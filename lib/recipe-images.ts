@@ -26,19 +26,19 @@ function url(id: string) {
 
 export const IMAGE_IDS = {
   // Chicken / poultry bowl
-  chickenBowl:        'jpkfc5_d-DI',
-  chickenLettuce:     'XoByiBymX20',
+  chickenBowl:        '1546069901-ba9599a7e63c',
+  chickenLettuce:     '1598515214146-d51e5d3d8f3c',
   chickenWrap:        '1619895092538-89f5b1b57807',
   chickenTeriyaki:    '1606787366850-de6ba5c8c5e5',
   chickenMed:         '1598515214146-d51e5d3d8f3c',
   // Seafood
   salmonPlate:        '1467003909585-2f8a72700288',
-  shrimpDish:         'xY55bL5mZAM',
+  shrimpDish:         '1565557623262-b51c2513a641',
   shrimpPasta:        '1565557623262-b51c2513a641',
   fishPlate:          '1559847844-5315695dadae',
   whiteFish:          '1519708227418-c8fd9a32b7a2',
   // Beef / pork
-  steakDish:          '9MzCd76xLGk',
+  steakDish:          '1544025162-18a3e1d0c1a5',
   beefBowl:           '1558030006-450c9f8c2c2c',
   burgerDish:         '1551183053-bf91a1d81141',
   porkDish:           '1544025162-18a3e1d0c1a5',
