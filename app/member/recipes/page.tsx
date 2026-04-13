@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Search, Filter, X, UtensilsCrossed, Trash2 } from 'lucide-react';
 import { recipesData, filterRecipes, sortRecipes, searchRecipes, type Recipe } from '@/lib/recipes';
+import { getRecipeImage, FALLBACK_IMAGE_URL } from '@/lib/recipe-images';
 
 export default function MemberRecipesPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,28 +63,38 @@ export default function MemberRecipesPage() {
 
   // Convert custom recipes to Recipe format and combine with default recipes
   const allRecipes = useMemo(() => {
-    const formattedCustomRecipes: Recipe[] = customRecipes.map(cr => ({
-      id: cr.id,
-      name: cr.name,
-      description: cr.description || 'Custom recipe',
-      imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&h=600&auto=format&fit=crop&q=80', // Default image
-      imageId: '1546069901-ba9599a7e63c',
-      calories: cr.calories_per_serving,
-      protein_g: cr.protein_per_serving,
-      carbs_g: cr.carbs_per_serving,
-      fat_g: cr.fat_per_serving,
-      prepMinutes: 0,
-      cookMinutes: 0,
-      servings: cr.servings,
-      ingredients: cr.ingredients.map((ing: any) => ({
+    const formattedCustomRecipes: Recipe[] = customRecipes.map(cr => {
+      const ingredients = cr.ingredients.map((ing: any) => ({
         item: ing.ingredientName,
         quantity: ing.grams,
         unit: 'g'
-      })),
-      instructions: ['Custom recipe - instructions not provided'],
-      tags: ['custom'],
-      isCustom: true
-    }));
+      }));
+      const { imageUrl, imageId } = getRecipeImage({
+        id: cr.id,
+        name: cr.name,
+        description: cr.description || '',
+        ingredients,
+        tags: ['custom'],
+      });
+      return {
+        id: cr.id,
+        name: cr.name,
+        description: cr.description || 'Custom recipe',
+        imageUrl,
+        imageId,
+        calories: cr.calories_per_serving,
+        protein_g: cr.protein_per_serving,
+        carbs_g: cr.carbs_per_serving,
+        fat_g: cr.fat_per_serving,
+        prepMinutes: 0,
+        cookMinutes: 0,
+        servings: cr.servings,
+        ingredients,
+        instructions: ['Custom recipe - instructions not provided'],
+        tags: ['custom'],
+        isCustom: true,
+      };
+    });
 
     return [...recipesData, ...formattedCustomRecipes];
   }, [customRecipes]);
@@ -347,14 +358,14 @@ export default function MemberRecipesPage() {
                 {/* Recipe Image */}
                 <div className="relative h-48 overflow-hidden bg-thrivv-bg-card">
                   <Image
-                    src={`${recipe.imageUrl}&v=2`}
+                    src={recipe.imageUrl.includes('?') ? recipe.imageUrl : `${recipe.imageUrl}&v=2`}
                     alt={recipe.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                     loading="lazy"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
-                      target.src = 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1600&auto=format&fit=crop&q=80';
+                      target.src = FALLBACK_IMAGE_URL;
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />

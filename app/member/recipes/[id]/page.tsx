@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Clock, Users, CheckCircle, X } from 'lucide-react';
 import { getRecipeById, type Recipe } from '@/lib/recipes';
+import { FALLBACK_IMAGE_URL } from '@/lib/recipe-images';
 import { addMealToToday, getTodayLog, computeTotals, type DailyLog } from '@/lib/nutrition-log';
 
 export default function RecipeDetailPage({ params }: { params: { id: string } }) {
@@ -185,14 +186,14 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
       <div className="premium-card p-0 overflow-hidden mb-8 animate-slide-up">
         <div className="relative h-80 md:h-96 overflow-hidden bg-thrivv-bg-card">
           <Image
-            src={`${recipe.imageUrl}&v=2`}
+            src={recipe.imageUrl.includes('?') ? recipe.imageUrl : `${recipe.imageUrl}&v=2`}
             alt={recipe.name}
             fill
             className="object-cover"
             priority
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.src = 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=1600&auto=format&fit=crop&q=80';
+              target.src = FALLBACK_IMAGE_URL;
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />

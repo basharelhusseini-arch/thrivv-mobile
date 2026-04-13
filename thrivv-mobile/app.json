@@ -23,7 +23,19 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro",
+      "manifest": {
+        "name": "Thrivv",
+        "short_name": "Thrivv",
+        "description": "Thrivv Mobile App",
+        "display": "standalone",
+        "orientation": "portrait",
+        "theme_color": "#000000",
+        "background_color": "#000000",
+        "start_url": "/",
+        "scope": "/"
+      }
     },
     "plugins": [
       "expo-router",

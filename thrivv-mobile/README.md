@@ -1,50 +1,63 @@
-# Welcome to your Expo app 👋
+# Thrivv Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A Progressive Web App (PWA) that loads https://thrivv.dev in a fullscreen WebView experience.
 
-## Get started
+## Features
 
-1. Install dependencies
+- 📱 **Installable**: Can be installed on iOS and Android home screens
+- 🌐 **Fullscreen**: Opens without browser UI when installed
+- 🎨 **Native Feel**: Black theme with smooth transitions
+- ⚡ **Fast**: Optimized for mobile performance
 
-   ```bash
-   npm install
-   ```
+## PWA Installation
 
-2. Start the app
+### iOS (iPhone/iPad)
+1. Open the app in Safari
+2. Tap the Share button (square with arrow pointing up)
+3. Scroll down and tap "Add to Home Screen"
+4. Tap "Add"
+5. The app will appear on your home screen with the Thrivv icon
 
-   ```bash
-   npx expo start
-   ```
+### Android
+1. Open the app in Chrome
+2. Tap the three-dot menu
+3. Tap "Add to Home screen" or "Install app"
+4. Confirm the installation
+5. The app will appear on your home screen
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Development
 
 ```bash
-npm run reset-project
+# Start the development server
+npm start
+
+# Run on web
+npm run web
+
+# Run on iOS
+npm run ios
+
+# Run on Android
+npm run android
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## PWA Configuration
 
-## Learn more
+The PWA setup includes:
+- ✅ `manifest.json` with app metadata
+- ✅ Icons in multiple sizes (192x192, 512x512)
+- ✅ Apple touch icon for iOS
+- ✅ Meta tags for fullscreen mode
+- ✅ Theme colors for native appearance
+- ✅ Viewport configuration for mobile devices
 
-To learn more about developing your project with Expo, look at the following resources:
+## Tech Stack
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- **Framework**: Expo + React Native
+- **Router**: Expo Router
+- **WebView**: react-native-webview
+- **PWA**: Native Web Manifest + Meta Tags
 
-## Join the community
+## License
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Private
