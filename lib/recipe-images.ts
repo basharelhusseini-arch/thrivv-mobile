@@ -26,14 +26,14 @@ export const IMAGE_IDS = {
   whiteFish:    '1519708227418-c8fd9a32b7a2',  // baked white fish fillet
 
   // Chicken / poultry
-  chickenBowl:  '1476224203421-9ac39bcb3327',  // grilled chicken rice bowl
-  chickenWrap:  '1482049016688-2d3e1b311543',  // chicken wrap / quesadilla
+  chickenBowl:  '1762631383846-6bead15b9796',  // grilled chicken rice bowl
+  chickenWrap:  '1752095809096-f09d22c466c5',  // chicken wrap / burrito
 
   // Asian / teriyaki / stir-fry
-  asianBowl:    '1543339308-43e59d6b73a6',     // teriyaki / asian bowl
+  asianBowl:    '1732988978816-ce0c78c79f4c',  // teriyaki chicken noodle bowl
 
   // Beef / pork / steak
-  steakMeat:    '1547592180-85f173990554',      // grilled steak
+  steakMeat:    '1775481391371-fab83ed296e9',  // sliced grilled steak plate
   burger:       '1551183053-bf91a1d81141',      // burger patty
 
   // Pasta / Italian
@@ -47,13 +47,13 @@ export const IMAGE_IDS = {
   curry:        '1455619452474-d2be8b1e70cd',  // chickpea / coconut curry
   sweetPotato:  '1543352634-a1c51d9f1fa7',     // sweet potato kale bowl
   mushroom:     '1506976785307-8732e854ad03',  // stuffed portobello / mushroom
-  grainBowl:    '1512058454905-6b841e7ad132',  // grain / quinoa salad bowl
+  grainBowl:    '1623428187442-b633f414aedc',  // quinoa grain salad bowl
 
   // Breakfast
   pancakes:     '1488477181946-6428a0291777',  // protein pancakes / french toast
   eggs:         '1525351326368-efbb5cb6814d',  // scrambled eggs / egg bowl
   eggBake:      '1517673132405-a56a62b18caf',  // baked egg muffins
-  smoothieBowl: '1490645935967-10de6ba17061',  // smoothie / yogurt / oats bowl
+  smoothieBowl: '1654923064926-be7e64267a31',  // acai smoothie bowl with berries
 } as const;
 
 // ---------------------------------------------------------------------------
