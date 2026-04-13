@@ -61,13 +61,20 @@ export default function MemberRecipesPage() {
     }
   };
 
-  // Convert custom recipes to Recipe format and combine with default recipes
+  // Convert custom recipes to Recipe format and combine with default recipes.
+  // getRecipeImage() is called for every recipe so IMAGE_IDS is the single
+  // source of truth — no stale hardcoded imageUrls from lib/recipes.ts leaking in.
   const allRecipes = useMemo(() => {
+    const builtInWithCorrectImages = recipesData.map(recipe => {
+      const { imageUrl, imageId } = getRecipeImage(recipe);
+      return { ...recipe, imageUrl, imageId };
+    });
+
     const formattedCustomRecipes: Recipe[] = customRecipes.map(cr => {
       const ingredients = cr.ingredients.map((ing: any) => ({
         item: ing.ingredientName,
         quantity: ing.grams,
-        unit: 'g'
+        unit: 'g',
       }));
       const { imageUrl, imageId } = getRecipeImage({
         id: cr.id,
@@ -96,30 +103,8 @@ export default function MemberRecipesPage() {
       };
     });
 
-    return [...recipesData, ...formattedCustomRecipes];
+    return [...builtInWithCorrectImages, ...formattedCustomRecipes];
   }, [customRecipes]);
-
-  // DEV: Verify no duplicate image URLs
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    const logged = (window as any).__recipeImagesVerified;
-    if (!logged) {
-      const imageUrls = recipesData.map(r => r.imageUrl);
-      const uniqueUrls = new Set(imageUrls);
-      
-      if (imageUrls.length !== uniqueUrls.size) {
-        console.error('❌ DUPLICATE RECIPE IMAGES DETECTED!');
-        const duplicates = imageUrls.filter((url, index) => imageUrls.indexOf(url) !== index);
-        console.error('Duplicate URLs:', [...new Set(duplicates)]);
-      } else {
-        console.log('✅ All 50 recipe images are unique');
-        console.log('📊 Sample image IDs:');
-        recipesData.slice(0, 3).forEach((r, i) => {
-          console.log(`  ${i + 1}. ${r.name}: imageId="${r.imageId}"`);
-        });
-      }
-      (window as any).__recipeImagesVerified = true;
-    }
-  }
 
   const toggleFilter = (filter: keyof typeof filters) => {
     setFilters(prev => ({ ...prev, [filter]: !prev[filter] }));
@@ -358,7 +343,7 @@ export default function MemberRecipesPage() {
                 {/* Recipe Image */}
                 <div className="relative h-48 overflow-hidden bg-thrivv-bg-card">
                   <Image
-                    src={recipe.imageUrl.includes('?') ? recipe.imageUrl : `${recipe.imageUrl}&v=2`}
+                    src={recipe.imageUrl}
                     alt={recipe.name}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"

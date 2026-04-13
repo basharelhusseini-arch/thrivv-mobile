@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Clock, Users, CheckCircle, X } from 'lucide-react';
 import { getRecipeById, type Recipe } from '@/lib/recipes';
-import { FALLBACK_IMAGE_URL } from '@/lib/recipe-images';
+import { getRecipeImage, FALLBACK_IMAGE_URL } from '@/lib/recipe-images';
 import { addMealToToday, getTodayLog, computeTotals, type DailyLog } from '@/lib/nutrition-log';
 
 export default function RecipeDetailPage({ params }: { params: { id: string } }) {
@@ -36,6 +36,12 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
 
       // First, try to find in default recipes
       let foundRecipe = getRecipeById(params.id);
+
+      // Override imageUrl with the centralized image system
+      if (foundRecipe) {
+        const { imageUrl, imageId } = getRecipeImage(foundRecipe);
+        foundRecipe = { ...foundRecipe, imageUrl, imageId };
+      }
       
       // If not found, try to fetch custom recipe from API
       if (!foundRecipe) {
@@ -186,7 +192,7 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
       <div className="premium-card p-0 overflow-hidden mb-8 animate-slide-up">
         <div className="relative h-80 md:h-96 overflow-hidden bg-thrivv-bg-card">
           <Image
-            src={recipe.imageUrl.includes('?') ? recipe.imageUrl : `${recipe.imageUrl}&v=2`}
+            src={recipe.imageUrl}
             alt={recipe.name}
             fill
             className="object-cover"
