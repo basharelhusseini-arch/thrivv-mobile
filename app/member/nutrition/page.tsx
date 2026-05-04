@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Calendar, Target, TrendingUp, UtensilsCrossed, Trash2, ChefHat, CheckCircle } from 'lucide-react';
 import { NutritionPlan } from '@/types';
+import PageHeader from '@/components/PageHeader';
 import { getTodayLog, removeMealFromToday, computeTotals, getRecipeFromMeal, type DailyLog } from '@/lib/nutrition-log';
 
 export default function MemberNutritionPage() {
@@ -102,8 +103,15 @@ export default function MemberNutritionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark">
-        <p className="text-thrivv-text-secondary">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <UtensilsCrossed className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading nutrition
+          </span>
+        </div>
       </div>
     );
   }
@@ -112,14 +120,12 @@ export default function MemberNutritionPage() {
   const todayTotals = todayLog ? computeTotals(todayLog) : null;
 
   return (
-    <div className="min-h-screen bg-thrivv-bg-dark">
-      {/* Hero Section */}
-      <div className="mb-8 animate-fade-in-up">
-        <h1 className="text-4xl font-semibold text-thrivv-text-primary mb-2">
-          My Nutrition
-        </h1>
-        <p className="text-thrivv-text-secondary">Track your daily meals and nutrition goals</p>
-      </div>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Fuel"
+        title="My Nutrition"
+        subtitle="Track today\u2019s meals and macros so your Health Score reflects what you ate."
+      />
 
       <main className="space-y-8">
         {/* Today's Logged Meals */}

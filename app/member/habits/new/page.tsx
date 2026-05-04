@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Habit } from '@/types';
+import PageHeader from '@/components/PageHeader';
 
 export default function NewHabitPage() {
   const router = useRouter();
@@ -83,28 +84,23 @@ export default function NewHabitPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <header className="glass-effect border-b border-gray-800/50 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/member/habits"
-                className="flex items-center text-gray-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Habits
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Add New Habit</h1>
-                <p className="text-sm text-gray-400">Create a new habit to track</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="New habit"
+        title="Add New Habit"
+        subtitle="Create a habit to track and let it stack streaks toward your Health Score."
+        action={
+          <Link
+            href="/member/habits"
+            className="btn-ghost px-4 py-2 inline-flex items-center gap-2 text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Habits
+          </Link>
+        }
+      />
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-3xl mx-auto">
         <form onSubmit={handleSubmit} className="dark-card p-6 space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">

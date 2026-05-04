@@ -11,8 +11,15 @@ export default function MemberClassesRedirect() {
   }, [router]);
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark">
-      <p className="text-thrivv-text-secondary">Redirecting to Bookings...</p>
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+          <span className="w-2 h-2 rounded-full bg-thrivv-gold-500" />
+        </div>
+        <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+          Redirecting to bookings
+        </span>
+      </div>
     </div>
   );
 }

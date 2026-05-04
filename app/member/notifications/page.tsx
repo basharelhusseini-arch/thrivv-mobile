@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Bell, Mail, Calendar, DollarSign, User, LogOut, CheckCircle } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 
 interface Notification {
   id: string;
@@ -53,97 +54,92 @@ export default function MemberNotificationsPage() {
     switch (type) {
       case 'class_reminder':
       case 'class_cancelled':
-        return <Calendar className="w-5 h-5 text-blue-500" />;
+        return <Calendar className="w-4 h-4 text-thrivv-gold-500" />;
       case 'payment_receipt':
-        return <DollarSign className="w-5 h-5 text-green-500" />;
+        return <DollarSign className="w-4 h-4 text-thrivv-neon-green" />;
       case 'membership_expiring':
-        return <User className="w-5 h-5 text-orange-500" />;
+        return <User className="w-4 h-4 text-thrivv-gold-400" />;
       default:
-        return <Mail className="w-5 h-5 text-gray-500" />;
+        return <Mail className="w-4 h-4 text-thrivv-text-secondary" />;
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <Bell className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading notifications
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link href="/member/dashboard" className="text-2xl font-bold text-gray-900 hover:text-blue-600">
-                Thrivv
-              </Link>
-              <p className="text-sm text-gray-600">Notifications</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/member/dashboard"
-                className="text-gray-700 hover:text-gray-900"
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Inbox"
+        title="Notifications"
+        subtitle="Class reminders, payment receipts, and updates from your gym."
+        action={
+          <button
+            onClick={handleLogout}
+            className="btn-ghost px-4 py-2 inline-flex items-center gap-2 text-sm hover:text-red-400 hover:border-red-500/30"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        }
+      />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-          </div>
-
+      <main className="max-w-4xl">
+        <div className="premium-card overflow-hidden">
           <div className="p-6">
             {notifications.length === 0 ? (
-              <div className="text-center py-12">
-                <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg mb-2">No notifications</p>
-                <p className="text-gray-400 text-sm">You&apos;re all caught up!</p>
+              <div className="text-center py-14">
+                <div className="w-14 h-14 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/20 mx-auto mb-4 flex items-center justify-center">
+                  <Bell className="w-6 h-6 text-thrivv-gold-500" />
+                </div>
+                <p className="text-thrivv-text-primary text-base font-medium mb-1">
+                  No notifications
+                </p>
+                <p className="text-thrivv-text-muted text-sm">
+                  You&apos;re all caught up.
+                </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className="rounded-xl bg-thrivv-bg-card/50 border border-thrivv-gold-500/10 p-4 hover:border-thrivv-gold-500/30 transition-colors"
                   >
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0 mt-1">
+                    <div className="flex items-start gap-3">
+                      <div className="icon-badge w-9 h-9 inline-flex items-center justify-center shrink-0">
                         {getNotificationIcon(notification.type)}
                       </div>
-                      <div className="ml-4 flex-1">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <h3 className="text-sm font-semibold text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="text-sm font-semibold text-thrivv-text-primary">
                               {notification.subject}
                             </h3>
-                            <p className="mt-1 text-sm text-gray-600">
+                            <p className="mt-1 text-sm text-thrivv-text-secondary leading-relaxed">
                               {notification.body}
                             </p>
-                            <p className="mt-2 text-xs text-gray-400">
+                            <p className="mt-2 text-[11px] text-thrivv-text-muted">
                               {new Date(notification.createdAt).toLocaleString()}
                             </p>
                           </div>
                           {notification.sent && (
-                            <div className="flex items-center text-green-600 text-xs">
-                              <CheckCircle className="w-4 h-4 mr-1" />
+                            <span className="inline-flex items-center gap-1 text-[11px] text-thrivv-neon-green bg-thrivv-neon-green/10 border border-thrivv-neon-green/20 px-2 py-0.5 rounded-md shrink-0">
+                              <CheckCircle className="w-3 h-3" />
                               Sent
-                            </div>
+                            </span>
                           )}
                         </div>
                       </div>

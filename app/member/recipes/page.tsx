@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Search, Filter, X, UtensilsCrossed, Trash2 } from 'lucide-react';
 import { recipesData, filterRecipes, sortRecipes, searchRecipes, type Recipe } from '@/lib/recipes';
 import { getRecipeImage, FALLBACK_IMAGE_URL } from '@/lib/recipe-images';
+import PageHeader from '@/components/PageHeader';
 
 export default function MemberRecipesPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -156,23 +157,21 @@ export default function MemberRecipesPage() {
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-thrivv-bg-dark">
-      {/* Hero Section */}
-      <div className="mb-8 animate-fade-in-up flex items-start justify-between">
-        <div>
-          <h1 className="text-4xl font-semibold text-thrivv-text-primary mb-2">
-            Recipes
-          </h1>
-          <p className="text-thrivv-text-secondary">Macro-friendly recipes to fuel your goals</p>
-        </div>
-        <Link
-          href="/recipes/builder"
-          className="flex items-center px-4 py-2 bg-thrivv-gold-500 text-black font-semibold rounded-lg hover:bg-thrivv-gold-400 transition-colors"
-        >
-          <UtensilsCrossed className="w-5 h-5 mr-2" />
-          Build Your Recipe
-        </Link>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Recipes"
+        title="Recipe Library"
+        subtitle="Macro-friendly recipes to fuel your goals."
+        action={
+          <Link
+            href="/recipes/builder"
+            className="btn-primary px-5 py-2.5 inline-flex items-center gap-2"
+          >
+            <UtensilsCrossed className="w-4 h-4" />
+            Build Your Recipe
+          </Link>
+        }
+      />
 
       {/* Search and Filters Bar */}
       <div className="mb-8 space-y-4">

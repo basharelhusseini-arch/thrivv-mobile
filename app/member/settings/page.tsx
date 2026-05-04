@@ -13,6 +13,7 @@ import { useState, useEffect } from 'react';
 import { Settings, Target, Activity, Bell, Shield } from 'lucide-react';
 import { HealthGoal, WearableType } from '@/types';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
+import PageHeader from '@/components/PageHeader';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -104,30 +105,26 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-thrivv-bg-dark flex items-center justify-center">
-        <div className="text-thrivv-text-secondary">Loading settings...</div>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <Settings className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading settings
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-thrivv-bg-dark p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3">
-          <div className="icon-badge">
-            <Settings className="w-6 h-6 text-thrivv-gold-500" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-semibold text-thrivv-text-primary">
-              Settings
-            </h1>
-            <p className="text-thrivv-text-secondary">
-              Manage your preferences and profile
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Preferences"
+        title="Settings"
+        subtitle="Tune your goal, wearable, and data confidence."
+      />
 
       <div className="max-w-4xl space-y-6">
         {/* Confidence Score Card */}

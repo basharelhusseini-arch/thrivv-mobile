@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Watch, Activity, CheckCircle, Apple, Bluetooth } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 
 interface WearableConnection {
   type: 'whoop' | 'garmin' | 'apple_health';
@@ -111,35 +112,28 @@ export default function WearablesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <p className="text-gray-400">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <Bluetooth className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading wearables
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <header className="glass-effect border-b border-gray-800/50 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/member/dashboard"
-                className="flex items-center text-gray-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Connect Your Wearable</h1>
-                <p className="text-sm text-gray-400">Sync your fitness data automatically for accurate health tracking</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Wearables"
+        title="Connect Your Wearable"
+        subtitle="Sync workouts, sleep, and recovery automatically. Wearable integrations are rolling out."
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main>
         {/* Benefits Section */}
         <div className="dark-card p-6 mb-8">
           <div className="flex items-start space-x-4">

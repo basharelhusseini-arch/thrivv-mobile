@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Mail, Phone, Calendar, CreditCard, LogOut } from 'lucide-react';
+import { User, Mail, Phone, Calendar, CreditCard, LogOut, CheckCircle } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 
 interface MemberData {
   id: string;
@@ -68,8 +69,15 @@ export default function MemberProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <User className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading profile
+          </span>
+        </div>
       </div>
     );
   }
@@ -89,153 +97,134 @@ export default function MemberProfilePage() {
     return age;
   };
 
+  const statusBadge = (status: string) => {
+    if (status === 'active') return 'bg-thrivv-neon-green/10 text-thrivv-neon-green border border-thrivv-neon-green/20';
+    if (status === 'suspended') return 'bg-red-500/10 text-red-400 border border-red-500/20';
+    return 'bg-thrivv-bg-card text-thrivv-text-secondary border border-thrivv-gold-500/10';
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link href="/member/dashboard" className="text-2xl font-bold text-gray-900 hover:text-blue-600">
-                Thrivv
-              </Link>
-              <p className="text-sm text-gray-600">My Profile</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/member/dashboard"
-                className="text-gray-700 hover:text-gray-900"
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Account"
+        title="Profile"
+        subtitle="Your personal info and active membership."
+        action={
+          <button
+            onClick={handleLogout}
+            className="btn-ghost px-4 py-2 inline-flex items-center gap-2 text-sm hover:text-red-400 hover:border-red-500/30"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        }
+      />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Profile Information</h1>
-          </div>
-
-          <div className="p-6 space-y-6">
-            {/* Personal Information */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-start">
-                  <User className="w-5 h-5 text-gray-400 mr-3 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Full Name</p>
-                    <p className="text-gray-900 font-medium">
-                      {member.firstName} {member.lastName}
-                    </p>
-                  </div>
+      <main className="max-w-4xl space-y-6">
+        <section className="premium-card p-7">
+          <h2 className="text-lg font-semibold text-thrivv-text-primary mb-5">Personal Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[
+              { icon: User, label: 'Full Name', value: `${member.firstName} ${member.lastName}` },
+              { icon: Mail, label: 'Email', value: member.email },
+              { icon: Phone, label: 'Phone', value: member.phone || '—' },
+              {
+                icon: Calendar,
+                label: 'Date of Birth',
+                value: `${new Date(member.dateOfBirth).toLocaleDateString()} (Age ${calculateAge(member.dateOfBirth)})`,
+              },
+            ].map((row) => (
+              <div key={row.label} className="flex items-start gap-3">
+                <div className="icon-badge w-10 h-10 inline-flex items-center justify-center shrink-0">
+                  <row.icon className="w-4 h-4 text-thrivv-gold-500" />
                 </div>
-
-                <div className="flex items-start">
-                  <Mail className="w-5 h-5 text-gray-400 mr-3 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="text-gray-900 font-medium">{member.email}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <Phone className="w-5 h-5 text-gray-400 mr-3 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Phone</p>
-                    <p className="text-gray-900 font-medium">{member.phone}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <Calendar className="w-5 h-5 text-gray-400 mr-3 mt-1" />
-                  <div>
-                    <p className="text-sm text-gray-500">Date of Birth</p>
-                    <p className="text-gray-900 font-medium">
-                      {new Date(member.dateOfBirth).toLocaleDateString()} (Age: {calculateAge(member.dateOfBirth)})
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Membership Information */}
-            <div className="pt-6 border-t border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Membership</h2>
-              {membership ? (
-                <div className="bg-blue-50 rounded-lg p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="flex items-center mb-2">
-                        <CreditCard className="w-5 h-5 text-blue-600 mr-2" />
-                        <h3 className="text-xl font-bold text-gray-900">{membership.name}</h3>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-2">{membership.description}</p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        ${membership.price.toFixed(2)}
-                        <span className="text-sm font-normal text-gray-500">/month</span>
-                      </p>
-                    </div>
-                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 capitalize">
-                      {member.status}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Features Included:</p>
-                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {membership.features.map((feature, index) => (
-                        <li key={index} className="text-sm text-gray-600 flex items-center">
-                          <span className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-gray-50 rounded-lg p-6 text-center">
-                  <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500">No active membership</p>
-                </div>
-              )}
-            </div>
-
-            {/* Account Information */}
-            <div className="pt-6 border-t border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-500">Member Since</p>
-                  <p className="text-gray-900 font-medium">
-                    {new Date(member.joinDate).toLocaleDateString()}
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-thrivv-text-muted">
+                    {row.label}
+                  </p>
+                  <p className="text-sm text-thrivv-text-primary font-medium mt-1 truncate">
+                    {row.value}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Account Status</p>
-                  <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
-                    member.status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : member.status === 'suspended'
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {member.status}
-                  </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="premium-card p-7">
+          <h2 className="text-lg font-semibold text-thrivv-text-primary mb-5">Membership</h2>
+          {membership ? (
+            <div className="rounded-xl bg-thrivv-bg-card/60 border border-thrivv-gold-500/15 p-5">
+              <div className="flex items-start justify-between mb-4 gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <CreditCard className="w-4 h-4 text-thrivv-gold-500" />
+                    <h3 className="text-lg font-semibold text-thrivv-text-primary truncate">
+                      {membership.name}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-thrivv-text-secondary mb-2">
+                    {membership.description}
+                  </p>
+                  <p className="text-2xl font-semibold text-thrivv-gold-500">
+                    ${membership.price.toFixed(2)}
+                    <span className="text-sm font-normal text-thrivv-text-muted">/month</span>
+                  </p>
                 </div>
+                <span
+                  className={`px-3 py-1 text-[11px] font-medium rounded-full capitalize ${statusBadge(member.status)}`}
+                >
+                  {member.status}
+                </span>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-thrivv-text-muted mb-2.5">
+                  Features included
+                </p>
+                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {membership.features.map((feature, index) => (
+                    <li
+                      key={index}
+                      className="text-sm text-thrivv-text-secondary flex items-center gap-2"
+                    >
+                      <CheckCircle className="w-4 h-4 text-thrivv-neon-green shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
+          ) : (
+            <div className="rounded-xl bg-thrivv-bg-card/60 border border-thrivv-gold-500/10 p-8 text-center">
+              <CreditCard className="w-10 h-10 text-thrivv-text-muted mx-auto mb-3" />
+              <p className="text-thrivv-text-secondary">No active membership</p>
+            </div>
+          )}
+        </section>
+
+        <section className="premium-card p-7">
+          <h2 className="text-lg font-semibold text-thrivv-text-primary mb-5">Account</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-thrivv-text-muted mb-1">
+                Member Since
+              </p>
+              <p className="text-sm text-thrivv-text-primary font-medium">
+                {new Date(member.joinDate).toLocaleDateString()}
+              </p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-thrivv-text-muted mb-1.5">
+                Account Status
+              </p>
+              <span
+                className={`inline-block px-3 py-1 text-[11px] font-medium rounded-full capitalize ${statusBadge(member.status)}`}
+              >
+                {member.status}
+              </span>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
     </div>
   );

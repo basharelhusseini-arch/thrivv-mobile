@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Clock, Target, TrendingUp, LogOut, Dumbbell, Plus, Sparkles } from 'lucide-react';
 import { WorkoutPlan } from '@/types';
+import PageHeader from '@/components/PageHeader';
 
 export default function MemberWorkoutsPage() {
   const router = useRouter();
@@ -44,8 +45,15 @@ export default function MemberWorkoutsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark">
-        <p className="text-thrivv-text-secondary">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <Dumbbell className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading workouts
+          </span>
+        </div>
       </div>
     );
   }
@@ -54,17 +62,12 @@ export default function MemberWorkoutsPage() {
   const completedPlans = workoutPlans.filter(p => p.status === 'completed');
 
   return (
-    <div className="min-h-screen bg-thrivv-bg-dark">
-      {/* Hero Section */}
-      <div className="mb-12 animate-fade-in-up">
-        <h1 className="text-4xl font-semibold text-thrivv-text-primary mb-2">
-          My Workouts
-        </h1>
-        <p className="text-thrivv-text-secondary">Personalized workout plans to reach your goals</p>
-      </div>
-
-      <main className="space-y-8">
-        <div className="flex items-center justify-end mb-8">
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Training"
+        title="My Workouts"
+        subtitle="Personalised plans built around your goals, equipment, and recovery."
+        action={
           <Link
             href="/workouts/new"
             className="flex items-center btn-primary px-6 py-3"
@@ -72,7 +75,10 @@ export default function MemberWorkoutsPage() {
             <Sparkles className="w-5 h-5 mr-2" />
             Generate New Plan
           </Link>
-        </div>
+        }
+      />
+
+      <main className="space-y-8">
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

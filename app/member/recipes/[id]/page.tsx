@@ -167,8 +167,15 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
 
   if (loading || !recipe) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark">
-        <p className="text-thrivv-text-secondary">Loading recipe...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading recipe
+          </span>
+        </div>
       </div>
     );
   }
@@ -176,14 +183,13 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
   const totalTime = recipe.prepMinutes + recipe.cookMinutes;
 
   return (
-    <div className="min-h-screen bg-thrivv-bg-dark">
-      {/* Back Button */}
-      <div className="mb-6 animate-fade-in-up">
+    <div className="space-y-6">
+      <div className="animate-fade-in-up">
         <Link
           href="/member/recipes"
-          className="inline-flex items-center text-thrivv-text-secondary hover:text-thrivv-gold-500 transition-colors"
+          className="inline-flex items-center text-thrivv-text-secondary hover:text-thrivv-gold-500 transition-colors text-sm"
         >
-          <ArrowLeft className="w-5 h-5 mr-2" />
+          <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Recipes
         </Link>
       </div>

@@ -36,6 +36,29 @@
     @apply border-thrivv-gold-500/30 scale-[1.01];
     box-shadow: 0 0 30px rgba(255, 208, 0, 0.08);
   }
+
+  /* Legacy alias used across older member pages — same surface as premium-card without the hover scale. */
+  .dark-card {
+    @apply bg-thrivv-bg-card rounded-2xl border border-thrivv-gold-500/10 transition-colors duration-300;
+  }
+
+  .dark-card:hover {
+    @apply border-thrivv-gold-500/25;
+  }
+
+  /* Legacy alias for sticky header chrome. */
+  .glass-effect {
+    @apply backdrop-blur-xl bg-thrivv-bg-darker/70 border-thrivv-gold-500/10;
+  }
+
+  /* Lightweight hover utility used across legacy pages. */
+  .card-hover {
+    @apply transition-all duration-300;
+  }
+  .card-hover:hover {
+    @apply border-thrivv-gold-500/30 scale-[1.01];
+    box-shadow: 0 0 30px rgba(255, 208, 0, 0.08);
+  }
   
   /* Primary button - solid THRIVV gold */
   .btn-primary {

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Activity, TrendingUp, Zap, Moon, UtensilsCrossed, Target, Award, Sparkles, Watch, ArrowRight, Calendar, CheckCircle } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 
 interface HealthSummary {
   score: number;
@@ -95,25 +96,25 @@ export default function MemberHealthPage() {
   const streak = healthData?.streak || 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gradient">Health Statistics</h1>
-          <p className="mt-2 text-thrivv-text-secondary">Track your overall health and wellness</p>
-        </div>
-        {streak > 0 && (
-          <div className="bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 rounded-xl px-6 py-3">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5 text-thrivv-gold-500" />
-              <div>
-                <p className="text-2xl font-bold text-thrivv-gold-500">{streak}</p>
-                <p className="text-xs text-thrivv-text-muted">Day Streak</p>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Your data"
+        title="Health Statistics"
+        subtitle="Track your overall health and the components feeding your gym leaderboard rank."
+        action={
+          streak > 0 ? (
+            <div className="bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 rounded-xl px-6 py-3">
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-5 h-5 text-thrivv-gold-500" />
+                <div>
+                  <p className="text-2xl font-bold text-thrivv-gold-500">{streak}</p>
+                  <p className="text-xs text-thrivv-text-muted">Day Streak</p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          ) : undefined
+        }
+      />
 
       {/* Error Warning (if any) */}
       {error && (

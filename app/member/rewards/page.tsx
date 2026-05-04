@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Trophy, Star, Gift, TrendingUp, Zap, Award, DollarSign, Users, Dumbbell, UtensilsCrossed, Lock, CheckCircle, AlertTriangle, Shield } from 'lucide-react';
 import { useTypingFeatures } from '@/hooks/useTypingFeatures';
+import PageHeader from '@/components/PageHeader';
 
 interface HealthScore {
   total: number;
@@ -342,35 +343,28 @@ export default function RewardsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <p className="text-gray-400">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <Trophy className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading rewards
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      <header className="glass-effect border-b border-gray-800/50 shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/member/dashboard"
-                className="flex items-center text-gray-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-white">Rewards</h1>
-                <p className="text-sm text-gray-400">Earn points with your health score and unlock exclusive rewards</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Rewards"
+        title="Rewards Marketplace"
+        subtitle="Your Health Score earns points. Redeem them for gear, supplements, and gym perks."
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main>
         {/* Points Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {/* Total Points */}

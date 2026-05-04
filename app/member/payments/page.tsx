@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { DollarSign, CheckCircle, XCircle, Clock, LogOut, CreditCard } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 
 interface Payment {
   id: string;
@@ -70,131 +71,119 @@ export default function MemberPaymentsPage() {
   const getStatusIcon = (status: Payment['status']) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-thrivv-neon-green" />;
       case 'failed':
-        return <XCircle className="w-5 h-5 text-red-500" />;
+        return <XCircle className="w-4 h-4 text-red-400" />;
       case 'pending':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
+        return <Clock className="w-4 h-4 text-thrivv-gold-500" />;
       default:
-        return <Clock className="w-5 h-5 text-gray-500" />;
+        return <Clock className="w-4 h-4 text-thrivv-text-secondary" />;
     }
   };
 
   const getStatusColor = (status: Payment['status']) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-thrivv-neon-green/10 text-thrivv-neon-green border border-thrivv-neon-green/20';
       case 'failed':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-500/10 text-red-400 border border-red-500/20';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-thrivv-gold-500/10 text-thrivv-gold-500 border border-thrivv-gold-500/20';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-thrivv-bg-card text-thrivv-text-secondary border border-thrivv-gold-500/10';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <CreditCard className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading payments
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Link href="/member/dashboard" className="text-2xl font-bold text-gray-900 hover:text-blue-600">
-                Thrivv
-              </Link>
-              <p className="text-sm text-gray-600">Payment History</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/member/dashboard"
-                className="text-gray-700 hover:text-gray-900"
-              >
-                Dashboard
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Billing"
+        title="Payment History"
+        subtitle="Membership transactions and receipts."
+        action={
+          <button
+            onClick={handleLogout}
+            className="btn-ghost px-4 py-2 inline-flex items-center gap-2 text-sm hover:text-red-400 hover:border-red-500/30"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
+        }
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900">Payment History</h1>
-          </div>
-
+      <main>
+        <div className="premium-card overflow-hidden">
           <div className="p-6">
             {payments.length === 0 ? (
-              <div className="text-center py-12">
-                <CreditCard className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg mb-2">No payments found</p>
-                <p className="text-gray-400 text-sm">Your payment history will appear here</p>
+              <div className="text-center py-14">
+                <div className="w-14 h-14 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/20 mx-auto mb-4 flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-thrivv-gold-500" />
+                </div>
+                <p className="text-thrivv-text-primary text-base font-medium mb-1">
+                  No payments yet
+                </p>
+                <p className="text-thrivv-text-muted text-sm">
+                  Your payment history will appear here.
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Membership
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Method
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Transaction ID
-                      </th>
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-[0.2em] text-thrivv-text-muted">
+                      <th className="px-4 py-3 text-left font-medium">Date</th>
+                      <th className="px-4 py-3 text-left font-medium">Membership</th>
+                      <th className="px-4 py-3 text-left font-medium">Amount</th>
+                      <th className="px-4 py-3 text-left font-medium">Method</th>
+                      <th className="px-4 py-3 text-left font-medium">Status</th>
+                      <th className="px-4 py-3 text-left font-medium">Transaction ID</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {payments.map((payment) => (
-                      <tr key={payment.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <tbody>
+                    {payments.map((payment, idx) => (
+                      <tr
+                        key={payment.id}
+                        className={`hover:bg-thrivv-bg-card/40 transition-colors ${
+                          idx > 0 ? 'border-t border-thrivv-gold-500/10' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-thrivv-text-primary">
                           {new Date(payment.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-thrivv-text-primary">
                           {memberships[payment.membershipId]?.name || 'Unknown'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-thrivv-gold-500 tabular-nums">
                           ${payment.amount.toFixed(2)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-thrivv-text-secondary">
                           {payment.paymentMethod}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
                             {getStatusIcon(payment.status)}
-                            <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(payment.status)}`}>
+                            <span className={`px-2 py-0.5 text-[11px] font-medium rounded-md capitalize ${getStatusColor(payment.status)}`}>
                               {payment.status}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                          {payment.transactionId || 'N/A'}
+                        <td className="px-4 py-4 whitespace-nowrap text-xs text-thrivv-text-muted font-mono">
+                          {payment.transactionId || '—'}
                         </td>
                       </tr>
                     ))}

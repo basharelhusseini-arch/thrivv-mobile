@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Calendar, Clock, Users, CheckCircle, Star, Award, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { trainersData, type Trainer } from '@/lib/trainers-data';
+import PageHeader from '@/components/PageHeader';
 
 interface ClassData {
   id: string;
@@ -190,8 +191,15 @@ export default function MemberBookingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark">
-        <p className="text-thrivv-text-secondary">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <Calendar className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading bookings
+          </span>
+        </div>
       </div>
     );
   }
@@ -220,14 +228,12 @@ export default function MemberBookingsPage() {
   ).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
   return (
-    <div className="min-h-screen bg-thrivv-bg-dark">
-      {/* Hero Section */}
-      <div className="mb-12 animate-fade-in-up">
-        <h1 className="text-4xl font-semibold text-thrivv-text-primary mb-2">
-          Bookings
-        </h1>
-        <p className="text-thrivv-text-secondary">Book classes and trainer sessions</p>
-      </div>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow="Schedule"
+        title="Bookings"
+        subtitle="Book classes and trainer sessions at your gym."
+      />
 
       {/* Upcoming Bookings */}
       {upcomingBookings.length > 0 && (
