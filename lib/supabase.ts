@@ -76,9 +76,25 @@ export type Database = {
           email: string;
           password_hash: string;
           created_at: string;
+          // Added by migration 015 (additive, nullable / default false)
+          gym_id?: string | null;
+          is_admin?: boolean;
+          membership_start_date?: string | null;
         };
         Insert: Omit<Database['public']['Tables']['users']['Row'], 'id' | 'created_at'>;
         Update: Partial<Database['public']['Tables']['users']['Insert']>;
+      };
+      gyms: {
+        Row: {
+          id: string;
+          name: string;
+          owner_email: string;
+          pilot_start_date: string | null;
+          pilot_member_count: number;
+          created_at: string;
+        };
+        Insert: Omit<Database['public']['Tables']['gyms']['Row'], 'id' | 'created_at'>;
+        Update: Partial<Database['public']['Tables']['gyms']['Insert']>;
       };
       daily_checkins: {
         Row: {
