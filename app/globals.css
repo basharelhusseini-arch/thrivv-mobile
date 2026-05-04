@@ -128,4 +128,26 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Cinematic infinite-scroll marquee. The track must contain its content
+     duplicated at least twice so the loop is visually seamless. */
+  @keyframes marquee-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .marquee-track {
+    animation: marquee-scroll 50s linear infinite;
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      animation: none;
+    }
+  }
 }
