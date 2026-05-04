@@ -679,7 +679,7 @@ function FinalCTA() {
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
-              href="mailto:hello@thrivv.dev?subject=Bring%20Thrivv%20to%20my%20gym"
+              href="mailto:bashar@thrivv.dev?subject=Bring%20Thrivv%20to%20my%20gym"
               className="btn-ghost px-8 py-4 text-base inline-flex items-center justify-center gap-2"
             >
               Ask your gym for Thrivv
@@ -726,7 +726,7 @@ function Footer() {
             Sign Up
           </Link>
           <a
-            href="mailto:hello@thrivv.dev?subject=Run%20Thrivv%20at%20my%20gym"
+            href="mailto:bashar@thrivv.dev?subject=Run%20Thrivv%20at%20my%20gym"
             className="text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
           >
             For gym owners →
