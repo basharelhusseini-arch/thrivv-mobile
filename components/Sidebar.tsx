@@ -80,11 +80,11 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu button — glass + gold rim, matches sidebar surface */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2.5 rounded-xl bg-thrivv-gold-500 text-black shadow-[0_8px_30px_rgba(255,208,0,0.35)] hover:scale-105 transition-transform"
+          className="p-2.5 rounded-xl backdrop-blur-xl bg-thrivv-bg-darker/80 border border-thrivv-gold-500/30 text-thrivv-gold-500 shadow-[0_8px_30px_rgba(255,208,0,0.18)] hover:scale-105 hover:border-thrivv-gold-500/60 transition-all duration-300"
           aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
         >
           {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -95,39 +95,75 @@ export default function Sidebar() {
       <aside
         className={`
           fixed inset-y-0 left-0 z-40 w-24 lg:w-24
-          backdrop-blur-xl bg-thrivv-bg-darker/70
-          text-white transform transition-all duration-300 ease-in-out
+          backdrop-blur-2xl
+          bg-gradient-to-b from-thrivv-bg-darker/90 via-thrivv-bg-darker/80 to-thrivv-bg-darker/90
+          text-white transform
+          transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}
         aria-label="Primary navigation"
       >
-        {/* Right-edge gold gradient line */}
+        {/* Right-edge gold gradient line — primary blade accent */}
         <div
-          className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-thrivv-gold-500/30 to-transparent pointer-events-none"
+          className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-thrivv-gold-500/40 to-transparent pointer-events-none"
+          aria-hidden
+        />
+        {/* Inner-left soft gold rim — adds depth to the chrome */}
+        <div
+          className="absolute top-1/4 bottom-1/4 left-0 w-px bg-gradient-to-b from-transparent via-thrivv-gold-500/15 to-transparent pointer-events-none"
+          aria-hidden
+        />
+        {/* Top + bottom feathered fades so the sidebar melts into the canvas */}
+        <div
+          className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-thrivv-bg-darker/60 to-transparent pointer-events-none"
+          aria-hidden
+        />
+        <div
+          className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-thrivv-bg-darker/60 to-transparent pointer-events-none"
           aria-hidden
         />
 
         <div className="flex flex-col h-full relative">
           {/* Logo */}
-          <div className="flex items-center justify-center h-20 px-3 border-b border-thrivv-gold-500/10">
-            <Logo variant="gold" size="md" linkTo={memberData ? '/member/dashboard' : '/'} />
+          <div className="relative flex items-center justify-center h-24 px-3">
+            <div
+              className="absolute inset-x-4 inset-y-3 bg-thrivv-gold-500/10 blur-2xl rounded-full pointer-events-none"
+              aria-hidden
+            />
+            <div className="relative">
+              <Logo variant="gold" size="md" linkTo={memberData ? '/member/dashboard' : '/'} />
+            </div>
+            <div
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent"
+              aria-hidden
+            />
           </div>
 
           {/* Member Avatar (if logged in) */}
           {memberData && (
-            <div className="px-3 py-4 border-b border-thrivv-gold-500/10">
-              <div
-                className="w-10 h-10 mx-auto rounded-xl bg-thrivv-gold-500 flex items-center justify-center transition-all duration-200 hover:scale-105 glow-gold"
-                title={memberData.name}
-              >
-                <User className="w-5 h-5 text-black" />
+            <div className="relative px-3 py-4">
+              <div className="relative w-11 h-11 mx-auto group/avatar">
+                <div
+                  className="absolute -inset-1.5 bg-thrivv-gold-500/30 blur-lg rounded-2xl pointer-events-none animate-pulse"
+                  aria-hidden
+                />
+                <div
+                  className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-thrivv-gold-500 to-thrivv-gold-400 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/avatar:scale-105 shadow-[0_8px_24px_rgba(255,208,0,0.35)]"
+                  title={memberData.name}
+                >
+                  <User className="w-5 h-5 text-black" />
+                </div>
               </div>
+              <div
+                className="mt-4 mx-auto w-12 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/30 to-transparent"
+                aria-hidden
+              />
             </div>
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-6 space-y-1.5 overflow-y-auto">
+          <nav className="flex-1 px-2 py-5 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -141,21 +177,30 @@ export default function Sidebar() {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`
-                    relative flex flex-col items-center justify-center py-3 px-2 rounded-xl group
-                    transition-[background-color,transform,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
+                    relative flex flex-col items-center justify-center py-3 px-2 rounded-2xl group overflow-hidden
+                    transition-[background,transform,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
+                    border
                     ${
                       isActive
-                        ? 'bg-thrivv-gold-500 glow-gold'
-                        : 'hover:bg-thrivv-gold-500/10 hover:scale-[1.015]'
+                        ? 'bg-gradient-to-b from-thrivv-gold-500 to-thrivv-gold-400 border-thrivv-gold-300/40 shadow-[0_8px_30px_rgba(255,208,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]'
+                        : 'border-transparent hover:border-thrivv-gold-500/20 hover:bg-gradient-to-b hover:from-thrivv-gold-500/[0.12] hover:to-thrivv-gold-500/[0.04] hover:scale-[1.015]'
                     }
                   `}
                   aria-current={isActive ? 'page' : undefined}
                 >
+                  {/* Hover left-edge accent — only visible on inactive items */}
+                  {!isActive && (
+                    <span
+                      className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-0 bg-thrivv-gold-500/70 rounded-r-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:h-6"
+                      aria-hidden
+                    />
+                  )}
+
                   <Icon
-                    className={`w-5 h-5 mb-1.5 transition-colors duration-500 ${
+                    className={`w-5 h-5 mb-1.5 transition-[color,transform] duration-500 ${
                       isActive
-                        ? 'text-black'
-                        : 'text-thrivv-text-secondary group-hover:text-thrivv-gold-500'
+                        ? 'text-black scale-110'
+                        : 'text-thrivv-text-muted group-hover:text-thrivv-gold-500 group-hover:scale-105'
                     }`}
                   />
                   <span
@@ -167,9 +212,11 @@ export default function Sidebar() {
                   >
                     {displayLabel}
                   </span>
+
+                  {/* Active left-edge bar */}
                   {isActive && (
                     <span
-                      className="absolute -left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-thrivv-gold-500 rounded-r-full"
+                      className="absolute -left-0.5 top-1/2 -translate-y-1/2 w-1 h-9 bg-thrivv-gold-300 rounded-r-full shadow-[0_0_12px_rgba(255,208,0,0.6)]"
                       aria-hidden
                     />
                   )}
@@ -179,22 +226,40 @@ export default function Sidebar() {
           </nav>
 
           {/* Footer Actions */}
-          <div className="px-2 py-4 border-t border-thrivv-gold-500/10">
+          <div className="relative px-2 py-4">
+            <div
+              className="absolute top-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/20 to-transparent"
+              aria-hidden
+            />
             {memberData ? (
               <button
                 onClick={handleLogout}
-                className="w-full flex flex-col items-center justify-center py-3 rounded-xl transition-all duration-300 text-thrivv-text-secondary hover:text-red-400 hover:bg-red-500/10 group"
+                className="
+                  w-full relative flex flex-col items-center justify-center py-3 rounded-2xl group overflow-hidden border border-transparent
+                  transition-[background,transform,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
+                  text-thrivv-text-muted hover:text-red-400
+                  hover:border-red-500/30
+                  hover:bg-gradient-to-b hover:from-red-500/[0.12] hover:to-red-500/[0.04]
+                  hover:scale-[1.015]
+                "
               >
-                <LogOut className="w-5 h-5 mb-1.5" />
+                <LogOut className="w-5 h-5 mb-1.5 transition-transform duration-500 group-hover:scale-105" />
                 <span className="text-[11px] font-medium">Sign Out</span>
               </button>
             ) : (
               !isInMemberPortal && (
                 <Link
                   href="/member/login"
-                  className="w-full flex flex-col items-center justify-center py-3 rounded-xl transition-all duration-300 text-thrivv-text-secondary hover:text-thrivv-gold-500 hover:bg-thrivv-gold-500/10 group"
+                  className="
+                    w-full relative flex flex-col items-center justify-center py-3 rounded-2xl group overflow-hidden border border-transparent
+                    transition-[background,transform,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
+                    text-thrivv-text-muted hover:text-thrivv-gold-500
+                    hover:border-thrivv-gold-500/20
+                    hover:bg-gradient-to-b hover:from-thrivv-gold-500/[0.12] hover:to-thrivv-gold-500/[0.04]
+                    hover:scale-[1.015]
+                  "
                 >
-                  <LogIn className="w-5 h-5 mb-1.5" />
+                  <LogIn className="w-5 h-5 mb-1.5 transition-transform duration-500 group-hover:scale-105" />
                   <span className="text-[11px] font-medium">Sign In</span>
                 </Link>
               )
