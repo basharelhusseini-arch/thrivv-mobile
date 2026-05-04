@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Calendar, Clock, Users, CreditCard, LogOut, User, BookOpen, CheckCircle, Bell, DollarSign, Dumbbell, UtensilsCrossed, Target, Activity, Watch, Trophy, AlertCircle, Shield } from 'lucide-react';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
 import { ConfidenceLevel } from '@/types';
+import PageHeader, { gradient } from '@/components/PageHeader';
 
 interface UserData {
   id: string;
@@ -130,10 +131,14 @@ export default function MemberDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark">
-        <div className="text-center">
-          <Activity className="w-12 h-12 text-thrivv-gold-500 mx-auto mb-4 animate-pulse" />
-          <p className="text-thrivv-text-secondary">Loading...</p>
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
+            <Activity className="w-5 h-5 text-thrivv-gold-500" />
+          </div>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Loading your snapshot
+          </span>
         </div>
       </div>
     );
@@ -146,19 +151,22 @@ export default function MemberDashboardPage() {
   const userDisplayName = user.email.split('@')[0];
 
   return (
-    <div className="min-h-screen bg-thrivv-bg-dark">
-      {/* Hero Section */}
-      <div className="mb-12 animate-fade-in-up">
-        <h1 className="text-4xl font-semibold text-thrivv-text-primary mb-2">
-          Welcome back, {userDisplayName}
-        </h1>
-        <p className="text-thrivv-text-secondary">Here&apos;s your health snapshot</p>
-      </div>
+    <div className="space-y-10">
+      <PageHeader
+        eyebrow={"Today\u2019s snapshot"}
+        titleNode={<>Welcome back, {gradient(userDisplayName)}</>}
+        subtitle={
+          "Your training, nutrition, and sleep \u2014 distilled into one Health Score that ranks you on your gym\u2019s leaderboard."
+        }
+      />
 
       <main className="space-y-8">
         {/* Check-in Alert */}
         {!todayCheckin && (
-          <div className="premium-card bg-thrivv-gold-500/5 border-thrivv-gold-500/30 p-6 flex items-center justify-between animate-fade-in">
+          <div
+            className="premium-card bg-thrivv-gold-500/5 border-thrivv-gold-500/30 p-6 flex items-center justify-between animate-fade-in-up"
+            style={{ animationDelay: '60ms' }}
+          >
             <div className="flex items-center space-x-4">
               <div className="icon-badge">
                 <AlertCircle className="w-5 h-5 text-thrivv-gold-500" />
@@ -180,7 +188,10 @@ export default function MemberDashboardPage() {
         )}
 
         {/* Health Score & Leaderboard Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div
+          className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up"
+          style={{ animationDelay: '120ms' }}
+        >
           {/* Large Health Score Display */}
           <div className="lg:col-span-1">
             <div className="premium-card p-8 flex flex-col items-center justify-center">
@@ -388,7 +399,10 @@ export default function MemberDashboardPage() {
         </div>
 
         {/* Main Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up"
+          style={{ animationDelay: '200ms' }}
+        >
           {/* Daily Check-in */}
           <Link
             href="/member/checkin"
@@ -464,7 +478,10 @@ export default function MemberDashboardPage() {
 
         {/* Score History Detail */}
         {scoreHistory.length > 0 && (
-          <div className="premium-card">
+          <div
+            className="premium-card animate-fade-in-up"
+            style={{ animationDelay: '280ms' }}
+          >
             <div className="px-6 py-5 flex items-center">
               <Calendar className="w-5 h-5 mr-3 text-thrivv-gold-500" />
               <h2 className="text-xl font-semibold text-thrivv-text-primary">Recent Scores</h2>

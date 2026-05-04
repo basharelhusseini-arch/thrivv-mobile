@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  LayoutDashboard, 
+import {
+  LayoutDashboard,
   Activity,
-  Calendar, 
+  Calendar,
   UserCog,
   Menu,
   LogIn,
@@ -16,7 +16,8 @@ import {
   Heart,
   Trophy,
   User,
-  ChefHat
+  ChefHat,
+  X,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Logo from './Logo';
@@ -52,12 +53,11 @@ export default function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [memberData, setMemberData] = useState<{ id: string; name: string; email: string } | null>(null);
 
-  // Check if user is logged in
   useEffect(() => {
     const memberId = localStorage.getItem('memberId');
     const memberName = localStorage.getItem('memberName');
     const memberEmail = localStorage.getItem('memberEmail');
-    
+
     if (memberId && memberName) {
       setMemberData({
         id: memberId,
@@ -75,7 +75,6 @@ export default function Sidebar() {
     router.push('/');
   };
 
-  // Determine which navigation to show
   const isInMemberPortal = pathname?.startsWith('/member');
   const navigation = isInMemberPortal || memberData ? memberNavigation : adminNavigation;
 
@@ -85,21 +84,31 @@ export default function Sidebar() {
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-lg bg-thrivv-gold-500 text-black hover:from-yellow-600 hover:to-thrivv-gold-600 transition-all duration-200 shadow-lg shadow-thrivv-gold-500/20"
+          className="p-2.5 rounded-xl bg-thrivv-gold-500 text-black shadow-[0_8px_30px_rgba(255,208,0,0.35)] hover:scale-105 transition-transform"
+          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
         >
-          <Menu className="w-6 h-6" />
+          {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
       {/* Sidebar */}
-      <div
+      <aside
         className={`
-          fixed inset-y-0 left-0 z-40 w-24 lg:w-24 bg-thrivv-bg-darker border-r border-thrivv-gold-500/10 text-white transform transition-all duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-40 w-24 lg:w-24
+          backdrop-blur-xl bg-thrivv-bg-darker/70
+          text-white transform transition-all duration-300 ease-in-out
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}
+        aria-label="Primary navigation"
       >
-        <div className="flex flex-col h-full">
+        {/* Right-edge gold gradient line */}
+        <div
+          className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-thrivv-gold-500/30 to-transparent pointer-events-none"
+          aria-hidden
+        />
+
+        <div className="flex flex-col h-full relative">
           {/* Logo */}
           <div className="flex items-center justify-center h-20 px-3 border-b border-thrivv-gold-500/10">
             <Logo variant="gold" size="md" linkTo={memberData ? '/member/dashboard' : '/'} />
@@ -108,44 +117,48 @@ export default function Sidebar() {
           {/* Member Avatar (if logged in) */}
           {memberData && (
             <div className="px-3 py-4 border-b border-thrivv-gold-500/10">
-              <div className="w-10 h-10 mx-auto rounded-xl bg-thrivv-gold-500 flex items-center justify-center transition-all duration-200 hover:scale-105 glow-gold">
+              <div
+                className="w-10 h-10 mx-auto rounded-xl bg-thrivv-gold-500 flex items-center justify-center transition-all duration-200 hover:scale-105 glow-gold"
+                title={memberData.name}
+              >
                 <User className="w-5 h-5 text-black" />
               </div>
             </div>
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-6 space-y-2 overflow-y-auto">
+          <nav className="flex-1 px-2 py-6 space-y-1.5 overflow-y-auto">
             {navigation.map((item) => {
-              // Handle active state - also match /member/classes to Bookings
-              const isActive = pathname === item.href || 
+              const isActive =
+                pathname === item.href ||
                 (item.href === '/member/bookings' && pathname === '/member/classes');
               const Icon = item.icon;
               const displayLabel = item.label;
-              
+
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`
-                    flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all duration-300 relative group
+                    relative flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all duration-300 group
                     ${
                       isActive
                         ? 'bg-thrivv-gold-500 glow-gold'
-                        : 'hover:bg-thrivv-gold-500/10'
+                        : 'hover:bg-thrivv-gold-500/10 hover:scale-[1.02]'
                     }
                   `}
+                  aria-current={isActive ? 'page' : undefined}
                 >
-                  <Icon 
+                  <Icon
                     className={`w-5 h-5 mb-1.5 transition-colors duration-300 ${
                       isActive
                         ? 'text-black'
                         : 'text-thrivv-text-secondary group-hover:text-thrivv-gold-500'
                     }`}
                   />
-                  <span 
-                    className={`text-xs font-medium text-center leading-tight truncate w-full transition-colors duration-300 ${
+                  <span
+                    className={`text-[11px] font-medium text-center leading-tight truncate w-full transition-colors duration-300 ${
                       isActive
                         ? 'text-black'
                         : 'text-thrivv-text-muted group-hover:text-thrivv-gold-500'
@@ -154,7 +167,10 @@ export default function Sidebar() {
                     {displayLabel}
                   </span>
                   {isActive && (
-                    <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-10 bg-thrivv-gold-500 rounded-r-full" />
+                    <span
+                      className="absolute -left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-thrivv-gold-500 rounded-r-full"
+                      aria-hidden
+                    />
                   )}
                 </Link>
               );
@@ -164,35 +180,34 @@ export default function Sidebar() {
           {/* Footer Actions */}
           <div className="px-2 py-4 border-t border-thrivv-gold-500/10">
             {memberData ? (
-              // Sign Out Button (when logged in)
               <button
                 onClick={handleLogout}
                 className="w-full flex flex-col items-center justify-center py-3 rounded-xl transition-all duration-300 text-thrivv-text-secondary hover:text-red-400 hover:bg-red-500/10 group"
               >
                 <LogOut className="w-5 h-5 mb-1.5" />
-                <span className="text-xs font-medium">Sign Out</span>
+                <span className="text-[11px] font-medium">Sign Out</span>
               </button>
             ) : (
-              // Member Portal Link (when not logged in, and not already in member portal)
               !isInMemberPortal && (
                 <Link
                   href="/member/login"
                   className="w-full flex flex-col items-center justify-center py-3 rounded-xl transition-all duration-300 text-thrivv-text-secondary hover:text-thrivv-gold-500 hover:bg-thrivv-gold-500/10 group"
                 >
                   <LogIn className="w-5 h-5 mb-1.5" />
-                  <span className="text-xs font-medium">Sign In</span>
+                  <span className="text-[11px] font-medium">Sign In</span>
                 </Link>
               )
             )}
           </div>
         </div>
-      </div>
+      </aside>
 
-      {/* Overlay for mobile */}
+      {/* Mobile overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden
         />
       )}
     </>
