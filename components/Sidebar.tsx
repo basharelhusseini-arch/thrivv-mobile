@@ -143,27 +143,27 @@ export default function Sidebar() {
           {/* Member Avatar (if logged in) */}
           {memberData && (
             <div className="relative px-3 py-4">
-              <div className="relative w-11 h-11 mx-auto group/avatar">
+              <div className="relative w-10 h-10 mx-auto group/avatar">
                 <div
-                  className="absolute -inset-1.5 bg-thrivv-gold-500/30 blur-lg rounded-2xl pointer-events-none animate-pulse"
+                  className="absolute -inset-1 bg-thrivv-gold-500/20 blur-md rounded-2xl pointer-events-none"
                   aria-hidden
                 />
                 <div
-                  className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-thrivv-gold-500 to-thrivv-gold-400 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/avatar:scale-105 shadow-[0_8px_24px_rgba(255,208,0,0.35)]"
+                  className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-thrivv-gold-500 to-thrivv-gold-400 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/avatar:scale-105 shadow-[0_4px_18px_rgba(255,208,0,0.28)]"
                   title={memberData.name}
                 >
-                  <User className="w-5 h-5 text-black" />
+                  <User className="w-4 h-4 text-black" />
                 </div>
               </div>
               <div
-                className="mt-4 mx-auto w-12 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/30 to-transparent"
+                className="mt-4 mx-auto w-10 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/25 to-transparent"
                 aria-hidden
               />
             </div>
           )}
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-5 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-2 py-5 space-y-0.5 overflow-y-auto">
             {navigation.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -177,13 +177,13 @@ export default function Sidebar() {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`
-                    relative flex flex-col items-center justify-center py-3 px-2 rounded-2xl group overflow-hidden
+                    relative flex flex-col items-center justify-center py-2.5 px-2 rounded-xl group overflow-hidden
                     transition-[background,transform,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
                     border
                     ${
                       isActive
-                        ? 'bg-gradient-to-b from-thrivv-gold-500 to-thrivv-gold-400 border-thrivv-gold-300/40 shadow-[0_8px_30px_rgba(255,208,0,0.45),inset_0_1px_0_rgba(255,255,255,0.18)]'
-                        : 'border-transparent hover:border-thrivv-gold-500/20 hover:bg-gradient-to-b hover:from-thrivv-gold-500/[0.12] hover:to-thrivv-gold-500/[0.04] hover:scale-[1.015]'
+                        ? 'bg-gradient-to-b from-thrivv-gold-500 to-thrivv-gold-400 border-thrivv-gold-400/30 shadow-[0_4px_20px_rgba(255,208,0,0.35)]'
+                        : 'border-transparent hover:border-thrivv-gold-500/15 hover:bg-gradient-to-b hover:from-thrivv-gold-500/[0.08] hover:to-thrivv-gold-500/[0.02] hover:scale-[1.01]'
                     }
                   `}
                   aria-current={isActive ? 'page' : undefined}
@@ -191,7 +191,7 @@ export default function Sidebar() {
                   {/* Hover left-edge accent — only visible on inactive items */}
                   {!isActive && (
                     <span
-                      className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-0 bg-thrivv-gold-500/70 rounded-r-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:h-6"
+                      className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-0 bg-thrivv-gold-500/60 rounded-r-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:h-5"
                       aria-hidden
                     />
                   )}
@@ -199,12 +199,12 @@ export default function Sidebar() {
                   <Icon
                     className={`w-5 h-5 mb-1.5 transition-[color,transform] duration-500 ${
                       isActive
-                        ? 'text-black scale-110'
+                        ? 'text-black'
                         : 'text-thrivv-text-muted group-hover:text-thrivv-gold-500 group-hover:scale-105'
                     }`}
                   />
                   <span
-                    className={`text-[11px] font-medium text-center leading-tight truncate w-full transition-colors duration-500 ${
+                    className={`text-[10.5px] font-medium text-center leading-tight truncate w-full transition-colors duration-500 ${
                       isActive
                         ? 'text-black'
                         : 'text-thrivv-text-muted group-hover:text-thrivv-gold-500'
@@ -213,10 +213,10 @@ export default function Sidebar() {
                     {displayLabel}
                   </span>
 
-                  {/* Active left-edge bar */}
+                  {/* Active left-edge bar — slim and softly glowing */}
                   {isActive && (
                     <span
-                      className="absolute -left-0.5 top-1/2 -translate-y-1/2 w-1 h-9 bg-thrivv-gold-300 rounded-r-full shadow-[0_0_12px_rgba(255,208,0,0.6)]"
+                      className="absolute -left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-7 bg-thrivv-gold-300 rounded-r-full shadow-[0_0_10px_rgba(255,208,0,0.5)]"
                       aria-hidden
                     />
                   )}

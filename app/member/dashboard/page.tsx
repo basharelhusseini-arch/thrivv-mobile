@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, Clock, Users, CreditCard, LogOut, User, BookOpen, CheckCircle, Bell, DollarSign, Dumbbell, UtensilsCrossed, Target, Activity, Watch, Trophy, AlertCircle, Shield } from 'lucide-react';
+import { Calendar, Clock, Users, CreditCard, LogOut, User, BookOpen, CheckCircle, Bell, DollarSign, Dumbbell, UtensilsCrossed, Target, Activity, Watch, Trophy, AlertCircle, Shield, TrendingUp } from 'lucide-react';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
 import { ConfidenceLevel } from '@/types';
 import PageHeader, { gradient } from '@/components/PageHeader';
@@ -154,6 +154,19 @@ export default function MemberDashboardPage() {
 
   const userDisplayName = user.email.split('@')[0];
 
+  // HUD command-bar values — all derived from existing fetched state.
+  // No new API calls, no fabricated numbers.
+  const todayValue = healthScore?.score ?? null;
+  const sevenDayAvg =
+    scoreHistory.length > 0
+      ? Math.round(
+          scoreHistory.reduce((sum, h) => sum + h.score, 0) / scoreHistory.length
+        )
+      : null;
+  const userRankIndex = leaderboard.findIndex((e) => e.id === user.id);
+  const userRank = userRankIndex >= 0 ? userRankIndex + 1 : null;
+  const todayCheckedIn = !!todayCheckin;
+
   return (
     <div className="space-y-10">
       <PageHeader
@@ -162,9 +175,67 @@ export default function MemberDashboardPage() {
         subtitle={
           "Your training, nutrition, and sleep \u2014 distilled into one Health Score that ranks you on your gym\u2019s leaderboard."
         }
+        action={
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-thrivv-neon-green/30 bg-thrivv-neon-green/5 text-thrivv-neon-green text-[10px] uppercase tracking-[0.25em]">
+            <span className="relative flex w-1.5 h-1.5">
+              <span className="absolute inset-0 rounded-full bg-thrivv-neon-green opacity-70 animate-ping" />
+              <span className="relative w-1.5 h-1.5 rounded-full bg-thrivv-neon-green" />
+            </span>
+            Live
+          </span>
+        }
       />
 
       <main className="space-y-8">
+        {/* HUD command bar — derived from existing state */}
+        <Reveal delay={40}>
+          <div className="relative glass-card overflow-hidden p-5 lg:p-6 shadow-[0_30px_120px_-40px_rgba(255,208,0,0.18)]">
+            <div
+              className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent"
+              aria-hidden
+            />
+            <div
+              className="absolute -top-24 -right-24 w-56 h-56 bg-thrivv-gold-500/10 rounded-full blur-3xl pointer-events-none"
+              aria-hidden
+            />
+            <div className="relative grid grid-cols-2 lg:grid-cols-4 gap-y-6 lg:gap-y-0 lg:divide-x divide-thrivv-gold-500/10">
+              <HudTile
+                icon={Activity}
+                label="Today"
+                value={todayValue !== null ? String(todayValue) : '\u2014'}
+                sub="Health Score"
+                accent={todayValue !== null && todayValue >= 80 ? 'green' : 'gold'}
+              />
+              <HudTile
+                icon={TrendingUp}
+                label="7-day avg"
+                value={sevenDayAvg !== null ? String(sevenDayAvg) : '\u2014'}
+                sub={
+                  scoreHistory.length > 0
+                    ? `${scoreHistory.length} day${scoreHistory.length === 1 ? '' : 's'} tracked`
+                    : 'Start tracking'
+                }
+              />
+              <HudTile
+                icon={Trophy}
+                label="Rank"
+                value={userRank !== null ? `#${userRank}` : '\u2014'}
+                sub={
+                  leaderboard.length > 0
+                    ? `of ${leaderboard.length}`
+                    : 'No leaderboard yet'
+                }
+              />
+              <HudTile
+                icon={todayCheckedIn ? CheckCircle : AlertCircle}
+                label="Status"
+                value={todayCheckedIn ? 'Checked in' : 'Pending'}
+                sub={todayCheckedIn ? 'Today complete' : 'Log today\u2019s check-in'}
+                accent={todayCheckedIn ? 'green' : 'gold'}
+              />
+            </div>
+          </div>
+        </Reveal>
         {/* Check-in Alert */}
         {!todayCheckin && (
           <Reveal delay={60}>
@@ -195,7 +266,15 @@ export default function MemberDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Large Health Score Display */}
           <div className="lg:col-span-1">
-            <div className="premium-card p-8 flex flex-col items-center justify-center">
+            <div className="premium-card relative overflow-hidden p-8 flex flex-col items-center justify-center shadow-[0_30px_120px_-40px_rgba(255,208,0,0.2)]">
+                <div
+                  className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent"
+                  aria-hidden
+                />
+                <div
+                  className="absolute -top-24 -right-24 w-56 h-56 bg-thrivv-gold-500/12 rounded-full blur-3xl pointer-events-none"
+                  aria-hidden
+                />
                 {healthScore ? (
                   <>
                     {/* Total Rewards Score (if confidence score available) */}
@@ -328,13 +407,21 @@ export default function MemberDashboardPage() {
 
           {/* Leaderboard */}
           <div className="lg:col-span-2">
-            <div className="premium-card">
-              <div className="px-6 py-5 flex items-center justify-between">
+            <div className="premium-card relative overflow-hidden shadow-[0_30px_120px_-40px_rgba(255,208,0,0.16)]">
+              <div
+                className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent"
+                aria-hidden
+              />
+              <div
+                className="absolute -top-24 -left-24 w-56 h-56 bg-thrivv-gold-500/10 rounded-full blur-3xl pointer-events-none"
+                aria-hidden
+              />
+              <div className="relative px-6 py-5 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-thrivv-text-primary flex items-center">
                   <Trophy className="w-5 h-5 mr-3 text-thrivv-gold-500" />
                   Leaderboard
                 </h2>
-                <span className="text-sm text-thrivv-text-muted">Top 10</span>
+                <span className="text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">Top 10</span>
               </div>
               <div className="divider" />
               <div className="p-6">
@@ -480,10 +567,17 @@ export default function MemberDashboardPage() {
         {/* Score History Detail */}
         {scoreHistory.length > 0 && (
           <Reveal delay={280}>
-          <div className="premium-card">
-            <div className="px-6 py-5 flex items-center">
-              <Calendar className="w-5 h-5 mr-3 text-thrivv-gold-500" />
-              <h2 className="text-xl font-semibold text-thrivv-text-primary">Recent Scores</h2>
+          <div className="premium-card relative overflow-hidden shadow-[0_30px_120px_-40px_rgba(255,208,0,0.14)]">
+            <div
+              className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent"
+              aria-hidden
+            />
+            <div className="relative px-6 py-5 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-thrivv-text-primary flex items-center">
+                <Calendar className="w-5 h-5 mr-3 text-thrivv-gold-500" />
+                Recent Scores
+              </h2>
+              <span className="text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">Last {scoreHistory.length} days</span>
             </div>
             <div className="divider" />
             <div className="p-6">
@@ -529,6 +623,52 @@ export default function MemberDashboardPage() {
           </Reveal>
         )}
       </main>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function HudTile({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  accent = 'gold',
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  sub?: string;
+  accent?: 'gold' | 'green' | 'muted';
+}) {
+  const accentClasses =
+    accent === 'green'
+      ? 'bg-thrivv-neon-green/10 border-thrivv-neon-green/30 text-thrivv-neon-green'
+      : accent === 'muted'
+        ? 'bg-thrivv-bg-card border-thrivv-gold-500/10 text-thrivv-text-muted'
+        : 'bg-thrivv-gold-500/10 border-thrivv-gold-500/25 text-thrivv-gold-500';
+
+  return (
+    <div className="flex items-center gap-4 lg:gap-5 lg:px-5 first:lg:pl-0 last:lg:pr-0">
+      <div
+        className={`shrink-0 w-10 h-10 rounded-xl border flex items-center justify-center ${accentClasses}`}
+      >
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="min-w-0">
+        <div className="text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted leading-none mb-1.5">
+          {label}
+        </div>
+        <div className="text-2xl lg:text-[1.75rem] font-semibold tracking-tighter leading-none text-thrivv-text-primary tabular-nums">
+          {value}
+        </div>
+        {sub ? (
+          <div className="mt-1.5 text-[10px] text-thrivv-text-muted truncate">
+            {sub}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
