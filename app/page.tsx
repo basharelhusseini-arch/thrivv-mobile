@@ -110,22 +110,22 @@ function Hero() {
         <div className="lg:col-span-7 animate-fade-in-up">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 text-thrivv-gold-500 text-[11px] uppercase tracking-[0.2em] font-medium mb-7">
             <Sparkles className="w-3 h-3" />
-            AI-native fitness platform
+            Powered by your gym
           </span>
 
           <h1 className="text-balance text-[2.6rem] sm:text-5xl lg:text-[4.5rem] font-semibold leading-[1.04] tracking-tight mb-6">
-            Build the health system that keeps you{' '}
+            Train. Track.{' '}
             <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-              consistent
+              Climb the leaderboard
             </span>
             .
           </h1>
 
           <p className="text-base sm:text-lg text-thrivv-text-secondary leading-relaxed max-w-xl mb-9">
-            Thrivv combines AI-powered workouts, nutrition planning, health
-            tracking, and accountability into one intelligent fitness
-            platform — designed to turn small daily habits into measurable
-            progress.
+            Thrivv is the gamified fitness platform your gym gives you. Daily
+            check-ins, AI workouts, wearable sync, recipes, and rewards —
+            rolled into a single Health Score that ranks you on your gym&apos;s
+            weekly leaderboard.
           </p>
 
           <div className="flex flex-col sm:flex-row flex-wrap gap-3">
@@ -133,14 +133,14 @@ function Hero() {
               href="/member/signup"
               className="btn-primary px-7 py-3.5 text-base inline-flex items-center justify-center gap-2 group"
             >
-              Start Your Journey
+              Get Started Free
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
               href="#features"
               className="btn-ghost px-7 py-3.5 text-base inline-flex items-center justify-center gap-2"
             >
-              Explore Features
+              See How It Works
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -148,15 +148,15 @@ function Hero() {
           <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-thrivv-text-muted">
             <span className="inline-flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
-              Free to start
+              Free for gym members
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
-              No card required
+              30-second daily check-in
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
-              Cancel any time
+              Wearable sync rolling out
             </span>
           </div>
         </div>
@@ -172,6 +172,12 @@ function Hero() {
 function DashboardMockup() {
   // Static, hand-tuned mockup that mirrors the real product look.
   // Pure SVG/HTML — no data, no fetching, decorative only.
+  const board = [
+    { rank: 1, name: 'You', score: 86, gold: true },
+    { rank: 2, name: 'Alex M.', score: 83 },
+    { rank: 3, name: 'Priya R.', score: 81 },
+    { rank: 4, name: 'Sami K.', score: 78 },
+  ];
   return (
     <div className="relative">
       {/* Glow halo */}
@@ -188,7 +194,7 @@ function DashboardMockup() {
             <span className="w-2.5 h-2.5 rounded-full bg-thrivv-neon-green/50" />
           </div>
           <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted">
-            thrivv · today
+            iron works · today
           </span>
           <span className="inline-flex items-center gap-1 text-[10px] text-thrivv-neon-green">
             <span className="relative flex w-1.5 h-1.5">
@@ -229,14 +235,65 @@ function DashboardMockup() {
           </div>
         </div>
 
-        {/* Mini chart */}
+        {/* Gym leaderboard (the social hook) */}
         <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4 mb-3">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted flex items-center gap-1">
+              <Trophy className="w-3 h-3 text-thrivv-gold-500" /> Iron Works · this week
+            </span>
+            <span className="text-[10px] text-thrivv-gold-500/80 inline-flex items-center gap-1">
+              <Flame className="w-3 h-3" /> 11d streak
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {board.map((r) => (
+              <div
+                key={r.name}
+                className={`flex items-center justify-between text-xs px-2 py-1.5 rounded-lg ${
+                  r.gold
+                    ? 'bg-thrivv-gold-500/10 border border-thrivv-gold-500/30'
+                    : 'bg-transparent'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-5 text-center text-thrivv-text-muted tabular-nums">
+                    #{r.rank}
+                  </span>
+                  <span
+                    className={
+                      r.gold
+                        ? 'text-thrivv-gold-500 font-medium'
+                        : 'text-thrivv-text-primary'
+                    }
+                  >
+                    {r.name}
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1 tabular-nums">
+                  <span
+                    className={
+                      r.gold
+                        ? 'text-thrivv-gold-500 font-semibold'
+                        : 'text-thrivv-text-secondary'
+                    }
+                  >
+                    {r.score}
+                  </span>
+                  <span className="text-thrivv-text-muted">/100</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mini chart */}
+        <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted">
-              Streak energy · 14d
+              Health Score · 14d
             </span>
-            <span className="text-[10px] text-thrivv-gold-500 inline-flex items-center gap-1">
-              <Flame className="w-3 h-3" /> 11 days
+            <span className="text-[10px] text-thrivv-neon-green inline-flex items-center gap-1">
+              <Zap className="w-3 h-3" /> trending up
             </span>
           </div>
           <svg viewBox="0 0 280 56" className="w-full h-14" preserveAspectRatio="none">
@@ -260,48 +317,6 @@ function DashboardMockup() {
             />
           </svg>
         </div>
-
-        {/* Mini leaderboard */}
-        <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted flex items-center gap-1">
-              <Trophy className="w-3 h-3 text-thrivv-gold-500" /> Top streaks
-            </span>
-          </div>
-          <div className="space-y-2">
-            {[
-              { rank: '🥇', name: 'You', streak: 11, gold: true },
-              { rank: '🥈', name: 'Alex M.', streak: 9 },
-              { rank: '🥉', name: 'Priya R.', streak: 7 },
-            ].map((r) => (
-              <div
-                key={r.name}
-                className={`flex items-center justify-between text-xs px-2 py-1.5 rounded-lg ${
-                  r.gold
-                    ? 'bg-thrivv-gold-500/10 border border-thrivv-gold-500/30'
-                    : 'bg-transparent'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span className="w-5 text-center">{r.rank}</span>
-                  <span
-                    className={
-                      r.gold
-                        ? 'text-thrivv-gold-500 font-medium'
-                        : 'text-thrivv-text-primary'
-                    }
-                  >
-                    {r.name}
-                  </span>
-                </span>
-                <span className="inline-flex items-center gap-1 tabular-nums">
-                  <Flame className="w-3 h-3 text-thrivv-gold-500" />
-                  {r.streak}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -310,26 +325,42 @@ function DashboardMockup() {
 /* ---------------------------------------------------------------- */
 
 function ValueCards() {
-  const cards = [
-    {
-      icon: Brain,
-      title: 'AI Workouts',
-      body: 'Personalised training that adapts to your goals, equipment, recovery, and recent performance — every single session.',
-    },
-    {
-      icon: UtensilsCrossed,
-      title: 'Smart Nutrition',
-      body: 'Macro-balanced meal plans built around your body, your preferences, and the food you actually enjoy eating.',
-    },
+  const cards: Array<{
+    icon: React.ComponentType<{ className?: string }>;
+    title: string;
+    body: string;
+    badge?: string;
+  }> = [
     {
       icon: Activity,
       title: 'Health Score',
-      body: 'A single 0-100 score that captures training, diet, sleep, and habits — so you always know if you’re on track.',
+      body: 'Training, nutrition, sleep, and habits distilled into one 0–100 score. The number that ranks you on your gym\u2019s leaderboard.',
     },
     {
       icon: Trophy,
-      title: 'Rewards & Accountability',
-      body: 'Daily streaks, leaderboard tension, and reward points that make consistency feel like a game worth winning.',
+      title: 'Gym Leaderboard',
+      body: 'Compete with the members at your gym every week. Streaks, weekly ranks, and bragging rights turn training into a game.',
+    },
+    {
+      icon: Dumbbell,
+      title: 'AI Workout Generator',
+      body: 'Personalised programs that adapt to your goals, equipment, recovery, and last session — generated by AI, refined by your data.',
+    },
+    {
+      icon: UtensilsCrossed,
+      title: 'Recipes & Nutrition',
+      body: 'Macro-balanced meal plans and a curated recipe library tuned to your body, your preferences, and how you like to eat.',
+    },
+    {
+      icon: Heart,
+      title: 'Wearable Sync',
+      body: 'Pull workouts, sleep, and recovery from Whoop, Apple Health, and Garmin so your training data flows in automatically.',
+      badge: 'Rolling out',
+    },
+    {
+      icon: Sparkles,
+      title: 'Rewards Marketplace',
+      body: 'Earn points for showing up. Redeem them for gear, supplements, and gym perks. Consistency that pays you back.',
     },
   ];
 
@@ -343,15 +374,15 @@ function ValueCards() {
           eyebrow="What you get"
           title={
             <>
-              One platform for the four{' '}
-              <span className="text-gradient">things that actually matter</span>
+              Everything your training needs,{' '}
+              <span className="text-gradient">in one app</span>
               .
             </>
           }
-          sub="Most fitness apps solve one problem. Thrivv connects training, nutrition, recovery, and habits into one feedback loop."
+          sub={"Most fitness apps solve one problem. Thrivv connects training, nutrition, recovery, rewards, and your gym\u2019s leaderboard into one feedback loop."}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-14">
           {cards.map((c, i) => (
             <div
               key={c.title}
@@ -359,8 +390,15 @@ function ValueCards() {
               style={{ animationDelay: `${i * 80}ms` }}
             >
               <div className="absolute -top-12 -right-12 w-40 h-40 bg-thrivv-gold-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="icon-badge inline-flex w-12 h-12 items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                <c.icon className="w-5 h-5 text-thrivv-gold-500" />
+              <div className="flex items-center justify-between mb-5">
+                <div className="icon-badge inline-flex w-12 h-12 items-center justify-center group-hover:scale-105 transition-transform">
+                  <c.icon className="w-5 h-5 text-thrivv-gold-500" />
+                </div>
+                {c.badge ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.18em] text-thrivv-gold-500 bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 px-2 py-1 rounded-md">
+                    {c.badge}
+                  </span>
+                ) : null}
               </div>
               <h3 className="text-lg font-semibold text-thrivv-text-primary mb-2">
                 {c.title}
@@ -384,19 +422,19 @@ function HowItWorks() {
       icon: Heart,
       label: 'Step 01',
       title: 'Log your daily check-in',
-      body: 'Workout, nutrition, sleep, and habits — all in under 30 seconds a day.',
+      body: 'Workout, nutrition, sleep, and habits — all in under 30 seconds a day. Sync your wearable to fill in the rest.',
     },
     {
       icon: LineChart,
       label: 'Step 02',
       title: 'Get your Health Score',
-      body: 'A single number that tells you, honestly, whether today moved you forward.',
+      body: 'A single number from 0–100 that captures how today actually went — and feeds your weekly leaderboard rank.',
     },
     {
-      icon: Zap,
+      icon: Trophy,
       label: 'Step 03',
-      title: 'Improve with AI guidance',
-      body: 'Tomorrow’s plan adapts to today’s data — workouts, meals, and recovery all tuned to you.',
+      title: 'Climb your gym\u2019s leaderboard',
+      body: 'Top your gym every week. Earn rewards points for streaks, redeem them for gear, supplements, and gym perks.',
     },
   ];
 
@@ -411,7 +449,7 @@ function HowItWorks() {
               <span className="text-gradient">A system that compounds.</span>
             </>
           }
-          sub="No spreadsheets. No second-guessing. Just a feedback loop that gets sharper every day you show up."
+          sub="No spreadsheets. No second-guessing. Just a feedback loop that gets sharper every day you show up — and a leaderboard that keeps you honest."
         />
 
         <div className="relative mt-16">
@@ -461,13 +499,14 @@ function HowItWorks() {
 
 function Differentiation() {
   const rows: Array<{ label: string; them: string | boolean; us: boolean }> = [
-    { label: 'Personalised training plans', them: 'Sometimes', us: true },
-    { label: 'Daily nutrition tracking', them: 'Sometimes', us: true },
+    { label: 'Personalised AI training plans', them: 'Sometimes', us: true },
+    { label: 'Recipes & nutrition planning', them: 'Sometimes', us: true },
     { label: 'Sleep & recovery factored in', them: false, us: true },
-    { label: 'Habit accountability built-in', them: false, us: true },
-    { label: 'A single connected health score', them: false, us: true },
-    { label: 'AI that learns from your data', them: 'Partial', us: true },
-    { label: 'Rewards that pay off consistency', them: false, us: true },
+    { label: 'A single connected Health Score', them: false, us: true },
+    { label: 'Wearable sync (Whoop / Apple Health / Garmin)', them: 'Partial', us: true },
+    { label: 'Gym leaderboard built in', them: false, us: true },
+    { label: 'Rewards marketplace', them: false, us: true },
+    { label: 'Deployed by your gym', them: false, us: true },
   ];
 
   return (
@@ -481,7 +520,7 @@ function Differentiation() {
               <span className="text-gradient">One connected system.</span>
             </>
           }
-          sub="Most apps optimise for a single metric. Thrivv treats training, diet, sleep, and habits as one feedback loop — because that’s how the body actually works."
+          sub={"Most apps optimise for a single metric. Thrivv treats training, diet, sleep, wearable data, and your gym\u2019s leaderboard as one feedback loop — because that\u2019s how the body and motivation actually work."}
         />
 
         <div className="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -525,19 +564,21 @@ function Differentiation() {
               <Target className="w-5 h-5 text-thrivv-gold-500" />
             </div>
             <h3 className="text-xl font-semibold text-thrivv-text-primary mb-3">
-              Designed to turn consistency into measurable progress.
+              Built around the only thing that actually works: showing up.
             </h3>
             <p className="text-sm text-thrivv-text-secondary leading-relaxed mb-6">
-              The hardest part of fitness isn’t knowing what to do — it’s
-              showing up tomorrow. Thrivv is built around the one variable
-              that beats genetics, trainers, and willpower: <em>showing up</em>.
+              The hardest part of fitness isn&apos;t knowing what to do — it&apos;s
+              showing up tomorrow. Thrivv hooks into your gym&apos;s
+              leaderboard so consistency has a witness, a score, and a reward
+              on the other side.
             </p>
             <div className="mt-auto space-y-2.5">
               {[
                 'Daily check-ins under 30 seconds',
                 'Health Score you can compare to yesterday',
-                'Streaks and rewards for showing up',
-                'AI that adapts when life gets in the way',
+                'Live gym leaderboard updated weekly',
+                'Streaks and rewards points for showing up',
+                'Wearable data filling in automatically',
               ].map((line) => (
                 <div
                   key={line}
@@ -571,13 +612,13 @@ function TrustPillars() {
     },
     {
       icon: Activity,
-      label: 'Daily health tracking',
-      body: 'Training, diet, sleep, and habits — captured in 30 seconds a day.',
+      label: 'Wearable + self-logged',
+      body: 'Whoop, Apple Health, Garmin syncing alongside your daily check-ins.',
     },
     {
       icon: Trophy,
-      label: 'Rewards-based motivation',
-      body: 'Streaks, leaderboards, and points so progress feels worth chasing.',
+      label: 'Your gym, your league',
+      body: 'Live weekly leaderboards across every member at your gym.',
     },
   ];
 
@@ -620,21 +661,31 @@ function FinalCTA() {
           <h2 className="text-balance text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
             Ready to{' '}
             <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-              build momentum
+              top your gym
             </span>
             ?
           </h2>
           <p className="text-thrivv-text-secondary text-base lg:text-lg max-w-xl mx-auto mb-8">
-            Join Thrivv and start turning daily habits into measurable
-            progress. It takes 30 seconds to sign up.
+            Sign up free, log your first check-in, and watch your Health Score
+            climb the leaderboard. If your gym isn&apos;t on Thrivv yet, send
+            them our way — we&apos;ll handle the rest.
           </p>
-          <Link
-            href="/member/signup"
-            className="btn-primary px-8 py-4 text-base inline-flex items-center justify-center gap-2 group"
-          >
-            Sign Up Free
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/member/signup"
+              className="btn-primary px-8 py-4 text-base inline-flex items-center justify-center gap-2 group"
+            >
+              Sign Up Free
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              href="mailto:hello@thrivv.dev?subject=Bring%20Thrivv%20to%20my%20gym"
+              className="btn-ghost px-8 py-4 text-base inline-flex items-center justify-center gap-2"
+            >
+              Ask your gym for Thrivv
+              <ChevronRight className="w-4 h-4" />
+            </a>
+          </div>
           <div className="mt-5 text-xs text-thrivv-text-muted">
             Already with us?{' '}
             <Link
@@ -657,8 +708,9 @@ function Footer() {
     <footer className="relative z-10 border-t border-thrivv-gold-500/10 py-10 px-6 lg:px-10">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <Logo variant="gold" size="sm" />
-        <p className="text-xs text-thrivv-text-muted">
-          © {new Date().getFullYear()} Thrivv. Build momentum. Measure progress.
+        <p className="text-xs text-thrivv-text-muted text-center">
+          © {new Date().getFullYear()} Thrivv. The fitness app your gym
+          deploys.
         </p>
         <div className="flex items-center gap-4 text-xs">
           <Link
@@ -673,6 +725,12 @@ function Footer() {
           >
             Sign Up
           </Link>
+          <a
+            href="mailto:hello@thrivv.dev?subject=Run%20Thrivv%20at%20my%20gym"
+            className="text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
+          >
+            For gym owners →
+          </a>
         </div>
       </div>
     </footer>
