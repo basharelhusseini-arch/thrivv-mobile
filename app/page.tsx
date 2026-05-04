@@ -1,242 +1,706 @@
 'use client';
 
-import { 
-  Dumbbell, 
-  Utensils, 
-  Calendar, 
-  Trophy, 
-  Activity, 
-  Sparkles, 
-  ArrowRight,
-  Zap,
-  Target,
-  Users,
-  Heart,
-  TrendingUp
-} from 'lucide-react';
 import Link from 'next/link';
-import BackgroundWordmark from '@/components/BackgroundWordmark';
+import {
+  Activity,
+  ArrowRight,
+  Brain,
+  Check,
+  ChevronRight,
+  Dumbbell,
+  Flame,
+  Heart,
+  LineChart,
+  ShieldCheck,
+  Sparkles,
+  Target,
+  Trophy,
+  UtensilsCrossed,
+  Zap,
+} from 'lucide-react';
 import Logo from '@/components/Logo';
 
 export default function LandingPage() {
-  const features = [
+  return (
+    <div className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-x-hidden">
+      <BackgroundLayers />
+
+      <Navbar />
+
+      <main className="relative z-10">
+        <Hero />
+        <ValueCards />
+        <HowItWorks />
+        <Differentiation />
+        <TrustPillars />
+        <FinalCTA />
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function BackgroundLayers() {
+  return (
+    <>
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.04]"
+        aria-hidden
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,208,0,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,208,0,0.6) 1px, transparent 1px)',
+          backgroundSize: '64px 64px',
+          maskImage:
+            'radial-gradient(ellipse at center, black 25%, transparent 75%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse at center, black 25%, transparent 75%)',
+        }}
+      />
+      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+        <div className="absolute -top-1/4 -left-1/4 w-[55vw] h-[55vw] bg-thrivv-gold-500/10 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute top-1/3 -right-1/4 w-[55vw] h-[55vw] bg-thrivv-gold-500/[0.06] rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '1.5s' }}
+        />
+        <div
+          className="absolute -bottom-1/4 left-1/3 w-[40vw] h-[40vw] bg-thrivv-gold-500/[0.05] rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: '3s' }}
+        />
+      </div>
+    </>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function Navbar() {
+  return (
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-thrivv-bg-darker/70 border-b border-thrivv-gold-500/10">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
+        <Logo variant="gold" size="md" linkTo="/" />
+        <nav className="flex items-center gap-1.5 sm:gap-3">
+          <Link
+            href="/member/login"
+            className="px-3.5 sm:px-4 py-2 text-sm text-thrivv-text-secondary hover:text-thrivv-text-primary transition-colors"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/member/signup"
+            className="btn-primary px-4 sm:px-5 py-2 text-sm inline-flex items-center gap-1.5"
+          >
+            Sign Up Free
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function Hero() {
+  return (
+    <section className="relative px-6 lg:px-10 pt-16 lg:pt-24 pb-20 lg:pb-28">
+      <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+        <div className="lg:col-span-7 animate-fade-in-up">
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 text-thrivv-gold-500 text-[11px] uppercase tracking-[0.2em] font-medium mb-7">
+            <Sparkles className="w-3 h-3" />
+            AI-native fitness platform
+          </span>
+
+          <h1 className="text-balance text-[2.6rem] sm:text-5xl lg:text-[4.5rem] font-semibold leading-[1.04] tracking-tight mb-6">
+            Build the health system that keeps you{' '}
+            <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+              consistent
+            </span>
+            .
+          </h1>
+
+          <p className="text-base sm:text-lg text-thrivv-text-secondary leading-relaxed max-w-xl mb-9">
+            Thrivv combines AI-powered workouts, nutrition planning, health
+            tracking, and accountability into one intelligent fitness
+            platform — designed to turn small daily habits into measurable
+            progress.
+          </p>
+
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+            <Link
+              href="/member/signup"
+              className="btn-primary px-7 py-3.5 text-base inline-flex items-center justify-center gap-2 group"
+            >
+              Start Your Journey
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              href="#features"
+              className="btn-ghost px-7 py-3.5 text-base inline-flex items-center justify-center gap-2"
+            >
+              Explore Features
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-thrivv-text-muted">
+            <span className="inline-flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
+              Free to start
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
+              No card required
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
+              Cancel any time
+            </span>
+          </div>
+        </div>
+
+        <div className="lg:col-span-5 animate-fade-in-up" style={{ animationDelay: '120ms' }}>
+          <DashboardMockup />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DashboardMockup() {
+  // Static, hand-tuned mockup that mirrors the real product look.
+  // Pure SVG/HTML — no data, no fetching, decorative only.
+  return (
+    <div className="relative">
+      {/* Glow halo */}
+      <div className="absolute -inset-6 bg-thrivv-gold-500/15 blur-3xl rounded-full" aria-hidden />
+      <div className="relative glass-card p-5 lg:p-6 shadow-[0_30px_120px_-20px_rgba(255,208,0,0.18)]">
+        {/* Top accent line */}
+        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent" />
+
+        {/* Window chrome */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
+            <span className="w-2.5 h-2.5 rounded-full bg-thrivv-gold-500/50" />
+            <span className="w-2.5 h-2.5 rounded-full bg-thrivv-neon-green/50" />
+          </div>
+          <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted">
+            thrivv · today
+          </span>
+          <span className="inline-flex items-center gap-1 text-[10px] text-thrivv-neon-green">
+            <span className="relative flex w-1.5 h-1.5">
+              <span className="absolute inset-0 rounded-full bg-thrivv-neon-green opacity-70 animate-ping" />
+              <span className="relative w-1.5 h-1.5 rounded-full bg-thrivv-neon-green" />
+            </span>
+            Live
+          </span>
+        </div>
+
+        {/* Hero stat */}
+        <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4 mb-3">
+          <div className="text-[10px] uppercase tracking-widest text-thrivv-text-muted mb-2">
+            Health Score · Today
+          </div>
+          <div className="flex items-end justify-between">
+            <div className="flex items-baseline gap-1">
+              <span className="text-5xl font-semibold text-thrivv-gold-500 leading-none">
+                86
+              </span>
+              <span className="text-thrivv-text-muted text-sm">/100</span>
+            </div>
+            <div className="inline-flex items-center gap-1 text-[11px] text-thrivv-neon-green bg-thrivv-neon-green/10 border border-thrivv-neon-green/20 px-2 py-0.5 rounded-md">
+              <Zap className="w-3 h-3" />
+              +4 vs avg
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] text-thrivv-text-muted">
+            <span className="flex items-center gap-1">
+              <Dumbbell className="w-3 h-3 text-thrivv-gold-500" /> Train 27/30
+            </span>
+            <span className="flex items-center gap-1">
+              <UtensilsCrossed className="w-3 h-3 text-thrivv-neon-green" /> Diet 35/40
+            </span>
+            <span className="flex items-center gap-1">
+              <Activity className="w-3 h-3 text-thrivv-gold-400" /> Sleep 24/30
+            </span>
+          </div>
+        </div>
+
+        {/* Mini chart */}
+        <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4 mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted">
+              Streak energy · 14d
+            </span>
+            <span className="text-[10px] text-thrivv-gold-500 inline-flex items-center gap-1">
+              <Flame className="w-3 h-3" /> 11 days
+            </span>
+          </div>
+          <svg viewBox="0 0 280 56" className="w-full h-14" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lp-gold" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="#FFD000" stopOpacity="0.45" />
+                <stop offset="100%" stopColor="#FFD000" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M 0 40 L 20 36 L 40 38 L 60 30 L 80 32 L 100 24 L 120 28 L 140 20 L 160 22 L 180 14 L 200 18 L 220 10 L 240 14 L 260 8 L 280 12 L 280 56 L 0 56 Z"
+              fill="url(#lp-gold)"
+            />
+            <path
+              d="M 0 40 L 20 36 L 40 38 L 60 30 L 80 32 L 100 24 L 120 28 L 140 20 L 160 22 L 180 14 L 200 18 L 220 10 L 240 14 L 260 8 L 280 12"
+              fill="none"
+              stroke="#FFD000"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </div>
+
+        {/* Mini leaderboard */}
+        <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted flex items-center gap-1">
+              <Trophy className="w-3 h-3 text-thrivv-gold-500" /> Top streaks
+            </span>
+          </div>
+          <div className="space-y-2">
+            {[
+              { rank: '🥇', name: 'You', streak: 11, gold: true },
+              { rank: '🥈', name: 'Alex M.', streak: 9 },
+              { rank: '🥉', name: 'Priya R.', streak: 7 },
+            ].map((r) => (
+              <div
+                key={r.name}
+                className={`flex items-center justify-between text-xs px-2 py-1.5 rounded-lg ${
+                  r.gold
+                    ? 'bg-thrivv-gold-500/10 border border-thrivv-gold-500/30'
+                    : 'bg-transparent'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="w-5 text-center">{r.rank}</span>
+                  <span
+                    className={
+                      r.gold
+                        ? 'text-thrivv-gold-500 font-medium'
+                        : 'text-thrivv-text-primary'
+                    }
+                  >
+                    {r.name}
+                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1 tabular-nums">
+                  <Flame className="w-3 h-3 text-thrivv-gold-500" />
+                  {r.streak}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function ValueCards() {
+  const cards = [
     {
-      icon: Dumbbell,
-      title: 'AI-Powered Workouts',
-      description: 'Generate personalized workout plans tailored to your goals, experience level, and available equipment.',
-      color: 'bg-thrivv-gold-500',
-      delay: 'delay-100',
+      icon: Brain,
+      title: 'AI Workouts',
+      body: 'Personalised training that adapts to your goals, equipment, recovery, and recent performance — every single session.',
     },
     {
-      icon: Utensils,
-      title: 'Smart Nutrition Plans',
-      description: 'AI-driven meal plans optimized for your macros, dietary preferences, and fitness objectives.',
-      color: 'bg-thrivv-gold-500',
-      delay: 'delay-200',
+      icon: UtensilsCrossed,
+      title: 'Smart Nutrition',
+      body: 'Macro-balanced meal plans built around your body, your preferences, and the food you actually enjoy eating.',
     },
     {
       icon: Activity,
-      title: 'Health Score Tracking',
-      description: 'Comprehensive health & lifestyle score analyzing diet, training, sleep, and habits out of 100.',
-      color: 'bg-thrivv-gold-500',
-      delay: 'delay-300',
-    },
-    {
-      icon: Calendar,
-      title: 'Live Classes',
-      description: 'Book and attend fitness classes led by expert trainers. Track attendance and progress.',
-      color: 'bg-thrivv-gold-500',
-      delay: 'delay-[400ms]',
+      title: 'Health Score',
+      body: 'A single 0-100 score that captures training, diet, sleep, and habits — so you always know if you’re on track.',
     },
     {
       icon: Trophy,
-      title: 'Rewards System',
-      description: 'Unlock points based on your health score for discounts on classes, trainers, and partner brands.',
-      color: 'bg-thrivv-gold-500',
-      delay: 'delay-[500ms]',
+      title: 'Rewards & Accountability',
+      body: 'Daily streaks, leaderboard tension, and reward points that make consistency feel like a game worth winning.',
     },
-    {
-      icon: Heart,
-      title: 'Wearable Integration',
-      description: 'Connect Whoop, Garmin, or Apple Health to sync your biometric data automatically.',
-      color: 'bg-thrivv-gold-500',
-      delay: 'delay-[600ms]',
-    },
-  ];
-
-  const stats = [
-    { value: '10K+', label: 'Active Members', icon: Users },
-    { value: '95%', label: 'Goal Achievement', icon: Target },
-    { value: '24/7', label: 'AI Support', icon: Zap },
-    { value: '4.9★', label: 'User Rating', icon: TrendingUp },
   ];
 
   return (
-    <div className="min-h-screen bg-black overflow-hidden relative">
-      {/* Layer A: Base background glow (z-index: 0) - THRIVV gold only */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-thrivv-gold-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-thrivv-gold-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-      </div>
+    <section
+      id="features"
+      className="relative px-6 lg:px-10 py-20 lg:py-28 scroll-mt-20"
+    >
+      <div className="max-w-7xl mx-auto">
+        <SectionHeader
+          eyebrow="What you get"
+          title={
+            <>
+              One platform for the four{' '}
+              <span className="text-gradient">things that actually matter</span>
+              .
+            </>
+          }
+          sub="Most fitness apps solve one problem. Thrivv connects training, nutrition, recovery, and habits into one feedback loop."
+        />
 
-      {/* Navigation */}
-      <nav className="relative z-50 glass-effect border-b border-yellow-500/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <Logo variant="gold" size="md" linkTo="/" />
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/member/login"
-                className="px-6 py-2.5 text-white hover:text-yellow-400 transition-colors duration-300"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/member/signup"
-                className="px-6 py-2.5 btn-primary group"
-              >
-                Sign Up Free
-                <ArrowRight className="w-4 h-4 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Hero Section with Isolated Stacking Context */}
-      <section className="relative z-20 pt-20 pb-32 px-4 sm:px-6 lg:px-8" style={{ isolation: 'isolate' }}>
-        {/* SVG Background Wordmark - z-10, above overlays, below content */}
-        <BackgroundWordmark />
-
-        <div className="max-w-7xl mx-auto text-center relative z-20">
-          <div className="animate-fade-in-up">
-            <div className="flex justify-center mb-8">
-              <Logo variant="gold" size="hero" />
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-6">
-              <span className="text-white">Welcome to Your Transformation</span>
-            </h1>
-            <p className="text-xl sm:text-2xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed">
-              The all-in-one fitness platform that unites AI-powered workouts, intelligent nutrition planning, 
-              and comprehensive health tracking in one seamless experience.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Link
-                href="/member/signup"
-                className="px-8 py-4 btn-primary text-lg group w-full sm:w-auto"
-              >
-                Start Your Journey
-                <Zap className="w-5 h-5 ml-2 inline-block group-hover:rotate-12 transition-transform" />
-              </Link>
-              <Link
-                href="#features"
-                className="px-8 py-4 glass-effect text-white text-lg rounded-lg hover:bg-white/10 transition-all duration-300 w-full sm:w-auto"
-              >
-                Explore Features
-              </Link>
-            </div>
-
-            {/* Stats Bar */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto mt-16">
-              {stats.map((stat, index) => {
-                const Icon = stat.icon;
-                return (
-                  <div
-                    key={stat.label}
-                    className="glass-effect p-6 rounded-xl hover:scale-105 transition-transform duration-500"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <Icon className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
-                    <div className="text-3xl font-bold text-gradient mb-1">{stat.value}</div>
-                    <div className="text-sm text-gray-400">{stat.label}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="relative z-20 py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-              Everything You Need to <span className="text-gradient">Thrivv</span>
-            </h2>
-            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Powerful features designed to transform your fitness journey and help you achieve your goals.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <div
-                  key={feature.title}
-                  className={`dark-card card-hover p-8 group animate-fade-in-up ${feature.delay}`}
-                >
-                  <div className="relative mb-6">
-                    <div className={`inline-block p-4 rounded-xl bg-gradient-to-br ${feature.color} shadow-lg`}>
-                      <Icon className="w-8 h-8 text-black" />
-                    </div>
-                    <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500`}></div>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-3">{feature.title}</h3>
-                  <p className="text-gray-400 leading-relaxed">{feature.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="relative z-20 py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="glass-effect rounded-2xl p-12 text-center border-2 border-yellow-500/30 hover:border-yellow-500/50 transition-all duration-500">
-            <Sparkles className="w-16 h-16 text-yellow-400 mx-auto mb-6 animate-pulse" />
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Ready to Transform Your Fitness?
-            </h2>
-            <p className="text-xl text-gray-400 mb-8">
-              Join thousands of members already achieving their goals with Thrivv.
-            </p>
-            <Link
-              href="/member/signup"
-              className="inline-block px-10 py-4 btn-primary text-lg group"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-14">
+          {cards.map((c, i) => (
+            <div
+              key={c.title}
+              className="group premium-card p-7 relative overflow-hidden animate-fade-in-up"
+              style={{ animationDelay: `${i * 80}ms` }}
             >
-              Get Started Now
-              <ArrowRight className="w-5 h-5 ml-2 inline-block group-hover:translate-x-1 transition-transform" />
+              <div className="absolute -top-12 -right-12 w-40 h-40 bg-thrivv-gold-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="icon-badge inline-flex w-12 h-12 items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                <c.icon className="w-5 h-5 text-thrivv-gold-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-thrivv-text-primary mb-2">
+                {c.title}
+              </h3>
+              <p className="text-sm text-thrivv-text-secondary leading-relaxed">
+                {c.body}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function HowItWorks() {
+  const steps = [
+    {
+      icon: Heart,
+      label: 'Step 01',
+      title: 'Log your daily check-in',
+      body: 'Workout, nutrition, sleep, and habits — all in under 30 seconds a day.',
+    },
+    {
+      icon: LineChart,
+      label: 'Step 02',
+      title: 'Get your Health Score',
+      body: 'A single number that tells you, honestly, whether today moved you forward.',
+    },
+    {
+      icon: Zap,
+      label: 'Step 03',
+      title: 'Improve with AI guidance',
+      body: 'Tomorrow’s plan adapts to today’s data — workouts, meals, and recovery all tuned to you.',
+    },
+  ];
+
+  return (
+    <section className="relative px-6 lg:px-10 py-20 lg:py-28">
+      <div className="max-w-7xl mx-auto">
+        <SectionHeader
+          eyebrow="How Thrivv works"
+          title={
+            <>
+              Three simple steps.{' '}
+              <span className="text-gradient">A system that compounds.</span>
+            </>
+          }
+          sub="No spreadsheets. No second-guessing. Just a feedback loop that gets sharper every day you show up."
+        />
+
+        <div className="relative mt-16">
+          {/* Connector line on desktop */}
+          <div
+            aria-hidden
+            className="hidden lg:block absolute top-[60px] left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/30 to-transparent"
+          />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
+            {steps.map((s, i) => (
+              <div
+                key={s.title}
+                className="relative animate-fade-in-up"
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <div className="glass-card p-7 h-full hover:border-thrivv-gold-500/30 transition-colors">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-xl bg-thrivv-gold-500 text-black font-semibold flex items-center justify-center text-sm tracking-wider glow-gold">
+                        {String(i + 1).padStart(2, '0')}
+                      </div>
+                    </div>
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
+                      {s.label}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <s.icon className="w-5 h-5 text-thrivv-gold-500" />
+                    <h3 className="text-xl font-semibold text-thrivv-text-primary">
+                      {s.title}
+                    </h3>
+                  </div>
+                  <p className="text-sm text-thrivv-text-secondary leading-relaxed">
+                    {s.body}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function Differentiation() {
+  const rows: Array<{ label: string; them: string | boolean; us: boolean }> = [
+    { label: 'Personalised training plans', them: 'Sometimes', us: true },
+    { label: 'Daily nutrition tracking', them: 'Sometimes', us: true },
+    { label: 'Sleep & recovery factored in', them: false, us: true },
+    { label: 'Habit accountability built-in', them: false, us: true },
+    { label: 'A single connected health score', them: false, us: true },
+    { label: 'AI that learns from your data', them: 'Partial', us: true },
+    { label: 'Rewards that pay off consistency', them: false, us: true },
+  ];
+
+  return (
+    <section className="relative px-6 lg:px-10 py-20 lg:py-28">
+      <div className="max-w-7xl mx-auto">
+        <SectionHeader
+          eyebrow="Why Thrivv is different"
+          title={
+            <>
+              Not just workouts. Not just calories.{' '}
+              <span className="text-gradient">One connected system.</span>
+            </>
+          }
+          sub="Most apps optimise for a single metric. Thrivv treats training, diet, sleep, and habits as one feedback loop — because that’s how the body actually works."
+        />
+
+        <div className="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 premium-card overflow-hidden">
+            <div className="grid grid-cols-[1fr_auto_auto] items-center px-6 py-4 text-[10px] uppercase tracking-widest text-thrivv-text-muted">
+              <span>Capability</span>
+              <span className="px-4">Most apps</span>
+              <span className="px-4 text-thrivv-gold-500">Thrivv</span>
+            </div>
+            <div className="divider" />
+            <ul>
+              {rows.map((r, i) => (
+                <li
+                  key={r.label}
+                  className={`grid grid-cols-[1fr_auto_auto] items-center px-6 py-4 text-sm ${
+                    i < rows.length - 1
+                      ? 'border-b border-thrivv-gold-500/10'
+                      : ''
+                  }`}
+                >
+                  <span className="text-thrivv-text-primary">{r.label}</span>
+                  <span className="px-4 text-thrivv-text-muted text-xs">
+                    {r.them === true ? (
+                      <Check className="w-4 h-4" />
+                    ) : r.them === false ? (
+                      <span className="text-thrivv-text-muted/60">—</span>
+                    ) : (
+                      r.them
+                    )}
+                  </span>
+                  <span className="px-4 text-thrivv-gold-500">
+                    <Check className="w-4 h-4" />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="premium-card p-7 flex flex-col">
+            <div className="icon-badge inline-flex w-12 h-12 items-center justify-center mb-5">
+              <Target className="w-5 h-5 text-thrivv-gold-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-thrivv-text-primary mb-3">
+              Designed to turn consistency into measurable progress.
+            </h3>
+            <p className="text-sm text-thrivv-text-secondary leading-relaxed mb-6">
+              The hardest part of fitness isn’t knowing what to do — it’s
+              showing up tomorrow. Thrivv is built around the one variable
+              that beats genetics, trainers, and willpower: <em>showing up</em>.
+            </p>
+            <div className="mt-auto space-y-2.5">
+              {[
+                'Daily check-ins under 30 seconds',
+                'Health Score you can compare to yesterday',
+                'Streaks and rewards for showing up',
+                'AI that adapts when life gets in the way',
+              ].map((line) => (
+                <div
+                  key={line}
+                  className="flex items-start gap-2.5 text-sm text-thrivv-text-secondary"
+                >
+                  <Check className="w-4 h-4 text-thrivv-neon-green mt-0.5 shrink-0" />
+                  <span>{line}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function TrustPillars() {
+  const pillars = [
+    {
+      icon: ShieldCheck,
+      label: 'Built for consistency',
+      body: 'Designed around the one habit that beats every program: showing up.',
+    },
+    {
+      icon: Brain,
+      label: 'AI-guided planning',
+      body: 'Workouts and meals that adjust to your data — not generic templates.',
+    },
+    {
+      icon: Activity,
+      label: 'Daily health tracking',
+      body: 'Training, diet, sleep, and habits — captured in 30 seconds a day.',
+    },
+    {
+      icon: Trophy,
+      label: 'Rewards-based motivation',
+      body: 'Streaks, leaderboards, and points so progress feels worth chasing.',
+    },
+  ];
+
+  return (
+    <section className="relative px-6 lg:px-10 py-16">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {pillars.map((p, i) => (
+            <div
+              key={p.label}
+              className="glass-card p-5 hover:border-thrivv-gold-500/30 transition-colors animate-fade-in-up"
+              style={{ animationDelay: `${i * 70}ms` }}
+            >
+              <p.icon className="w-5 h-5 text-thrivv-gold-500 mb-3" />
+              <div className="text-sm font-medium text-thrivv-text-primary mb-1">
+                {p.label}
+              </div>
+              <div className="text-xs text-thrivv-text-muted leading-relaxed">
+                {p.body}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+
+function FinalCTA() {
+  return (
+    <section className="relative px-6 lg:px-10 py-20 lg:py-28">
+      <div className="max-w-5xl mx-auto">
+        <div className="relative premium-card overflow-hidden p-10 lg:p-14 text-center">
+          <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[60%] h-64 bg-thrivv-gold-500/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent" />
+
+          <Sparkles className="w-7 h-7 text-thrivv-gold-500 mx-auto mb-5" />
+          <h2 className="text-balance text-4xl lg:text-5xl font-semibold tracking-tight mb-4">
+            Ready to{' '}
+            <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+              build momentum
+            </span>
+            ?
+          </h2>
+          <p className="text-thrivv-text-secondary text-base lg:text-lg max-w-xl mx-auto mb-8">
+            Join Thrivv and start turning daily habits into measurable
+            progress. It takes 30 seconds to sign up.
+          </p>
+          <Link
+            href="/member/signup"
+            className="btn-primary px-8 py-4 text-base inline-flex items-center justify-center gap-2 group"
+          >
+            Sign Up Free
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+          <div className="mt-5 text-xs text-thrivv-text-muted">
+            Already with us?{' '}
+            <Link
+              href="/member/login"
+              className="text-thrivv-gold-500 hover:text-thrivv-gold-400 transition-colors"
+            >
+              Sign in →
             </Link>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* Footer */}
-      <footer className="relative z-20 border-t border-yellow-500/20 py-8 px-4 sm:px-6 lg:px-8 mt-20">
-        <div className="max-w-7xl mx-auto text-center text-gray-400">
-          <p>&copy; 2026 Thrivv. All rights reserved. Transform your fitness journey today.</p>
+/* ---------------------------------------------------------------- */
+
+function Footer() {
+  return (
+    <footer className="relative z-10 border-t border-thrivv-gold-500/10 py-10 px-6 lg:px-10">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <Logo variant="gold" size="sm" />
+        <p className="text-xs text-thrivv-text-muted">
+          © {new Date().getFullYear()} Thrivv. Build momentum. Measure progress.
+        </p>
+        <div className="flex items-center gap-4 text-xs">
+          <Link
+            href="/member/login"
+            className="text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/member/signup"
+            className="text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
+          >
+            Sign Up
+          </Link>
         </div>
-      </footer>
+      </div>
+    </footer>
+  );
+}
 
-      <style jsx>{`
-        @keyframes fade-in-up {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+/* ---------------------------------------------------------------- */
 
-        .animate-fade-in-up {
-          animation: fade-in-up 0.8s ease-out forwards;
-        }
-      `}</style>
+function SectionHeader({
+  eyebrow,
+  title,
+  sub,
+}: {
+  eyebrow: string;
+  title: React.ReactNode;
+  sub: string;
+}) {
+  return (
+    <div className="text-center max-w-3xl mx-auto">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.25em] mb-5">
+        {eyebrow}
+      </span>
+      <h2 className="text-balance text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1] mb-4">
+        {title}
+      </h2>
+      <p className="text-thrivv-text-secondary text-base sm:text-lg leading-relaxed">
+        {sub}
+      </p>
     </div>
   );
 }
