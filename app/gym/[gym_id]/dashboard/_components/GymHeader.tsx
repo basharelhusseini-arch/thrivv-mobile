@@ -18,19 +18,19 @@ export default function GymHeader({ data }: { data: GymAnalytics }) {
   const { gym, pilot_week_number, totals, date_range } = data;
   return (
     <section className="relative animate-fade-in-up">
-      <div className="glass-card relative overflow-hidden p-8 lg:p-10">
+      <div className="glass-card relative overflow-hidden p-8 lg:p-12">
         {/* Top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent" />
         {/* Soft corner glow */}
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-thrivv-gold-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-32 -right-24 w-72 h-72 bg-thrivv-gold-500/12 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 relative">
-          <div>
-            <div className="flex items-center gap-2 text-thrivv-text-muted text-xs tracking-widest uppercase mb-3">
-              <Building2 className="w-3.5 h-3.5 text-thrivv-gold-500" />
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 relative">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-5">
+              <Building2 className="w-3 h-3" />
               Gym Owner Dashboard
             </div>
-            <h1 className="text-3xl lg:text-4xl font-semibold text-thrivv-text-primary leading-tight mb-3">
+            <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.5rem] font-semibold text-thrivv-text-primary tracking-tighter leading-[1.02] mb-5">
               {gym.name}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
@@ -47,7 +47,7 @@ export default function GymHeader({ data }: { data: GymAnalytics }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
             <Tile label="Members" value={totals.total_members} icon={<Users className="w-4 h-4" />} />
             <Tile label="Pilot Cohort" value={totals.pilot_member_count} />
             <Tile label="Active 7d" value={totals.active_this_week} accent />

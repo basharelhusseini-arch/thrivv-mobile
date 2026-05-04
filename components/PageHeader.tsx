@@ -38,21 +38,21 @@ export default function PageHeader({
       <div
         className={`flex flex-col ${
           isCenter ? 'items-center' : 'sm:flex-row sm:items-end sm:justify-between'
-        } gap-5`}
+        } gap-6`}
       >
         <div className="min-w-0">
           {eyebrow ? (
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.25em] mb-4`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-5`}
             >
               {eyebrow}
             </span>
           ) : null}
-          <h1 className="text-balance text-3xl sm:text-4xl lg:text-[2.6rem] font-semibold tracking-tight leading-[1.1]">
+          <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.5rem] font-semibold tracking-tighter leading-[1.02]">
             {titleNode ?? title}
           </h1>
           {subtitle ? (
-            <p className="mt-3 text-thrivv-text-secondary text-base sm:text-lg leading-relaxed max-w-2xl">
+            <p className="mt-4 text-thrivv-text-secondary text-base sm:text-lg leading-relaxed max-w-2xl">
               {subtitle}
             </p>
           ) : null}

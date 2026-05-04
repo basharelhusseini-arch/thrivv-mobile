@@ -141,24 +141,25 @@ export default function Sidebar() {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`
-                    relative flex flex-col items-center justify-center py-3 px-2 rounded-xl transition-all duration-300 group
+                    relative flex flex-col items-center justify-center py-3 px-2 rounded-xl group
+                    transition-[background-color,transform,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
                     ${
                       isActive
                         ? 'bg-thrivv-gold-500 glow-gold'
-                        : 'hover:bg-thrivv-gold-500/10 hover:scale-[1.02]'
+                        : 'hover:bg-thrivv-gold-500/10 hover:scale-[1.015]'
                     }
                   `}
                   aria-current={isActive ? 'page' : undefined}
                 >
                   <Icon
-                    className={`w-5 h-5 mb-1.5 transition-colors duration-300 ${
+                    className={`w-5 h-5 mb-1.5 transition-colors duration-500 ${
                       isActive
                         ? 'text-black'
                         : 'text-thrivv-text-secondary group-hover:text-thrivv-gold-500'
                     }`}
                   />
                   <span
-                    className={`text-[11px] font-medium text-center leading-tight truncate w-full transition-colors duration-300 ${
+                    className={`text-[11px] font-medium text-center leading-tight truncate w-full transition-colors duration-500 ${
                       isActive
                         ? 'text-black'
                         : 'text-thrivv-text-muted group-hover:text-thrivv-gold-500'

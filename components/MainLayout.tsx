@@ -54,11 +54,14 @@ export default function MainLayout({
       <div className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-hidden">
         <BackgroundLayers />
         <div className="relative z-10 min-h-screen flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
-              <span className="w-2 h-2 rounded-full bg-thrivv-gold-500" />
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl bg-thrivv-gold-500/20 blur-xl animate-pulse" aria-hidden />
+              <div className="relative w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/40 flex items-center justify-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-thrivv-gold-500 animate-pulse" />
+              </div>
             </div>
-            <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-thrivv-text-muted">
               Loading
             </span>
           </div>

@@ -25,25 +25,38 @@
   /* Glass morphism card */
   .glass-card {
     @apply bg-thrivv-bg-card/40 backdrop-blur-xl border border-thrivv-gold-500/10 rounded-2xl;
+    transition: border-color 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  
-  /* Premium card with subtle glow */
+  .glass-card:hover {
+    @apply border-thrivv-gold-500/30;
+  }
+
+  /* Premium card with subtle cinematic hover — same easing as the landing. */
   .premium-card {
-    @apply bg-thrivv-bg-card rounded-2xl border border-thrivv-gold-500/10 transition-all duration-300;
+    @apply bg-thrivv-bg-card rounded-2xl border border-thrivv-gold-500/10;
+    transition: border-color 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  
+
   .premium-card:hover {
-    @apply border-thrivv-gold-500/30 scale-[1.01];
-    box-shadow: 0 0 30px rgba(255, 208, 0, 0.08);
+    @apply border-thrivv-gold-500/30;
+    transform: scale(1.005);
+    box-shadow: 0 20px 60px -20px rgba(255, 208, 0, 0.18);
   }
 
   /* Legacy alias used across older member pages — same surface as premium-card without the hover scale. */
   .dark-card {
-    @apply bg-thrivv-bg-card rounded-2xl border border-thrivv-gold-500/10 transition-colors duration-300;
+    @apply bg-thrivv-bg-card rounded-2xl border border-thrivv-gold-500/10;
+    transition: border-color 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 600ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .dark-card:hover {
-    @apply border-thrivv-gold-500/25;
+    @apply border-thrivv-gold-500/30;
+    box-shadow: 0 20px 60px -20px rgba(255, 208, 0, 0.14);
   }
 
   /* Legacy alias for sticky header chrome. */
@@ -53,26 +66,36 @@
 
   /* Lightweight hover utility used across legacy pages. */
   .card-hover {
-    @apply transition-all duration-300;
+    transition: border-color 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 600ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   .card-hover:hover {
-    @apply border-thrivv-gold-500/30 scale-[1.01];
-    box-shadow: 0 0 30px rgba(255, 208, 0, 0.08);
+    @apply border-thrivv-gold-500/30;
+    transform: scale(1.005);
+    box-shadow: 0 20px 60px -20px rgba(255, 208, 0, 0.18);
   }
-  
+
   /* Primary button - solid THRIVV gold */
   .btn-primary {
-    @apply relative bg-thrivv-gold-500 text-black rounded-xl font-semibold transition-all duration-300 overflow-hidden;
+    @apply relative bg-thrivv-gold-500 text-black rounded-xl font-semibold overflow-hidden;
+    transition: background-color 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 400ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  
+
   .btn-primary:hover {
-    @apply bg-thrivv-gold-400 scale-[1.02];
-    box-shadow: 0 8px 30px rgba(255, 208, 0, 0.35);
+    @apply bg-thrivv-gold-400;
+    transform: scale(1.015);
+    box-shadow: 0 12px 40px rgba(255, 208, 0, 0.35);
   }
-  
+
   /* Ghost button */
   .btn-ghost {
-    @apply border border-thrivv-gold-500/20 text-thrivv-text-primary rounded-xl font-medium transition-all duration-300 hover:border-thrivv-gold-500/40 hover:bg-thrivv-gold-500/5;
+    @apply border border-thrivv-gold-500/20 text-thrivv-text-primary rounded-xl font-medium hover:border-thrivv-gold-500/40 hover:bg-thrivv-gold-500/5;
+    transition: border-color 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 400ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   
   /* Input styles */

@@ -6,6 +6,7 @@ import ActiveThisWeekCard from './ActiveThisWeekCard';
 import StreakLeaderboard from './StreakLeaderboard';
 import EngagementChart from './EngagementChart';
 import RecentActivityFeed from './RecentActivityFeed';
+import Reveal from '@/components/Reveal';
 
 export type GymAnalytics = {
   gym: {
@@ -96,30 +97,34 @@ export default function GymDashboardView({ data }: { data: GymAnalytics }) {
         }
       `}</style>
 
-      <main className="relative max-w-7xl mx-auto px-6 lg:px-10 py-10 lg:py-12 space-y-8">
+      <main className="relative max-w-7xl mx-auto px-6 lg:px-10 py-10 lg:py-14 space-y-10">
         <GymHeader data={data} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up delay-100">
-          <div className="lg:col-span-2">
-            <Week4RetentionCard data={data} />
+        <Reveal delay={100}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Week4RetentionCard data={data} />
+            </div>
+            <div>
+              <ActiveThisWeekCard data={data} />
+            </div>
           </div>
-          <div>
-            <ActiveThisWeekCard data={data} />
-          </div>
-        </div>
+        </Reveal>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up delay-200">
-          <div className="lg:col-span-2">
-            <EngagementChart data={data.daily_checkins_30d} />
+        <Reveal delay={180}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <EngagementChart data={data.daily_checkins_30d} />
+            </div>
+            <div>
+              <StreakLeaderboard rows={data.streak_leaderboard} />
+            </div>
           </div>
-          <div>
-            <StreakLeaderboard rows={data.streak_leaderboard} />
-          </div>
-        </div>
+        </Reveal>
 
-        <div className="animate-fade-in-up delay-300">
+        <Reveal delay={260}>
           <RecentActivityFeed rows={data.recent_activity} />
-        </div>
+        </Reveal>
       </main>
     </div>
   );

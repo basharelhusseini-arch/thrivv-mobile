@@ -7,6 +7,7 @@ import { Calendar, Clock, Users, CreditCard, LogOut, User, BookOpen, CheckCircle
 import ConfidenceBadge from '@/components/ConfidenceBadge';
 import { ConfidenceLevel } from '@/types';
 import PageHeader, { gradient } from '@/components/PageHeader';
+import Reveal from '@/components/Reveal';
 
 interface UserData {
   id: string;
@@ -132,11 +133,14 @@ export default function MemberDashboardPage() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
-            <Activity className="w-5 h-5 text-thrivv-gold-500" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-2xl bg-thrivv-gold-500/20 blur-xl animate-pulse" aria-hidden />
+            <div className="relative w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/40 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-thrivv-gold-500" />
+            </div>
           </div>
-          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
+          <span className="text-[10px] uppercase tracking-[0.3em] text-thrivv-text-muted">
             Loading your snapshot
           </span>
         </div>
@@ -163,35 +167,32 @@ export default function MemberDashboardPage() {
       <main className="space-y-8">
         {/* Check-in Alert */}
         {!todayCheckin && (
-          <div
-            className="premium-card bg-thrivv-gold-500/5 border-thrivv-gold-500/30 p-6 flex items-center justify-between animate-fade-in-up"
-            style={{ animationDelay: '60ms' }}
-          >
-            <div className="flex items-center space-x-4">
-              <div className="icon-badge">
-                <AlertCircle className="w-5 h-5 text-thrivv-gold-500" />
+          <Reveal delay={60}>
+            <div className="premium-card bg-thrivv-gold-500/5 border-thrivv-gold-500/30 p-6 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="icon-badge">
+                  <AlertCircle className="w-5 h-5 text-thrivv-gold-500" />
+                </div>
+                <div>
+                  <h3 className="text-thrivv-text-primary font-semibold mb-1">Complete Today&apos;s Check-in</h3>
+                  <p className="text-thrivv-text-secondary text-sm">
+                    Log your workout, calories, and sleep
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-thrivv-text-primary font-semibold mb-1">Complete Today&apos;s Check-in</h3>
-                <p className="text-thrivv-text-secondary text-sm">
-                  Log your workout, calories, and sleep
-                </p>
-              </div>
+              <Link
+                href="/member/checkin"
+                className="btn-primary px-6 py-3 whitespace-nowrap"
+              >
+                Check In
+              </Link>
             </div>
-            <Link
-              href="/member/checkin"
-              className="btn-primary px-6 py-3 whitespace-nowrap"
-            >
-              Check In
-            </Link>
-          </div>
+          </Reveal>
         )}
 
         {/* Health Score & Leaderboard Section */}
-        <div
-          className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in-up"
-          style={{ animationDelay: '120ms' }}
-        >
+        <Reveal delay={120}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Large Health Score Display */}
           <div className="lg:col-span-1">
             <div className="premium-card p-8 flex flex-col items-center justify-center">
@@ -248,12 +249,12 @@ export default function MemberDashboardPage() {
                       </svg>
                       {/* Score Number */}
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <div className={`text-5xl font-semibold ${
+                        <div className={`text-6xl font-semibold tracking-tighter leading-none ${
                           healthScore.score >= 80 ? 'text-thrivv-neon-green' : 'text-thrivv-gold-500'
                         }`}>
                           {healthScore.score}
                         </div>
-                        <div className="text-thrivv-text-muted text-xs font-medium">Base Health Score</div>
+                        <div className="mt-1.5 text-thrivv-text-muted text-[10px] uppercase tracking-[0.25em]">Health Score</div>
                       </div>
                     </div>
                     
@@ -397,12 +398,11 @@ export default function MemberDashboardPage() {
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Main Feature Cards */}
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in-up"
-          style={{ animationDelay: '200ms' }}
-        >
+        <Reveal delay={200}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Daily Check-in */}
           <Link
             href="/member/checkin"
@@ -475,13 +475,12 @@ export default function MemberDashboardPage() {
             )}
           </div>
         </div>
+        </Reveal>
 
         {/* Score History Detail */}
         {scoreHistory.length > 0 && (
-          <div
-            className="premium-card animate-fade-in-up"
-            style={{ animationDelay: '280ms' }}
-          >
+          <Reveal delay={280}>
+          <div className="premium-card">
             <div className="px-6 py-5 flex items-center">
               <Calendar className="w-5 h-5 mr-3 text-thrivv-gold-500" />
               <h2 className="text-xl font-semibold text-thrivv-text-primary">Recent Scores</h2>
@@ -527,6 +526,7 @@ export default function MemberDashboardPage() {
               </div>
             </div>
           </div>
+          </Reveal>
         )}
       </main>
     </div>

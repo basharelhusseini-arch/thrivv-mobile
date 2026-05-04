@@ -42,14 +42,14 @@ export default function AdminGymsView() {
         <div className="absolute -top-1/3 -right-1/3 w-[60vw] h-[60vw] bg-thrivv-gold-500/5 rounded-full blur-3xl" />
       </div>
 
-      <main className="relative max-w-6xl mx-auto px-6 lg:px-10 py-10 lg:py-12 space-y-8">
+      <main className="relative max-w-6xl mx-auto px-6 lg:px-10 py-10 lg:py-14 space-y-10">
         <header className="flex items-end justify-between gap-4 animate-fade-in-up">
           <div>
-            <div className="flex items-center gap-2 text-thrivv-text-muted text-xs tracking-widest uppercase mb-2">
-              <Building2 className="w-3.5 h-3.5 text-thrivv-gold-500" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-5">
+              <Building2 className="w-3 h-3" />
               Admin · Gyms
-            </div>
-            <h1 className="text-3xl font-semibold text-thrivv-text-primary">
+            </span>
+            <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold text-thrivv-text-primary tracking-tighter leading-[1.02]">
               Manage Gym Pilots
             </h1>
           </div>
