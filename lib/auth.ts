@@ -17,6 +17,11 @@ try {
 
 const COOKIE_NAME = 'thrivv-session';
 
+// When set (e.g. ".thrivv.dev"), the session cookie is shared across
+// subdomains so auth works on both thrivv.dev and gyms.thrivv.dev.
+// When unset, behavior is unchanged (host-only cookie).
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
+
 export interface SessionUser {
   id: string;
   email: string;
@@ -117,6 +122,7 @@ export async function setSessionCookie(user: SessionUser): Promise<void> {
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7, // 7 days
     path: '/',
+    ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
   });
 }
 
@@ -145,7 +151,16 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 // Clear session cookie
 export async function clearSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.delete(COOKIE_NAME);
+  if (COOKIE_DOMAIN) {
+    // Domain-scoped cookies must be cleared with the same domain attribute.
+    cookieStore.set(COOKIE_NAME, '', {
+      expires: new Date(0),
+      path: '/',
+      domain: COOKIE_DOMAIN,
+    });
+  } else {
+    cookieStore.delete(COOKIE_NAME);
+  }
 }
 
 // Require authentication middleware
