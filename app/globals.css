@@ -102,10 +102,24 @@
   .input-premium {
     @apply bg-thrivv-bg-card/50 border border-thrivv-gold-500/10 rounded-xl text-thrivv-text-primary placeholder:text-thrivv-text-muted transition-all duration-200;
   }
-  
+
   .input-premium:focus {
     @apply outline-none border-thrivv-gold-500/40 bg-thrivv-bg-card;
     box-shadow: 0 0 0 4px rgba(255, 208, 0, 0.08);
+  }
+
+  /* Override Chrome / Safari autofill so credentials don't paint inputs
+     cream-yellow on top of our dark surface. Forces the dark fill, white
+     text, and a transition long enough to outlast any user action. */
+  .input-premium:-webkit-autofill,
+  .input-premium:-webkit-autofill:hover,
+  .input-premium:-webkit-autofill:focus,
+  .input-premium:-webkit-autofill:active {
+    -webkit-text-fill-color: #f5f5f5 !important;
+    -webkit-box-shadow: 0 0 0 1000px rgba(20, 22, 26, 0.95) inset !important;
+    caret-color: #f5f5f5 !important;
+    border-color: rgba(255, 208, 0, 0.15) !important;
+    transition: background-color 9999s ease-in-out 0s;
   }
   
   /* Glow effect for active states */

@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { User, Mail, Lock, Phone, Sparkles } from 'lucide-react';
-import BackgroundWordmark from '@/components/BackgroundWordmark';
+import { ArrowLeft, ArrowRight, Mail, Lock, User, Phone } from 'lucide-react';
+import BackgroundLayers from '@/components/BackgroundLayers';
 import Logo from '@/components/Logo';
+import Reveal from '@/components/Reveal';
 
 export default function MemberSignupPage() {
   const [formData, setFormData] = useState({
@@ -33,7 +34,6 @@ export default function MemberSignupPage() {
     setError('');
     setSuccess('');
 
-    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -67,174 +67,223 @@ export default function MemberSignupPage() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Check if email confirmation is required
         if (data.requiresEmailConfirmation) {
-          setSuccess(data.message || 'Account created! Please check your email to confirm.');
-          // Don't redirect - show success message
+          setSuccess(
+            data.message || 'Account created! Please check your email to confirm.'
+          );
         } else {
-          // Immediate login - save auth data to localStorage
           if (data.user) {
             localStorage.setItem('memberId', data.user.id);
-            localStorage.setItem('memberName', `${data.user.firstName} ${data.user.lastName}`);
+            localStorage.setItem(
+              'memberName',
+              `${data.user.firstName} ${data.user.lastName}`
+            );
             localStorage.setItem('memberEmail', data.user.email);
           }
-          
-          // Redirect to dashboard
           setSuccess('Account created successfully! Redirecting...');
           setTimeout(() => router.push('/member/dashboard'), 1500);
         }
       } else {
-        // Show the REAL error from Supabase
         const errorMessage = data.error || 'Registration failed';
         const errorDetails = data.details ? ` (${data.details})` : '';
         setError(errorMessage + errorDetails);
       }
-    } catch (error: any) {
-      console.error('Signup request failed:', error);
-      setError(error?.message || 'Network error. Please check your connection and try again.');
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Network error. Please check your connection and try again.';
+      console.error('Signup request failed:', err);
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark p-6 relative">
-      {/* Layer A: Base background glow (z-index: 0) */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-thrivv-gold-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-thrivv-gold-500/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-hidden">
+      <BackgroundLayers />
 
-      {/* Layer B: Background wordmark (z-index: 10) */}
-      <div className="fixed inset-0" style={{ zIndex: 10, isolation: 'isolate' }}>
-        <BackgroundWordmark />
-      </div>
-
-      {/* Layer D: Foreground content (z-index: 20) */}
-      <div className="relative max-w-md w-full z-20">
-        {/* Logo */}
-        <div className="text-center mb-12 animate-fade-in-up">
-          <div className="mb-6 flex justify-center">
-            <Logo variant="gold" size="xl" linkTo="/" />
-          </div>
-          <h1 className="text-3xl font-semibold text-gradient mb-2">Start Your Journey</h1>
-          <p className="text-thrivv-text-secondary">Create your account to begin</p>
-        </div>
-
-        {/* Form Card */}
-        <div className="glass-card p-8 animate-slide-up">
-          <form onSubmit={handleSubmit} className="space-y-5">
-
-            {/* First Name & Last Name */}
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-                className="input-premium px-5 py-4 text-base"
-                placeholder="First name"
-              />
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-                className="input-premium px-5 py-4 text-base"
-                placeholder="Last name"
-              />
-            </div>
-
-            {/* Email */}
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="input-premium w-full px-5 py-4 text-base"
-              placeholder="Email address"
-            />
-
-            {/* Phone */}
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-              className="input-premium w-full px-5 py-4 text-base"
-              placeholder="Phone number"
-            />
-
-            {/* Password */}
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="input-premium w-full px-5 py-4 text-base"
-              placeholder="Password (6+ characters)"
-            />
-
-            {/* Confirm Password */}
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              className="input-premium w-full px-5 py-4 text-base"
-              placeholder="Confirm password"
-            />
-
-            {error && (
-              <div className="error-badge px-4 py-3 text-sm">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="success-badge px-4 py-3 text-sm">
-                {success}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary py-4 px-6 disabled:opacity-50 disabled:cursor-not-allowed text-base"
-            >
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </button>
-          </form>
-
-          <div className="mt-8 text-center">
-            <p className="text-sm text-thrivv-text-secondary">
-              Already have an account?{' '}
-              <Link href="/member/login" className="text-thrivv-gold-500 hover:text-thrivv-gold-400 font-medium transition-colors">
-                Sign In
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Back link */}
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-sm text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors inline-flex items-center">
-            ← Back to Home
+      <main className="relative z-10 min-h-screen flex flex-col">
+        <nav className="px-6 lg:px-10 py-6 flex items-center justify-between">
+          <Logo variant="gold" size="md" linkTo="/" />
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to home
           </Link>
+        </nav>
+
+        <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
+          <div className="w-full max-w-md">
+            <Reveal>
+              <div className="text-center mb-10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
+                  Get started
+                </span>
+                <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold tracking-tighter leading-[1.02]">
+                  Start your{' '}
+                  <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+                    journey
+                  </span>
+                  .
+                </h1>
+                <p className="mt-4 text-thrivv-text-secondary text-base lg:text-lg">
+                  Create your account, log your first check-in, and climb your
+                  gym&apos;s leaderboard.
+                </p>
+              </div>
+            </Reveal>
+
+            <Reveal delay={120}>
+              <div className="relative glass-card overflow-hidden p-7 lg:p-8 shadow-[0_40px_140px_-30px_rgba(255,208,0,0.18)]">
+                <div
+                  className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
+                  aria-hidden
+                />
+                <div
+                  className="absolute -top-32 -right-24 w-72 h-72 bg-thrivv-gold-500/12 rounded-full blur-3xl pointer-events-none"
+                  aria-hidden
+                />
+
+                <form onSubmit={handleSubmit} className="space-y-4 relative">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="relative">
+                      <User className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        id="firstName"
+                        name="firstName"
+                        type="text"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        required
+                        autoComplete="given-name"
+                        className="input-premium w-full pl-11 pr-4 py-4 text-base"
+                        placeholder="First name"
+                      />
+                    </div>
+                    <input
+                      id="lastName"
+                      name="lastName"
+                      type="text"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      required
+                      autoComplete="family-name"
+                      className="input-premium w-full px-4 py-4 text-base"
+                      placeholder="Last name"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      autoComplete="email"
+                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
+                      placeholder="Email address"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <Phone className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                      autoComplete="tel"
+                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
+                      placeholder="Phone number"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      autoComplete="new-password"
+                      minLength={6}
+                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
+                      placeholder="Password (6+ characters)"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      required
+                      autoComplete="new-password"
+                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
+                      placeholder="Confirm password"
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="error-badge px-4 py-3 text-sm">{error}</div>
+                  )}
+
+                  {success && (
+                    <div className="success-badge px-4 py-3 text-sm">
+                      {success}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full btn-primary py-4 px-6 disabled:opacity-50 disabled:cursor-not-allowed text-base inline-flex items-center justify-center gap-2 group"
+                  >
+                    {loading ? (
+                      'Creating account...'
+                    ) : (
+                      <>
+                        Create Account
+                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <div className="mt-7 text-center text-sm text-thrivv-text-secondary">
+                  Already have an account?{' '}
+                  <Link
+                    href="/member/login"
+                    className="text-thrivv-gold-500 hover:text-thrivv-gold-400 font-medium transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={200}>
+              <p className="mt-8 text-center text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
+                Free for gym members · No credit card
+              </p>
+            </Reveal>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

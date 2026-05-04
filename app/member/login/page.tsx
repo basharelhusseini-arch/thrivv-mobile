@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import BackgroundWordmark from '@/components/BackgroundWordmark';
+import { ArrowLeft, ArrowRight, Mail, Lock } from 'lucide-react';
+import BackgroundLayers from '@/components/BackgroundLayers';
 import Logo from '@/components/Logo';
+import Reveal from '@/components/Reveal';
 
 export default function MemberLoginPage() {
   const [email, setEmail] = useState('');
@@ -28,18 +30,17 @@ export default function MemberLoginPage() {
       const data = await response.json();
 
       if (response.ok && data.user) {
-        // Save auth data to localStorage
         localStorage.setItem('memberId', data.user.id);
-        localStorage.setItem('memberName', `${data.user.firstName} ${data.user.lastName}`);
+        localStorage.setItem(
+          'memberName',
+          `${data.user.firstName} ${data.user.lastName}`
+        );
         localStorage.setItem('memberEmail', data.user.email);
-        
-        // Session cookie is set by the API
-        // Redirect to dashboard
         router.push('/member/dashboard');
       } else {
         setError(data.error || 'Login failed');
       }
-    } catch (error) {
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -47,91 +48,121 @@ export default function MemberLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark p-6 relative">
-      {/* Layer A: Base background glow (z-index: 0) */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-thrivv-gold-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-thrivv-gold-500/5 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-hidden">
+      <BackgroundLayers />
 
-      {/* Layer B: Background wordmark (z-index: 10) */}
-      <div className="fixed inset-0" style={{ zIndex: 10, isolation: 'isolate' }}>
-        <BackgroundWordmark />
-      </div>
-
-      {/* Layer D: Foreground content (z-index: 20) */}
-      <div className="relative max-w-md w-full z-20">
-        {/* Logo */}
-        <div className="text-center mb-12 animate-fade-in-up">
-          <div className="mb-6 flex justify-center">
-            <Logo variant="gold" size="xl" linkTo="/" />
-          </div>
-          <h1 className="text-3xl font-semibold text-gradient mb-2">Welcome Back</h1>
-          <p className="text-thrivv-text-secondary">Sign in to continue your journey</p>
-        </div>
-
-        {/* Form Card */}
-        <div className="glass-card p-8 animate-slide-up">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="input-premium w-full px-5 py-4 text-base"
-                placeholder="Email address"
-              />
-            </div>
-
-            <div>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="input-premium w-full px-5 py-4 text-base"
-                placeholder="Password"
-              />
-            </div>
-
-            {error && (
-              <div className="error-badge px-4 py-3 text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary py-4 px-6 disabled:opacity-50 disabled:cursor-not-allowed text-base"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-
-          <div className="mt-8 text-center">
-            <p className="text-sm text-thrivv-text-secondary">
-              Don&apos;t have an account?{' '}
-              <Link href="/member/signup" className="text-thrivv-gold-500 hover:text-thrivv-gold-400 font-medium transition-colors">
-                Sign Up
-              </Link>
-            </p>
-          </div>
-        </div>
-
-        {/* Back link */}
-        <div className="mt-6 text-center">
+      <main className="relative z-10 min-h-screen flex flex-col">
+        <nav className="px-6 lg:px-10 py-6 flex items-center justify-between">
+          <Logo variant="gold" size="md" linkTo="/" />
           <Link
             href="/"
-            className="text-sm text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors inline-flex items-center"
+            className="inline-flex items-center gap-1.5 text-sm text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
           >
-            ← Back to Home
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to home
           </Link>
+        </nav>
+
+        <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
+          <div className="w-full max-w-md">
+            <Reveal>
+              <div className="text-center mb-10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
+                  Member access
+                </span>
+                <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold tracking-tighter leading-[1.02]">
+                  Welcome{' '}
+                  <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+                    back
+                  </span>
+                  .
+                </h1>
+                <p className="mt-4 text-thrivv-text-secondary text-base lg:text-lg">
+                  Sign in to keep climbing your gym&apos;s leaderboard.
+                </p>
+              </div>
+            </Reveal>
+
+            <Reveal delay={120}>
+              <div className="relative glass-card overflow-hidden p-7 lg:p-8 shadow-[0_40px_140px_-30px_rgba(255,208,0,0.18)]">
+                <div
+                  className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
+                  aria-hidden
+                />
+                <div
+                  className="absolute -top-32 -right-24 w-72 h-72 bg-thrivv-gold-500/12 rounded-full blur-3xl pointer-events-none"
+                  aria-hidden
+                />
+
+                <form onSubmit={handleSubmit} className="space-y-4 relative">
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
+                      placeholder="Email address"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
+                      placeholder="Password"
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="error-badge px-4 py-3 text-sm">{error}</div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full btn-primary py-4 px-6 disabled:opacity-50 disabled:cursor-not-allowed text-base inline-flex items-center justify-center gap-2 group"
+                  >
+                    {loading ? (
+                      'Signing in...'
+                    ) : (
+                      <>
+                        Sign In
+                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                <div className="mt-7 text-center text-sm text-thrivv-text-secondary">
+                  Don&apos;t have an account?{' '}
+                  <Link
+                    href="/member/signup"
+                    className="text-thrivv-gold-500 hover:text-thrivv-gold-400 font-medium transition-colors"
+                  >
+                    Sign up
+                  </Link>
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal delay={200}>
+              <p className="mt-8 text-center text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
+                Built for gyms · Powered by Thrivv
+              </p>
+            </Reveal>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
