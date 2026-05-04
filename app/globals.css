@@ -187,4 +187,13 @@
       animation: none;
     }
   }
+
+  /* iPhone safe-area inset for bottom-anchored chrome (mobile bottom nav,
+     sheets). Falls back to 0 on browsers that don't support env(). */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .bottom-safe {
+    bottom: env(safe-area-inset-bottom, 0px);
+  }
 }

@@ -86,7 +86,7 @@ export default function MainLayout({
 
       <Sidebar />
 
-      <main className="relative z-10 lg:ml-24 px-5 sm:px-8 lg:px-12 py-8 lg:py-10 transition-all duration-300">
+      <main className="relative z-10 lg:ml-24 px-5 sm:px-8 lg:px-12 pt-8 pb-28 lg:py-10 transition-all duration-300">
         {children}
       </main>
     </div>
