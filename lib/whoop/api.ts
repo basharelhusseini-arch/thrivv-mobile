@@ -1,0 +1,126 @@
+/**
+ * WHOOP API fetch helpers (server-only).
+ *
+ * Each helper returns the raw JSON payload (or null on a soft
+ * failure) so the caller can both store the raw payload AND run
+ * the defensive extractors in `extract.ts`. A 401 from any
+ * endpoint is signalled via WhoopUnauthorizedError so the route
+ * can clear tokens and ask the user to reconnect.
+ */
+
+import { WHOOP_API_BASE } from './oauth';
+
+export class WhoopUnauthorizedError extends Error {
+  constructor(message = 'WHOOP returned 401') {
+    super(message);
+    this.name = 'WhoopUnauthorizedError';
+  }
+}
+
+export class WhoopApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'WhoopApiError';
+    this.status = status;
+  }
+}
+
+async function whoopGet(
+  path: string,
+  accessToken: string,
+  query: Record<string, string> = {}
+): Promise<unknown> {
+  const url = new URL(`${WHOOP_API_BASE}${path}`);
+  for (const [key, value] of Object.entries(query)) {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, value);
+    }
+  }
+
+  const res = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  if (res.status === 401) {
+    throw new WhoopUnauthorizedError();
+  }
+  if (!res.ok) {
+    // Don't leak the upstream body — could carry IDs.
+    throw new WhoopApiError(`WHOOP ${path} returned ${res.status}`, res.status);
+  }
+  return res.json();
+}
+
+/**
+ * Recovery records that span the supplied window. WHOOP returns
+ * paginated records; for our daily-sync use case we don't need to
+ * follow next_token because we only fetch a single day.
+ */
+export function fetchRecovery(
+  accessToken: string,
+  startIso: string,
+  endIso: string
+): Promise<unknown> {
+  return whoopGet('/developer/v2/recovery', accessToken, {
+    start: startIso,
+    end: endIso,
+    limit: '5',
+  });
+}
+
+export function fetchSleep(
+  accessToken: string,
+  startIso: string,
+  endIso: string
+): Promise<unknown> {
+  return whoopGet('/developer/v2/activity/sleep', accessToken, {
+    start: startIso,
+    end: endIso,
+    limit: '5',
+  });
+}
+
+export function fetchCycle(
+  accessToken: string,
+  startIso: string,
+  endIso: string
+): Promise<unknown> {
+  return whoopGet('/developer/v2/cycle', accessToken, {
+    start: startIso,
+    end: endIso,
+    limit: '5',
+  });
+}
+
+/**
+ * Fetch the WHOOP user profile. Used during /callback to resolve
+ * the WHOOP user_id we persist. Failures here are non-fatal —
+ * tokens are still saved.
+ */
+export async function fetchProfile(accessToken: string): Promise<{
+  whoopUserId: number | null;
+} | null> {
+  try {
+    const payload = (await whoopGet(
+      '/developer/v1/user/profile/basic',
+      accessToken
+    )) as Record<string, unknown> | null;
+    if (!payload) return null;
+    const id = payload.user_id;
+    if (typeof id === 'number' && Number.isFinite(id)) {
+      return { whoopUserId: id };
+    }
+    if (typeof id === 'string' && /^\d+$/.test(id)) {
+      return { whoopUserId: Number(id) };
+    }
+    return { whoopUserId: null };
+  } catch {
+    return null;
+  }
+}

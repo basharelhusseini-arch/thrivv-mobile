@@ -90,6 +90,36 @@ export function getJWTSecret(): string {
 }
 
 /**
+ * Get and validate WHOOP OAuth environment variables.
+ *
+ * These are required by the /api/whoop/connect, /callback, and /sync
+ * routes. They are server-only — never reference these from client
+ * code. WHOOP_REDIRECT_URI must exactly match the redirect URI
+ * registered in the WHOOP developer dashboard for the client.
+ *
+ * @throws {Error} If any required env var is missing.
+ */
+export function getWhoopEnv() {
+  const clientId = process.env.WHOOP_CLIENT_ID;
+  const clientSecret = process.env.WHOOP_CLIENT_SECRET;
+  const redirectUri = process.env.WHOOP_REDIRECT_URI;
+
+  if (!clientId || !clientSecret || !redirectUri) {
+    throw new Error(
+      '❌ Missing WHOOP OAuth environment variables\n\n' +
+        'Required env vars:\n' +
+        '  WHOOP_CLIENT_ID\n' +
+        '  WHOOP_CLIENT_SECRET\n' +
+        '  WHOOP_REDIRECT_URI (e.g. https://thrivv.dev/api/whoop/callback)\n\n' +
+        'Get the client id / secret from: https://developer.whoop.com\n' +
+        'The redirect URI must exactly match the one registered there.\n'
+    );
+  }
+
+  return { clientId, clientSecret, redirectUri };
+}
+
+/**
  * Validate all required environment variables at startup
  * Call this in your API routes or during initialization
  */
