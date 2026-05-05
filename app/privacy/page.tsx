@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = 'May 2026';
-const SUPPORT_EMAIL = 'support@thrivv.dev';
+const SUPPORT_EMAIL = 'bashar@thrivv.dev';
 
 export default function PrivacyPolicyPage() {
   return (
