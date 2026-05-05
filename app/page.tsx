@@ -829,6 +829,12 @@ function Footer() {
           >
             Sign Up
           </Link>
+          <Link
+            href="/privacy"
+            className="text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
+          >
+            Privacy
+          </Link>
           <a
             href="mailto:bashar@thrivv.dev?subject=Run%20Thrivv%20at%20my%20gym"
             className="text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
