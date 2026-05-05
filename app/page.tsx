@@ -22,7 +22,7 @@ import Reveal from '@/components/Reveal';
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-x-hidden">
-      <StaticBackground />
+      <AmbientBackground />
 
       <Navbar />
 
@@ -41,15 +41,23 @@ export default function LandingPage() {
 }
 
 /* ---------------------------------------------------------------- */
-/* Background — static. Faint gold grid + three soft gold halos.    */
-/* No pulse, no animation, no parallax.                             */
+/* Background — ambient. Slow gold grid drift + three independently */
+/* drifting halos + a soft spotlight pulse behind the hero.         */
+/*                                                                  */
+/* Every animation operates on transform / opacity /                */
+/* background-position only, so the browser composites the          */
+/* pre-blurred layers on the GPU without re-rasterising on each     */
+/* frame. Honors prefers-reduced-motion (animations disabled) and   */
+/* slows on small screens to keep scrolling smooth.                 */
 /* ---------------------------------------------------------------- */
 
-function StaticBackground() {
+function AmbientBackground() {
   return (
     <>
+      {/* Faint gold grid — drifts diagonally over 90s.
+          Pure background-position animation: no layout, no repaint. */}
       <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.04]"
+        className="thrivv-grid-drift pointer-events-none fixed inset-0 z-0 opacity-[0.04]"
         aria-hidden
         style={{
           backgroundImage:
@@ -61,12 +69,27 @@ function StaticBackground() {
             'radial-gradient(ellipse at center, black 30%, transparent 78%)',
         }}
       />
+
+      {/* Three drifting gold auras at staggered durations so they
+          never re-align. Blur is applied once via blur-3xl; only
+          transform animates, GPU composited. */}
       <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
-        <div className="absolute -top-1/4 -left-1/4 w-[55vw] h-[55vw] bg-thrivv-gold-500/[0.10] rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -right-1/4 w-[55vw] h-[55vw] bg-thrivv-gold-500/[0.06] rounded-full blur-3xl" />
-        <div className="absolute -bottom-1/4 left-1/3 w-[40vw] h-[40vw] bg-thrivv-gold-500/[0.05] rounded-full blur-3xl" />
+        <div className="thrivv-aura-a absolute -top-1/4 -left-1/4 w-[55vw] h-[55vw] bg-thrivv-gold-500/[0.10] rounded-full blur-3xl" />
+        <div className="thrivv-aura-b absolute top-1/3 -right-1/4 w-[55vw] h-[55vw] bg-thrivv-gold-500/[0.06] rounded-full blur-3xl" />
+        <div className="thrivv-aura-c absolute -bottom-1/4 left-1/3 w-[40vw] h-[40vw] bg-thrivv-gold-500/[0.05] rounded-full blur-3xl" />
       </div>
-      {/* Soft top + bottom vignette so chrome melts into the canvas */}
+
+      {/* Soft spotlight behind the hero — gentle opacity breathing. */}
+      <div
+        className="thrivv-aura-pulse pointer-events-none fixed inset-0 z-0"
+        aria-hidden
+        style={{
+          background:
+            'radial-gradient(ellipse 60vw 50vh at 50% 32%, rgba(255,208,0,0.07), transparent 70%)',
+        }}
+      />
+
+      {/* Top + bottom vignette so the chrome melts into the canvas. */}
       <div
         className="pointer-events-none fixed inset-x-0 top-0 z-0 h-32 bg-gradient-to-b from-thrivv-bg-darker to-transparent"
         aria-hidden

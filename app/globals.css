@@ -196,4 +196,71 @@
   .bottom-safe {
     bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  /* ===== Landing page ambient background motion =====
+     Slow, restrained motion that gives the dark canvas a sense of
+     life without heavy libraries or canvas. Every animation here
+     operates on transform / opacity / background-position only —
+     never on filter or layout — so the browser can composite the
+     pre-rasterised blurred layers on the GPU without recomputing
+     them. On reduced-motion the animations are disabled. On small
+     screens cadence is slowed so scroll performance stays smooth. */
+
+  @keyframes thrivv-aura-drift-a {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50%      { transform: translate3d(7vw, 5vh, 0) scale(1.05); }
+  }
+  @keyframes thrivv-aura-drift-b {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50%      { transform: translate3d(-6vw, 7vh, 0) scale(1.07); }
+  }
+  @keyframes thrivv-aura-drift-c {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50%      { transform: translate3d(5vw, -6vh, 0) scale(1.06); }
+  }
+  @keyframes thrivv-aura-pulse {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
+  }
+  @keyframes thrivv-grid-drift {
+    0%   { background-position: 0 0; }
+    100% { background-position: 72px 72px; }
+  }
+
+  .thrivv-aura-a {
+    animation: thrivv-aura-drift-a 38s ease-in-out infinite;
+    will-change: transform;
+  }
+  .thrivv-aura-b {
+    animation: thrivv-aura-drift-b 46s ease-in-out infinite;
+    will-change: transform;
+  }
+  .thrivv-aura-c {
+    animation: thrivv-aura-drift-c 54s ease-in-out infinite;
+    will-change: transform;
+  }
+  .thrivv-aura-pulse {
+    animation: thrivv-aura-pulse 14s ease-in-out infinite;
+  }
+  .thrivv-grid-drift {
+    animation: thrivv-grid-drift 90s linear infinite;
+  }
+
+  @media (max-width: 640px) {
+    .thrivv-aura-a { animation-duration: 56s; }
+    .thrivv-aura-b { animation-duration: 64s; }
+    .thrivv-aura-c { animation-duration: 72s; }
+    .thrivv-aura-pulse { animation-duration: 22s; }
+    .thrivv-grid-drift { animation-duration: 140s; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .thrivv-aura-a,
+    .thrivv-aura-b,
+    .thrivv-aura-c,
+    .thrivv-aura-pulse,
+    .thrivv-grid-drift {
+      animation: none !important;
+    }
+  }
 }
