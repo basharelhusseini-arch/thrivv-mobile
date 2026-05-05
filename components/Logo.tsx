@@ -22,17 +22,21 @@ const sizeClasses = {
 /**
  * Premium THRIV/// wordmark.
  *
- * Custom geometric path-based wordmark with skew-x(-10°) forward lean for
- * athletic, performance-oriented character. Refined for a more deliberate
- * tech-brand feel:
+ * Custom path-based wordmark redrawn for athletic-tech proportions:
  *
- *   - Subtle vertical gradient fill (anodized-gold finish on the gold variant)
- *   - Crisp two-pass drop shadow rather than a soft outer glow
- *   - Slimmer, more deliberate trailing slashes
- *   - Unique per-instance gradient id so multiple logos can coexist
+ *   - 12u stroke weight on a 64u cap height (~18.75% — sits in the
+ *     refined-sans range used by WHOOP / Strava / On).
+ *   - Tight, deliberate kerning (4u advance between letters).
+ *   - Sharp 90° terminals throughout. R bowl is rendered as a clean
+ *     rectangular "P" with an even-odd hollow + a parallelogram tail.
+ *   - Three slim 6u trailing slashes at uniform 12u rhythm.
+ *   - skewX(-10°) preserved for forward-leaning performance character.
+ *   - Subtle vertical gradient fill for a polished anodized finish at
+ *     hero scale; reads as one confident gold at navbar size.
+ *   - Crisp two-pass drop shadow rather than a soft outer glow.
  *
- * Public API (props, size presets, variants, linkTo) is unchanged so every
- * existing call site keeps working without edits.
+ * Public component API (props, sizes, variants, linkTo) is unchanged so
+ * every existing call site continues to work without edits.
  */
 export default function Logo({
   variant = 'gold',
@@ -40,21 +44,20 @@ export default function Logo({
   className = '',
   linkTo,
 }: LogoProps) {
-  // Stable, unique id per render (sidebar + nav + footer can all coexist).
+  // Stable, unique gradient id per render so multiple Logo instances on
+  // the same page (sidebar + navbar + footer) cannot collide.
   const reactId = useId();
   const gradientId = `thrivv-grad-${reactId.replace(/:/g, '')}`;
 
   const isGold = variant === 'gold';
 
-  // Subtle vertical gradient gives a refined "polished" finish without
-  // feeling dated. Stops sit close enough in value that the wordmark still
-  // reads as a single confident colour at small sizes.
+  // Subtle vertical gradient. Stops sit close enough in value that the
+  // wordmark still reads as a single confident colour at small sizes.
   const gradientStops = isGold
     ? ['#FFE066', '#FFD000', '#FFC400']
     : ['#FFFFFF', '#FFFFFF', '#F2F2F2'];
 
-  // Tighter, more deliberate drop shadow than a soft outer glow.
-  // Tiny dark depth shadow + a small gold halo for the gold variant only.
+  // Tight, deliberate drop shadow rather than a soft outer glow.
   const filterStyle = isGold
     ? {
         filter:
@@ -64,7 +67,7 @@ export default function Logo({
 
   const logoSvg = (
     <svg
-      viewBox="0 0 408 100"
+      viewBox="0 0 300 100"
       className={`${sizeClasses[size]} ${className} w-auto`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -79,27 +82,30 @@ export default function Logo({
       </defs>
 
       <g transform="skewX(-10)" fill={`url(#${gradientId})`}>
-        {/* T */}
-        <path d="M 8 18 L 65 18 L 65 30 L 48 30 L 48 82 L 32 82 L 32 30 L 15 30 Z" />
+        {/* T — cap 48u wide, 12u stroke */}
+        <path d="M 0 18 L 48 18 L 48 30 L 30 30 L 30 82 L 18 82 L 18 30 L 0 30 Z" />
 
-        {/* H */}
-        <path d="M 72 18 L 88 18 L 88 44 L 110 44 L 110 18 L 126 18 L 126 82 L 110 82 L 110 58 L 88 58 L 88 82 L 72 82 Z" />
+        {/* H — two stems + 12u crossbar */}
+        <path d="M 52 18 L 64 18 L 64 44 L 81 44 L 81 18 L 93 18 L 93 82 L 81 82 L 81 56 L 64 56 L 64 82 L 52 82 Z" />
 
-        {/* R — bowl */}
-        <path d="M 133 18 L 175 18 C 184 18 190 20 195 24 C 199 28 201 33 201 41 C 201 48 199 53 195 57 C 190 61 184 63 175 63 L 149 63 L 149 82 L 133 82 Z M 149 31 L 149 51 L 172 51 C 177 51 180 50 182 48 C 184 46 185 43 185 40 C 185 36 184 33 182 31 C 180 29 177 28 172 28 L 149 28 Z" />
-        {/* R — tail */}
-        <path d="M 168 63 L 182 63 L 196 82 L 178 82 Z" />
+        {/* R — square bowl with even-odd hollow */}
+        <path
+          fillRule="evenodd"
+          d="M 97 18 L 138 18 L 138 54 L 109 54 L 109 82 L 97 82 Z M 109 30 L 109 42 L 126 42 L 126 30 Z"
+        />
+        {/* R — diagonal tail */}
+        <path d="M 126 54 L 138 54 L 172 82 L 160 82 Z" />
 
-        {/* I */}
-        <path d="M 203 18 L 219 18 L 219 82 L 203 82 Z" />
+        {/* I — single bar */}
+        <path d="M 176 18 L 188 18 L 188 82 L 176 82 Z" />
 
-        {/* V */}
-        <path d="M 226 18 L 243 18 L 263 66 L 283 18 L 300 18 L 270 82 L 256 82 Z" />
+        {/* V — sharp valley + sharp point */}
+        <path d="M 192 18 L 204 18 L 217 60 L 230 18 L 242 18 L 217 82 Z" />
 
-        {/* /// — slimmer, more deliberate. Each slash 8u wide, gap 6u. */}
-        <path d="M 308 82 L 316 82 L 332 18 L 324 18 Z" />
-        <path d="M 338 82 L 346 82 L 362 18 L 354 18 Z" />
-        <path d="M 368 82 L 376 82 L 392 18 L 384 18 Z" />
+        {/* /// — three deliberate 6u-wide speed slashes at uniform rhythm */}
+        <path d="M 248 82 L 254 82 L 269 18 L 263 18 Z" />
+        <path d="M 260 82 L 266 82 L 281 18 L 275 18 Z" />
+        <path d="M 272 82 L 278 82 L 293 18 L 287 18 Z" />
       </g>
     </svg>
   );
