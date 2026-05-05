@@ -4,40 +4,34 @@ import Link from 'next/link';
 import {
   Activity,
   ArrowRight,
-  Brain,
   Check,
-  ChevronDown,
   ChevronRight,
   Dumbbell,
   Flame,
+  Gift,
   Heart,
-  LineChart,
-  ShieldCheck,
   Sparkles,
-  Target,
   Trophy,
   UtensilsCrossed,
+  Watch,
   Zap,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
-import BackgroundLayers from '@/components/BackgroundLayers';
 import Reveal from '@/components/Reveal';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-x-hidden">
-      <BackgroundLayers />
+      <StaticBackground />
 
       <Navbar />
 
       <main className="relative z-10">
         <Hero />
-        <StatsStrip />
-        <ValueCards />
         <HowItWorks />
-        <Differentiation />
-        <CitiesMarquee />
-        <TrustPillars />
+        <HealthScoreSection />
+        <RewardsSection />
+        <LeaderboardSection />
         <FinalCTA />
       </main>
 
@@ -47,16 +41,78 @@ export default function LandingPage() {
 }
 
 /* ---------------------------------------------------------------- */
+/* Background — static. Faint gold grid + three soft gold halos.    */
+/* No pulse, no animation, no parallax.                             */
+/* ---------------------------------------------------------------- */
+
+function StaticBackground() {
+  return (
+    <>
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.04]"
+        aria-hidden
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(255,208,0,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,208,0,0.6) 1px, transparent 1px)',
+          backgroundSize: '72px 72px',
+          maskImage:
+            'radial-gradient(ellipse at center, black 30%, transparent 78%)',
+          WebkitMaskImage:
+            'radial-gradient(ellipse at center, black 30%, transparent 78%)',
+        }}
+      />
+      <div className="pointer-events-none fixed inset-0 z-0" aria-hidden>
+        <div className="absolute -top-1/4 -left-1/4 w-[55vw] h-[55vw] bg-thrivv-gold-500/[0.10] rounded-full blur-3xl" />
+        <div className="absolute top-1/3 -right-1/4 w-[55vw] h-[55vw] bg-thrivv-gold-500/[0.06] rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/4 left-1/3 w-[40vw] h-[40vw] bg-thrivv-gold-500/[0.05] rounded-full blur-3xl" />
+      </div>
+      {/* Soft top + bottom vignette so chrome melts into the canvas */}
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-0 h-32 bg-gradient-to-b from-thrivv-bg-darker to-transparent"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-0 h-32 bg-gradient-to-t from-thrivv-bg-darker to-transparent"
+        aria-hidden
+      />
+    </>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Navbar — refined, premium, deliberate                            */
+/* ---------------------------------------------------------------- */
 
 function Navbar() {
+  const navLinks = [
+    { label: 'How it works', href: '#how-it-works' },
+    { label: 'Health Score', href: '#health-score' },
+    { label: 'Rewards', href: '#rewards' },
+    { label: 'Leaderboard', href: '#leaderboard' },
+    { label: 'Gyms', href: '#gyms' },
+  ];
+
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-xl bg-thrivv-bg-darker/70 border-b border-thrivv-gold-500/[0.08]">
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-thrivv-bg-darker/75 border-b border-thrivv-gold-500/[0.07]">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-        <Logo variant="gold" size="md" linkTo="/" />
-        <nav className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-10">
+          <Logo variant="gold" size="md" linkTo="/" />
+          <nav className="hidden lg:flex items-center gap-7" aria-label="Sections">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-sm text-thrivv-text-secondary hover:text-thrivv-text-primary transition-colors duration-300"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <div className="flex items-center gap-1.5 sm:gap-3">
           <Link
             href="/member/login"
-            className="px-3.5 sm:px-4 py-2 text-sm text-thrivv-text-secondary hover:text-thrivv-text-primary transition-colors"
+            className="px-3.5 sm:px-4 py-2 text-sm text-thrivv-text-secondary hover:text-thrivv-text-primary transition-colors duration-300"
           >
             Sign In
           </Link>
@@ -67,27 +123,29 @@ function Navbar() {
             Sign Up Free
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
-        </nav>
+        </div>
       </div>
     </header>
   );
 }
 
 /* ---------------------------------------------------------------- */
+/* Hero — full viewport, left-aligned, headline-dominant            */
+/* ---------------------------------------------------------------- */
 
 function Hero() {
   return (
-    <section className="relative px-6 lg:px-10 pt-20 lg:pt-28 pb-16 lg:pb-24 min-h-[calc(100vh-4rem)] flex flex-col justify-center">
-      <div className="max-w-5xl mx-auto text-center w-full">
+    <section className="relative px-6 lg:px-10 pt-20 lg:pt-32 pb-20 lg:pb-32 min-h-[calc(100vh-4rem)] flex flex-col justify-center">
+      <div className="max-w-7xl mx-auto w-full">
         <Reveal>
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 text-thrivv-gold-500 text-[11px] uppercase tracking-[0.25em] font-medium">
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 text-thrivv-gold-500 text-[11px] uppercase tracking-[0.28em] font-medium">
             <Sparkles className="w-3 h-3" />
             Powered by your gym
           </span>
         </Reveal>
 
         <Reveal delay={80}>
-          <h1 className="mt-8 text-balance text-[2.85rem] sm:text-7xl lg:text-[6rem] xl:text-[6.75rem] font-semibold tracking-tighter leading-[0.95]">
+          <h1 className="mt-8 text-balance font-semibold tracking-tighter leading-[0.92] text-[3rem] sm:text-[5.5rem] lg:text-[7.5rem] xl:text-[8.25rem] max-w-[18ch]">
             Train. Track.{' '}
             <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
               Climb the leaderboard
@@ -97,16 +155,16 @@ function Hero() {
         </Reveal>
 
         <Reveal delay={160}>
-          <p className="mt-7 max-w-2xl mx-auto text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
+          <p className="mt-8 lg:mt-10 max-w-xl text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
             Thrivv is the gamified fitness platform your gym gives you. Daily
             check-ins, AI workouts, wearable sync, recipes, and rewards —
-            rolled into one Health Score that ranks you on your gym&apos;s
+            distilled into one Health Score that ranks you on your gym&apos;s
             weekly leaderboard.
           </p>
         </Reveal>
 
         <Reveal delay={240}>
-          <div className="mt-10 flex flex-col sm:flex-row flex-wrap gap-3 justify-center">
+          <div className="mt-10 lg:mt-12 flex flex-col sm:flex-row gap-3">
             <Link
               href="/member/signup"
               className="btn-primary px-8 py-4 text-base inline-flex items-center justify-center gap-2 group"
@@ -115,313 +173,95 @@ function Hero() {
               <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
             </Link>
             <Link
-              href="#features"
+              href="#how-it-works"
               className="btn-ghost px-8 py-4 text-base inline-flex items-center justify-center gap-2"
             >
-              See How It Works
+              See how it works
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
         </Reveal>
 
         <Reveal delay={320}>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-thrivv-text-muted">
-            <span className="inline-flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
-              Free for gym members
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
-              30-second daily check-in
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-thrivv-neon-green" />
-              Wearable sync rolling out
-            </span>
-          </div>
+          <p className="mt-10 text-[11px] uppercase tracking-[0.25em] text-thrivv-text-muted">
+            Free for gym members · 30-second daily check-in · Wearable sync
+            rolling out
+          </p>
         </Reveal>
       </div>
-
-      <Reveal delay={420}>
-        <div className="mt-20 lg:mt-24 max-w-3xl mx-auto w-full">
-          <DashboardMockup />
-        </div>
-      </Reveal>
-
-      <Reveal delay={540}>
-        <div className="hidden lg:flex absolute bottom-6 left-1/2 -translate-x-1/2 flex-col items-center gap-2 text-thrivv-text-muted">
-          <span className="text-[10px] uppercase tracking-[0.3em]">Scroll</span>
-          <ChevronDown className="w-3 h-3 animate-bounce" />
-        </div>
-      </Reveal>
-    </section>
-  );
-}
-
-function DashboardMockup() {
-  // Static cinematic mockup. Pure SVG/HTML — decorative only.
-  const board = [
-    { rank: 1, name: 'You', score: 86, gold: true },
-    { rank: 2, name: 'Alex M.', score: 83 },
-    { rank: 3, name: 'Priya R.', score: 81 },
-    { rank: 4, name: 'Sami K.', score: 78 },
-  ];
-  return (
-    <div className="relative">
-      {/* Ambient halo */}
-      <div className="absolute -inset-10 bg-thrivv-gold-500/[0.18] blur-3xl rounded-full" aria-hidden />
-      <div className="relative glass-card p-5 lg:p-7 shadow-[0_40px_140px_-30px_rgba(255,208,0,0.25)]">
-        <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent" />
-
-        {/* Window chrome */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
-            <span className="w-2.5 h-2.5 rounded-full bg-thrivv-gold-500/50" />
-            <span className="w-2.5 h-2.5 rounded-full bg-thrivv-neon-green/50" />
-          </div>
-          <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted">
-            iron works · today
-          </span>
-          <span className="inline-flex items-center gap-1 text-[10px] text-thrivv-neon-green">
-            <span className="relative flex w-1.5 h-1.5">
-              <span className="absolute inset-0 rounded-full bg-thrivv-neon-green opacity-70 animate-ping" />
-              <span className="relative w-1.5 h-1.5 rounded-full bg-thrivv-neon-green" />
-            </span>
-            Live
-          </span>
-        </div>
-
-        {/* Hero stat */}
-        <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4 mb-3">
-          <div className="text-[10px] uppercase tracking-widest text-thrivv-text-muted mb-2">
-            Health Score · Today
-          </div>
-          <div className="flex items-end justify-between">
-            <div className="flex items-baseline gap-1">
-              <span className="text-5xl lg:text-6xl font-semibold text-thrivv-gold-500 leading-none tracking-tighter">
-                86
-              </span>
-              <span className="text-thrivv-text-muted text-sm">/100</span>
-            </div>
-            <div className="inline-flex items-center gap-1 text-[11px] text-thrivv-neon-green bg-thrivv-neon-green/10 border border-thrivv-neon-green/20 px-2 py-0.5 rounded-md">
-              <Zap className="w-3 h-3" />
-              +4 vs avg
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] text-thrivv-text-muted">
-            <span className="flex items-center gap-1">
-              <Dumbbell className="w-3 h-3 text-thrivv-gold-500" /> Train 27/30
-            </span>
-            <span className="flex items-center gap-1">
-              <UtensilsCrossed className="w-3 h-3 text-thrivv-neon-green" /> Diet 35/40
-            </span>
-            <span className="flex items-center gap-1">
-              <Activity className="w-3 h-3 text-thrivv-gold-400" /> Sleep 24/30
-            </span>
-          </div>
-        </div>
-
-        {/* Gym leaderboard */}
-        <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4 mb-3">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted flex items-center gap-1">
-              <Trophy className="w-3 h-3 text-thrivv-gold-500" /> Iron Works · this week
-            </span>
-            <span className="text-[10px] text-thrivv-gold-500/80 inline-flex items-center gap-1">
-              <Flame className="w-3 h-3" /> 11d streak
-            </span>
-          </div>
-          <div className="space-y-1.5">
-            {board.map((r) => (
-              <div
-                key={r.name}
-                className={`flex items-center justify-between text-xs px-2 py-1.5 rounded-lg ${
-                  r.gold
-                    ? 'bg-thrivv-gold-500/10 border border-thrivv-gold-500/30'
-                    : 'bg-transparent'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span className="w-5 text-center text-thrivv-text-muted tabular-nums">
-                    #{r.rank}
-                  </span>
-                  <span
-                    className={
-                      r.gold
-                        ? 'text-thrivv-gold-500 font-medium'
-                        : 'text-thrivv-text-primary'
-                    }
-                  >
-                    {r.name}
-                  </span>
-                </span>
-                <span className="inline-flex items-center gap-1 tabular-nums">
-                  <span
-                    className={
-                      r.gold
-                        ? 'text-thrivv-gold-500 font-semibold'
-                        : 'text-thrivv-text-secondary'
-                    }
-                  >
-                    {r.score}
-                  </span>
-                  <span className="text-thrivv-text-muted">/100</span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Mini chart */}
-        <div className="rounded-xl bg-thrivv-bg-card/70 border border-thrivv-gold-500/15 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase tracking-widest text-thrivv-text-muted">
-              Health Score · 14d
-            </span>
-            <span className="text-[10px] text-thrivv-neon-green inline-flex items-center gap-1">
-              <Zap className="w-3 h-3" /> trending up
-            </span>
-          </div>
-          <svg viewBox="0 0 280 56" className="w-full h-14" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="lp-gold" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#FFD000" stopOpacity="0.45" />
-                <stop offset="100%" stopColor="#FFD000" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M 0 40 L 20 36 L 40 38 L 60 30 L 80 32 L 100 24 L 120 28 L 140 20 L 160 22 L 180 14 L 200 18 L 220 10 L 240 14 L 260 8 L 280 12 L 280 56 L 0 56 Z"
-              fill="url(#lp-gold)"
-            />
-            <path
-              d="M 0 40 L 20 36 L 40 38 L 60 30 L 80 32 L 100 24 L 120 28 L 140 20 L 160 22 L 180 14 L 200 18 L 220 10 L 240 14 L 260 8 L 280 12"
-              fill="none"
-              stroke="#FFD000"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------------- */
-
-function StatsStrip() {
-  const stats = [
-    { value: '0\u2013100', label: 'Health Score' },
-    { value: '30s', label: 'Daily check-in' },
-    { value: 'Weekly', label: 'Gym leaderboard' },
-    { value: 'Free', label: 'For members' },
-  ];
-  return (
-    <section className="relative border-t border-b border-thrivv-gold-500/10 px-6 lg:px-10 py-16 lg:py-20">
-      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-y-10 gap-x-6">
-        {stats.map((s, i) => (
-          <Reveal key={s.label} delay={i * 100}>
-            <div className="text-center lg:text-left">
-              <div className="text-5xl sm:text-6xl lg:text-[4.5rem] font-semibold tracking-tighter leading-none text-thrivv-text-primary">
-                {s.value}
-              </div>
-              <div className="mt-3 text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
-                {s.label}
-              </div>
-            </div>
-          </Reveal>
-        ))}
-      </div>
     </section>
   );
 }
 
 /* ---------------------------------------------------------------- */
+/* How Thrivv Works — 4-step premium feature sequence               */
+/* ---------------------------------------------------------------- */
 
-function ValueCards() {
-  const cards: Array<{
-    icon: React.ComponentType<{ className?: string }>;
-    title: string;
-    body: string;
-    badge?: string;
-  }> = [
+function HowItWorks() {
+  const steps = [
     {
+      n: '01',
+      icon: Heart,
+      title: 'Daily check-in',
+      body: 'Log your workout, nutrition, and sleep in under 30 seconds a day. Quick, frictionless, repeatable.',
+    },
+    {
+      n: '02',
+      icon: Watch,
+      title: 'Wearable sync',
+      body: 'Connect Whoop, Apple Health, or Garmin. Training, sleep, and recovery data flow in automatically.',
+    },
+    {
+      n: '03',
       icon: Activity,
       title: 'Health Score',
-      body: 'Training, nutrition, sleep, and habits distilled into one 0\u2013100 score. The number that ranks you on your gym\u2019s leaderboard.',
+      body: 'Everything you do is distilled into one 0\u2013100 score. Updated daily. The number that runs your week.',
     },
     {
+      n: '04',
       icon: Trophy,
-      title: 'Gym Leaderboard',
-      body: 'Compete with the members at your gym every week. Streaks, weekly ranks, and bragging rights turn training into a game.',
-    },
-    {
-      icon: Dumbbell,
-      title: 'AI Workout Generator',
-      body: 'Personalised programs that adapt to your goals, equipment, recovery, and last session \u2014 generated by AI, refined by your data.',
-    },
-    {
-      icon: UtensilsCrossed,
-      title: 'Recipes & Nutrition',
-      body: 'Macro-balanced meal plans and a curated recipe library tuned to your body, your preferences, and how you like to eat.',
-    },
-    {
-      icon: Heart,
-      title: 'Wearable Sync',
-      body: 'Pull workouts, sleep, and recovery from Whoop, Apple Health, and Garmin so your training data flows in automatically.',
-      badge: 'Rolling out',
-    },
-    {
-      icon: Sparkles,
-      title: 'Rewards Marketplace',
-      body: 'Earn points for showing up. Redeem them for gear, supplements, and gym perks. Consistency that pays you back.',
+      title: 'Climb the leaderboard',
+      body: 'Compete with the members at your gym every week. Top your gym, hold your streak, earn rewards.',
     },
   ];
 
   return (
     <section
-      id="features"
-      className="relative px-6 lg:px-10 py-24 lg:py-36 scroll-mt-20"
+      id="how-it-works"
+      className="relative px-6 lg:px-10 py-28 lg:py-44 scroll-mt-20 border-t border-thrivv-gold-500/[0.07]"
     >
       <div className="max-w-7xl mx-auto">
         <Reveal>
-          <SectionHeader
-            eyebrow="What you get"
-            title={
-              <>
-                Everything your training needs,{' '}
-                <span className="text-gradient">in one app</span>
-                .
-              </>
-            }
-            sub={
-              'Most fitness apps solve one problem. Thrivv connects training, nutrition, recovery, rewards, and your gym\u2019s leaderboard into one feedback loop.'
-            }
-          />
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
+              How it works
+            </span>
+            <h2 className="text-balance text-4xl sm:text-5xl lg:text-[4.5rem] xl:text-[5rem] font-semibold tracking-tighter leading-[0.96]">
+              Four habits. One score.{' '}
+              <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+                Compounds daily.
+              </span>
+            </h2>
+            <p className="mt-6 text-base sm:text-lg lg:text-xl text-thrivv-text-secondary max-w-2xl leading-relaxed">
+              No spreadsheets. No second-guessing. Just a feedback loop that
+              gets sharper every day you show up.
+            </p>
+          </div>
         </Reveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-16 lg:mt-20">
-          {cards.map((c, i) => (
-            <Reveal key={c.title} delay={(i % 3) * 100}>
-              <div className="group relative h-full rounded-2xl bg-thrivv-bg-card border border-thrivv-gold-500/10 p-7 transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-thrivv-gold-500/30 hover:scale-[1.005] hover:shadow-[0_20px_60px_-20px_rgba(255,208,0,0.18)] overflow-hidden">
-                <div className="absolute -top-12 -right-12 w-40 h-40 bg-thrivv-gold-500/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                <div className="flex items-center justify-between mb-5">
-                  <div className="icon-badge inline-flex w-12 h-12 items-center justify-center transition-transform duration-500 group-hover:scale-105">
-                    <c.icon className="w-5 h-5 text-thrivv-gold-500" />
-                  </div>
-                  {c.badge ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-thrivv-gold-500 bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 px-2 py-1 rounded-md">
-                      {c.badge}
-                    </span>
-                  ) : null}
+        <div className="mt-16 lg:mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-14 lg:gap-x-10">
+          {steps.map((s, i) => (
+            <Reveal key={s.n} delay={i * 100}>
+              <div className="relative">
+                <div className="text-6xl lg:text-7xl font-semibold tracking-tighter leading-none text-thrivv-gold-500/80 mb-6">
+                  {s.n}
                 </div>
-                <h3 className="text-lg font-semibold text-thrivv-text-primary mb-2">
-                  {c.title}
+                <s.icon className="w-5 h-5 text-thrivv-gold-500 mb-4" />
+                <h3 className="text-xl lg:text-2xl font-semibold text-thrivv-text-primary mb-3 tracking-tight">
+                  {s.title}
                 </h3>
-                <p className="text-sm text-thrivv-text-secondary leading-relaxed">
-                  {c.body}
+                <p className="text-sm lg:text-base text-thrivv-text-secondary leading-relaxed">
+                  {s.body}
                 </p>
               </div>
             </Reveal>
@@ -433,183 +273,230 @@ function ValueCards() {
 }
 
 /* ---------------------------------------------------------------- */
+/* Health Score — flagship feature section, big static visual       */
+/* ---------------------------------------------------------------- */
 
-function HowItWorks() {
-  const steps = [
-    {
-      icon: Heart,
-      label: 'Step 01',
-      title: 'Log your daily check-in',
-      body: 'Workout, nutrition, sleep, and habits \u2014 all in under 30 seconds a day. Sync your wearable to fill in the rest.',
-    },
-    {
-      icon: LineChart,
-      label: 'Step 02',
-      title: 'Get your Health Score',
-      body: 'A single number from 0\u2013100 that captures how today actually went \u2014 and feeds your weekly leaderboard rank.',
-    },
-    {
-      icon: Trophy,
-      label: 'Step 03',
-      title: 'Climb your gym\u2019s leaderboard',
-      body: 'Top your gym every week. Earn rewards points for streaks, redeem them for gear, supplements, and gym perks.',
-    },
-  ];
-
+function HealthScoreSection() {
   return (
-    <section className="relative px-6 lg:px-10 py-24 lg:py-36">
-      <div className="max-w-7xl mx-auto">
-        <Reveal>
-          <SectionHeader
-            eyebrow="How Thrivv works"
-            title={
-              <>
-                Three simple steps.{' '}
-                <span className="text-gradient">A system that compounds.</span>
-              </>
-            }
-            sub="No spreadsheets. No second-guessing. Just a feedback loop that gets sharper every day you show up — and a leaderboard that keeps you honest."
-          />
-        </Reveal>
+    <section
+      id="health-score"
+      className="relative px-6 lg:px-10 py-28 lg:py-44 scroll-mt-20 border-t border-thrivv-gold-500/[0.07]"
+    >
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+        <div className="lg:col-span-6">
+          <Reveal>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
+              The Health Score
+            </span>
+            <h2 className="text-balance text-4xl sm:text-5xl lg:text-[4.5rem] xl:text-[5rem] font-semibold tracking-tighter leading-[0.96]">
+              One number.{' '}
+              <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+                Total clarity.
+              </span>
+            </h2>
+            <p className="mt-6 text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
+              Training, nutrition, sleep, and habits — distilled into one
+              0&ndash;100 score that updates every day. The number that ranks
+              you on your gym&apos;s leaderboard, drives your streak, and tells
+              you where to lean in tomorrow.
+            </p>
+            <ul className="mt-8 space-y-3 text-sm lg:text-base text-thrivv-text-secondary">
+              {[
+                'A single 0\u2013100 metric instead of a dozen siloed apps',
+                'Updated daily from your check-ins and wearable data',
+                'Drives your weekly rank, streak, and rewards points',
+                'Built around the only thing that actually works: showing up',
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-thrivv-neon-green mt-1 shrink-0" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        </div>
 
-        <div className="relative mt-16 lg:mt-20">
-          <div
-            aria-hidden
-            className="hidden lg:block absolute top-[60px] left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/30 to-transparent"
-          />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 relative">
-            {steps.map((s, i) => (
-              <Reveal key={s.title} delay={i * 120}>
-                <div className="glass-card p-7 h-full hover:border-thrivv-gold-500/30 transition-colors duration-500">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-12 h-12 rounded-xl bg-thrivv-gold-500 text-black font-semibold flex items-center justify-center text-sm tracking-wider glow-gold">
-                      {String(i + 1).padStart(2, '0')}
-                    </div>
-                    <span className="text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
-                      {s.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <s.icon className="w-5 h-5 text-thrivv-gold-500" />
-                    <h3 className="text-xl font-semibold text-thrivv-text-primary">
-                      {s.title}
-                    </h3>
-                  </div>
-                  <p className="text-sm text-thrivv-text-secondary leading-relaxed">
-                    {s.body}
-                  </p>
-                </div>
-              </Reveal>
-            ))}
+        <div className="lg:col-span-6">
+          <Reveal delay={120}>
+            <HealthScoreVisual />
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* Static product visual: the Health Score tile presented as a hero shot. */
+function HealthScoreVisual() {
+  return (
+    <div className="relative">
+      <div
+        className="absolute -inset-12 bg-thrivv-gold-500/[0.18] blur-3xl rounded-full"
+        aria-hidden
+      />
+      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(255,208,0,0.28)]">
+        <div
+          className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
+          aria-hidden
+        />
+
+        <div className="flex items-center justify-between mb-8">
+          <span className="text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted">
+            Health Score · Today
+          </span>
+          <span className="inline-flex items-center gap-1 text-[10px] text-thrivv-neon-green bg-thrivv-neon-green/10 border border-thrivv-neon-green/20 px-2 py-0.5 rounded-md">
+            <Zap className="w-3 h-3" />
+            +4 vs avg
+          </span>
+        </div>
+
+        {/* Big circular visualisation — static SVG, no animation */}
+        <div className="relative flex flex-col items-center py-4">
+          <svg width="220" height="220" viewBox="0 0 220 220" className="block">
+            <defs>
+              <linearGradient id="ring-gold" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stopColor="#FFD000" />
+                <stop offset="100%" stopColor="#FFB800" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="110"
+              cy="110"
+              r="92"
+              stroke="rgba(255,208,0,0.08)"
+              strokeWidth="14"
+              fill="none"
+            />
+            <circle
+              cx="110"
+              cy="110"
+              r="92"
+              stroke="url(#ring-gold)"
+              strokeWidth="14"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 92}`}
+              strokeDashoffset={`${2 * Math.PI * 92 * (1 - 0.86)}`}
+              transform="rotate(-90 110 110)"
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[5.5rem] font-semibold tracking-tighter leading-none text-thrivv-gold-500">
+              86
+            </span>
+            <span className="mt-1 text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted">
+              of 100
+            </span>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
 
-/* ---------------------------------------------------------------- */
-
-function Differentiation() {
-  const rows: Array<{ label: string; them: string | boolean; us: boolean }> = [
-    { label: 'Personalised AI training plans', them: 'Sometimes', us: true },
-    { label: 'Recipes & nutrition planning', them: 'Sometimes', us: true },
-    { label: 'Sleep & recovery factored in', them: false, us: true },
-    { label: 'A single connected Health Score', them: false, us: true },
-    { label: 'Wearable sync (Whoop / Apple Health / Garmin)', them: 'Partial', us: true },
-    { label: 'Gym leaderboard built in', them: false, us: true },
-    { label: 'Rewards marketplace', them: false, us: true },
-    { label: 'Deployed by your gym', them: false, us: true },
-  ];
-
-  return (
-    <section className="relative px-6 lg:px-10 py-24 lg:py-36">
-      <div className="max-w-7xl mx-auto">
-        <Reveal>
-          <SectionHeader
-            eyebrow="Why Thrivv is different"
-            title={
-              <>
-                Not just workouts. Not just calories.{' '}
-                <span className="text-gradient">One connected system.</span>
-              </>
-            }
-            sub={
-              'Most apps optimise for a single metric. Thrivv treats training, diet, sleep, wearable data, and your gym\u2019s leaderboard as one feedback loop \u2014 because that\u2019s how the body and motivation actually work.'
-            }
+        {/* Breakdown */}
+        <div className="mt-8 grid grid-cols-3 gap-3">
+          <BreakdownCell
+            icon={Dumbbell}
+            label="Training"
+            value="27"
+            outOf="30"
           />
-        </Reveal>
+          <BreakdownCell
+            icon={UtensilsCrossed}
+            label="Nutrition"
+            value="35"
+            outOf="40"
+            variant="green"
+          />
+          <BreakdownCell
+            icon={Activity}
+            label="Sleep"
+            value="24"
+            outOf="30"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        <div className="mt-16 lg:mt-20 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Reveal className="lg:col-span-2">
-            <div className="rounded-2xl bg-thrivv-bg-card border border-thrivv-gold-500/10 overflow-hidden">
-              <div className="grid grid-cols-[1fr_auto_auto] items-center px-6 py-4 text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
-                <span>Capability</span>
-                <span className="px-4">Most apps</span>
-                <span className="px-4 text-thrivv-gold-500">Thrivv</span>
-              </div>
-              <div className="border-t border-thrivv-gold-500/10" />
-              <ul>
-                {rows.map((r, i) => (
-                  <li
-                    key={r.label}
-                    className={`grid grid-cols-[1fr_auto_auto] items-center px-6 py-5 text-sm transition-colors hover:bg-thrivv-gold-500/[0.02] ${
-                      i < rows.length - 1
-                        ? 'border-b border-thrivv-gold-500/10'
-                        : ''
-                    }`}
-                  >
-                    <span className="text-thrivv-text-primary">{r.label}</span>
-                    <span className="px-4 text-thrivv-text-muted text-xs">
-                      {r.them === true ? (
-                        <Check className="w-4 h-4" />
-                      ) : r.them === false ? (
-                        <span className="text-thrivv-text-muted/60">—</span>
-                      ) : (
-                        r.them
-                      )}
-                    </span>
-                    <span className="px-4 text-thrivv-gold-500">
-                      <Check className="w-4 h-4" />
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+function BreakdownCell({
+  icon: Icon,
+  label,
+  value,
+  outOf,
+  variant = 'gold',
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  outOf: string;
+  variant?: 'gold' | 'green';
+}) {
+  const colour =
+    variant === 'green' ? 'text-thrivv-neon-green' : 'text-thrivv-gold-500';
+  return (
+    <div className="rounded-xl bg-thrivv-bg-card/60 border border-thrivv-gold-500/10 px-3 py-3">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Icon className={`w-3.5 h-3.5 ${colour}`} />
+        <span className="text-[10px] uppercase tracking-[0.2em] text-thrivv-text-muted">
+          {label}
+        </span>
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className="text-xl font-semibold tracking-tight text-thrivv-text-primary tabular-nums">
+          {value}
+        </span>
+        <span className="text-[10px] text-thrivv-text-muted">/ {outOf}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Rewards — benefit-led, visual + text                             */
+/* ---------------------------------------------------------------- */
+
+function RewardsSection() {
+  return (
+    <section
+      id="rewards"
+      className="relative px-6 lg:px-10 py-28 lg:py-44 scroll-mt-20 border-t border-thrivv-gold-500/[0.07]"
+    >
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+        <div className="lg:col-span-6 lg:order-2">
+          <Reveal>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
+              Rewards
+            </span>
+            <h2 className="text-balance text-4xl sm:text-5xl lg:text-[4.5rem] xl:text-[5rem] font-semibold tracking-tighter leading-[0.96]">
+              Show up.{' '}
+              <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+                Get rewarded.
+              </span>
+            </h2>
+            <p className="mt-6 text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
+              Every check-in earns points. Every streak compounds them. Redeem
+              them for gear, supplements, gym credit, and partner perks. The
+              members who put the work in are the ones who get paid back for
+              it.
+            </p>
+            <ul className="mt-8 space-y-3 text-sm lg:text-base text-thrivv-text-secondary">
+              {[
+                'Points for every check-in, multiplied by streak length',
+                'Real rewards: gear, supplements, gym credit, partner perks',
+                'No gimmicks \u2014 your gym sees who earned what',
+                'Consistency that pays you back, weekly',
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-thrivv-neon-green mt-1 shrink-0" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
           </Reveal>
+        </div>
 
+        <div className="lg:col-span-6 lg:order-1">
           <Reveal delay={120}>
-            <div className="rounded-2xl bg-thrivv-bg-card border border-thrivv-gold-500/10 p-7 flex flex-col h-full">
-              <div className="icon-badge inline-flex w-12 h-12 items-center justify-center mb-5">
-                <Target className="w-5 h-5 text-thrivv-gold-500" />
-              </div>
-              <h3 className="text-xl font-semibold text-thrivv-text-primary mb-3">
-                Built around the only thing that actually works: showing up.
-              </h3>
-              <p className="text-sm text-thrivv-text-secondary leading-relaxed mb-6">
-                The hardest part of fitness isn&apos;t knowing what to do — it&apos;s
-                showing up tomorrow. Thrivv hooks into your gym&apos;s
-                leaderboard so consistency has a witness, a score, and a reward
-                on the other side.
-              </p>
-              <div className="mt-auto space-y-2.5">
-                {[
-                  'Daily check-ins under 30 seconds',
-                  'Health Score you can compare to yesterday',
-                  'Live gym leaderboard updated weekly',
-                  'Streaks and rewards points for showing up',
-                  'Wearable data filling in automatically',
-                ].map((line) => (
-                  <div
-                    key={line}
-                    className="flex items-start gap-2.5 text-sm text-thrivv-text-secondary"
-                  >
-                    <Check className="w-4 h-4 text-thrivv-neon-green mt-0.5 shrink-0" />
-                    <span>{line}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <RewardsVisual />
           </Reveal>
         </div>
       </div>
@@ -617,153 +504,275 @@ function Differentiation() {
   );
 }
 
-/* ---------------------------------------------------------------- */
-
-function CitiesMarquee() {
-  const cities = [
-    'DUBAI',
-    'SHARJAH',
-    'COVENTRY',
-    'LEAMINGTON',
-    'LUANDA',
-    'ABU DHABI',
+function RewardsVisual() {
+  const items = [
+    { icon: Trophy, title: 'Weekly winner perk', detail: 'Top your gym 7 days in a row' },
+    { icon: Gift, title: 'Gear voucher', detail: 'Redeemable at partner stores' },
+    { icon: Flame, title: 'Streak multiplier', detail: '×1.25 points after 14d' },
   ];
-  // Duplicated content makes the -50% translate loop seamless.
-  const items = [...cities, ...cities, ...cities, ...cities];
-
   return (
-    <section className="relative border-t border-b border-thrivv-gold-500/10 py-14 lg:py-16 overflow-hidden">
-      {/* Edge fades so cities glide in/out of view rather than popping */}
+    <div className="relative">
       <div
-        className="pointer-events-none absolute inset-y-0 left-0 w-32 z-10 bg-gradient-to-r from-thrivv-bg-darker to-transparent"
+        className="absolute -inset-12 bg-thrivv-gold-500/[0.16] blur-3xl rounded-full"
         aria-hidden
       />
-      <div
-        className="pointer-events-none absolute inset-y-0 right-0 w-32 z-10 bg-gradient-to-l from-thrivv-bg-darker to-transparent"
-        aria-hidden
-      />
+      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(255,208,0,0.24)]">
+        <div
+          className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
+          aria-hidden
+        />
 
-      <Reveal>
-        <div className="text-center mb-8">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.25em]">
-            Where we&apos;re going
+        <div className="flex items-center justify-between mb-7">
+          <span className="text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted">
+            Your rewards · This month
+          </span>
+          <span className="inline-flex items-center gap-1 text-[10px] text-thrivv-gold-500 bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 px-2 py-0.5 rounded-md">
+            <Sparkles className="w-3 h-3" />
+            1,420 pts
           </span>
         </div>
-      </Reveal>
 
-      <div className="marquee-track flex gap-12 lg:gap-16 whitespace-nowrap items-center w-[200%]">
-        {items.map((c, i) => (
-          <span
-            key={`${c}-${i}`}
-            className="inline-flex items-center gap-12 lg:gap-16 text-2xl lg:text-3xl xl:text-4xl font-medium tracking-[0.2em] text-thrivv-text-muted"
-          >
-            {c}
-            <span className="text-thrivv-gold-500/40">·</span>
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
+        <div className="rounded-2xl bg-thrivv-bg-card/60 border border-thrivv-gold-500/15 p-5 mb-5">
+          <div className="text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted mb-2">
+            Points balance
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-5xl lg:text-6xl font-semibold tracking-tighter leading-none text-thrivv-gold-500 tabular-nums">
+              1,420
+            </span>
+            <span className="text-thrivv-text-muted text-sm">pts</span>
+          </div>
+          <div className="mt-4 h-1.5 rounded-full bg-thrivv-bg-card overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-thrivv-gold-500 to-thrivv-gold-300"
+              style={{ width: '71%' }}
+            />
+          </div>
+          <div className="mt-2 text-[11px] text-thrivv-text-muted">
+            580 pts to next reward
+          </div>
+        </div>
 
-/* ---------------------------------------------------------------- */
-
-function TrustPillars() {
-  const pillars = [
-    {
-      icon: ShieldCheck,
-      label: 'Built for consistency',
-      body: 'Designed around the one habit that beats every program: showing up.',
-    },
-    {
-      icon: Brain,
-      label: 'AI-guided planning',
-      body: 'Workouts and meals that adjust to your data — not generic templates.',
-    },
-    {
-      icon: Activity,
-      label: 'Wearable + self-logged',
-      body: 'Whoop, Apple Health, Garmin syncing alongside your daily check-ins.',
-    },
-    {
-      icon: Trophy,
-      label: 'Your gym, your league',
-      body: 'Live weekly leaderboards across every member at your gym.',
-    },
-  ];
-
-  return (
-    <section className="relative px-6 lg:px-10 py-20 lg:py-28">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {pillars.map((p, i) => (
-            <Reveal key={p.label} delay={i * 80}>
-              <div className="glass-card p-5 h-full hover:border-thrivv-gold-500/30 transition-colors duration-500">
-                <p.icon className="w-5 h-5 text-thrivv-gold-500 mb-3" />
-                <div className="text-sm font-medium text-thrivv-text-primary mb-1">
-                  {p.label}
+        <div className="space-y-2.5">
+          {items.map((it) => (
+            <div
+              key={it.title}
+              className="flex items-center gap-3 rounded-xl bg-thrivv-bg-card/40 border border-thrivv-gold-500/10 px-4 py-3"
+            >
+              <div className="w-9 h-9 rounded-lg bg-thrivv-gold-500/10 border border-thrivv-gold-500/25 flex items-center justify-center shrink-0">
+                <it.icon className="w-4 h-4 text-thrivv-gold-500" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm text-thrivv-text-primary font-medium truncate">
+                  {it.title}
                 </div>
-                <div className="text-xs text-thrivv-text-muted leading-relaxed">
-                  {p.body}
+                <div className="text-[11px] text-thrivv-text-muted truncate">
+                  {it.detail}
                 </div>
               </div>
-            </Reveal>
+              <ChevronRight className="w-4 h-4 text-thrivv-text-muted shrink-0" />
+            </div>
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Leaderboard — social competition section                         */
+/* ---------------------------------------------------------------- */
+
+function LeaderboardSection() {
+  return (
+    <section
+      id="leaderboard"
+      className="relative px-6 lg:px-10 py-28 lg:py-44 scroll-mt-20 border-t border-thrivv-gold-500/[0.07]"
+    >
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+        <div className="lg:col-span-6">
+          <Reveal>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
+              The Leaderboard
+            </span>
+            <h2 className="text-balance text-4xl sm:text-5xl lg:text-[4.5rem] xl:text-[5rem] font-semibold tracking-tighter leading-[0.96]">
+              Your gym.{' '}
+              <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+                Your league.
+              </span>
+            </h2>
+            <p className="mt-6 text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
+              Compete with the members at your gym every week. The hardest part
+              of fitness isn&apos;t knowing what to do &mdash; it&apos;s
+              showing up tomorrow. Thrivv hooks consistency to a witness, a
+              score, and a reward on the other side.
+            </p>
+            <ul className="mt-8 space-y-3 text-sm lg:text-base text-thrivv-text-secondary">
+              {[
+                'Live weekly leaderboards across every member at your gym',
+                'Streaks that stack week after week',
+                'Climb the table with consistency, not crash diets',
+                'Healthy social pressure \u2014 the real motivation engine',
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-thrivv-neon-green mt-1 shrink-0" />
+                  <span>{line}</span>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        </div>
+
+        <div className="lg:col-span-6">
+          <Reveal delay={120}>
+            <LeaderboardVisual />
+          </Reveal>
+        </div>
+      </div>
     </section>
   );
 }
 
+function LeaderboardVisual() {
+  const board = [
+    { rank: 1, name: 'You', score: 86, gold: true, streak: '11d' },
+    { rank: 2, name: 'Alex M.', score: 83, streak: '8d' },
+    { rank: 3, name: 'Priya R.', score: 81, streak: '14d' },
+    { rank: 4, name: 'Sami K.', score: 78, streak: '5d' },
+    { rank: 5, name: 'Jess T.', score: 76, streak: '9d' },
+  ];
+  return (
+    <div className="relative">
+      <div
+        className="absolute -inset-12 bg-thrivv-gold-500/[0.16] blur-3xl rounded-full"
+        aria-hidden
+      />
+      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(255,208,0,0.24)]">
+        <div
+          className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
+          aria-hidden
+        />
+
+        <div className="flex items-center justify-between mb-7">
+          <span className="text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted inline-flex items-center gap-1.5">
+            <Trophy className="w-3 h-3 text-thrivv-gold-500" />
+            Iron Works · this week
+          </span>
+          <span className="text-[10px] text-thrivv-gold-500/80 inline-flex items-center gap-1">
+            <Flame className="w-3 h-3" />
+            11d streak
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          {board.map((r) => (
+            <div
+              key={r.name}
+              className={`flex items-center justify-between rounded-xl px-4 py-3.5 border ${
+                r.gold
+                  ? 'bg-thrivv-gold-500/10 border-thrivv-gold-500/30'
+                  : 'bg-thrivv-bg-card/40 border-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-4 min-w-0">
+                <span
+                  className={`w-7 text-center text-sm tabular-nums ${
+                    r.gold ? 'text-thrivv-gold-500 font-semibold' : 'text-thrivv-text-muted'
+                  }`}
+                >
+                  #{r.rank}
+                </span>
+                <span
+                  className={`text-sm truncate ${
+                    r.gold
+                      ? 'text-thrivv-gold-500 font-semibold'
+                      : 'text-thrivv-text-primary'
+                  }`}
+                >
+                  {r.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 shrink-0">
+                <span className="text-[10px] text-thrivv-text-muted hidden sm:inline-flex items-center gap-1">
+                  <Flame className="w-3 h-3" />
+                  {r.streak}
+                </span>
+                <span className="inline-flex items-baseline gap-1 tabular-nums">
+                  <span
+                    className={`text-lg font-semibold ${
+                      r.gold
+                        ? 'text-thrivv-gold-500'
+                        : 'text-thrivv-text-primary'
+                    }`}
+                  >
+                    {r.score}
+                  </span>
+                  <span className="text-[10px] text-thrivv-text-muted">
+                    /100
+                  </span>
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Final CTA — bold and simple                                      */
 /* ---------------------------------------------------------------- */
 
 function FinalCTA() {
   return (
-    <section className="relative px-6 lg:px-10 py-24 lg:py-36">
-      <div className="max-w-5xl mx-auto">
+    <section
+      id="gyms"
+      className="relative px-6 lg:px-10 py-28 lg:py-44 scroll-mt-20 border-t border-thrivv-gold-500/[0.07]"
+    >
+      <div className="max-w-5xl mx-auto text-center">
         <Reveal>
-          <div className="relative rounded-3xl bg-thrivv-bg-card border border-thrivv-gold-500/10 overflow-hidden p-10 lg:p-16 text-center">
-            <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[70%] h-72 bg-thrivv-gold-500/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent" />
-
-            <Sparkles className="w-7 h-7 text-thrivv-gold-500 mx-auto mb-5" />
-            <h2 className="text-balance text-4xl sm:text-5xl lg:text-[4.5rem] font-semibold tracking-tighter leading-[1.02]">
-              Ready to{' '}
-              <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-                top your gym
-              </span>
-              ?
-            </h2>
-            <p className="mt-5 text-thrivv-text-secondary text-base lg:text-lg max-w-xl mx-auto">
-              Sign up free, log your first check-in, and watch your Health
-              Score climb the leaderboard. If your gym isn&apos;t on Thrivv
-              yet, send them our way.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href="/member/signup"
-                className="btn-primary px-8 py-4 text-base inline-flex items-center justify-center gap-2 group"
-              >
-                Sign Up Free
-                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </Link>
-              <a
-                href="mailto:bashar@thrivv.dev?subject=Bring%20Thrivv%20to%20my%20gym"
-                className="btn-ghost px-8 py-4 text-base inline-flex items-center justify-center gap-2"
-              >
-                Ask your gym for Thrivv
-                <ChevronRight className="w-4 h-4" />
-              </a>
-            </div>
-            <div className="mt-5 text-xs text-thrivv-text-muted">
-              Already with us?{' '}
-              <Link
-                href="/member/login"
-                className="text-thrivv-gold-500 hover:text-thrivv-gold-400 transition-colors"
-              >
-                Sign in →
-              </Link>
-            </div>
+          <h2 className="text-balance text-4xl sm:text-6xl lg:text-[5.5rem] xl:text-[6.5rem] font-semibold tracking-tighter leading-[0.94]">
+            Ready to{' '}
+            <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
+              top your gym
+            </span>
+            ?
+          </h2>
+        </Reveal>
+        <Reveal delay={100}>
+          <p className="mt-6 text-base lg:text-xl text-thrivv-text-secondary max-w-xl mx-auto leading-relaxed">
+            Sign up free, log your first check-in, and watch your Health Score
+            climb the leaderboard.
+          </p>
+        </Reveal>
+        <Reveal delay={180}>
+          <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/member/signup"
+              className="btn-primary px-8 py-4 text-base inline-flex items-center justify-center gap-2 group"
+            >
+              Sign Up Free
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+            </Link>
+            <a
+              href="mailto:bashar@thrivv.dev?subject=Bring%20Thrivv%20to%20my%20gym"
+              className="btn-ghost px-8 py-4 text-base inline-flex items-center justify-center gap-2"
+            >
+              Bring Thrivv to my gym
+              <ChevronRight className="w-4 h-4" />
+            </a>
+          </div>
+        </Reveal>
+        <Reveal delay={240}>
+          <div className="mt-6 text-xs text-thrivv-text-muted">
+            Already with us?{' '}
+            <Link
+              href="/member/login"
+              className="text-thrivv-gold-500 hover:text-thrivv-gold-400 transition-colors"
+            >
+              Sign in &rarr;
+            </Link>
           </div>
         </Reveal>
       </div>
@@ -772,15 +781,17 @@ function FinalCTA() {
 }
 
 /* ---------------------------------------------------------------- */
+/* Footer                                                           */
+/* ---------------------------------------------------------------- */
 
 function Footer() {
   return (
-    <footer className="relative z-10 border-t border-thrivv-gold-500/10 py-10 px-6 lg:px-10">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+    <footer className="relative z-10 border-t border-thrivv-gold-500/[0.07] py-10 px-6 lg:px-10">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5">
         <Logo variant="gold" size="sm" />
         <p className="text-xs text-thrivv-text-muted text-center">
-          © {new Date().getFullYear()} Thrivv. The fitness app your gym
-          deploys.
+          © {new Date().getFullYear()} Thrivv Technologies. The fitness app
+          your gym deploys.
         </p>
         <div className="flex items-center gap-4 text-xs">
           <Link
@@ -799,7 +810,7 @@ function Footer() {
             href="mailto:bashar@thrivv.dev?subject=Run%20Thrivv%20at%20my%20gym"
             className="text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
           >
-            For gym owners →
+            For gym owners &rarr;
           </a>
         </div>
       </div>
@@ -807,28 +818,3 @@ function Footer() {
   );
 }
 
-/* ---------------------------------------------------------------- */
-
-function SectionHeader({
-  eyebrow,
-  title,
-  sub,
-}: {
-  eyebrow: string;
-  title: React.ReactNode;
-  sub: string;
-}) {
-  return (
-    <div className="text-center max-w-3xl mx-auto">
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.25em] mb-5">
-        {eyebrow}
-      </span>
-      <h2 className="text-balance text-3xl sm:text-5xl lg:text-[3.75rem] font-semibold tracking-tighter leading-[1.02] mb-5">
-        {title}
-      </h2>
-      <p className="text-thrivv-text-secondary text-base sm:text-lg leading-relaxed">
-        {sub}
-      </p>
-    </div>
-  );
-}
