@@ -42,11 +42,35 @@ export type WhoopTokenResponse = {
 
 export class WhoopOAuthError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  /** OAuth 2.0 `error` field from the token endpoint JSON body, when present. */
+  oauthError?: string;
+
+  constructor(message: string, status: number, oauthError?: string) {
     super(message);
     this.name = 'WhoopOAuthError';
     this.status = status;
+    this.oauthError = oauthError;
   }
+}
+
+/**
+ * True when the token endpoint failure means the stored refresh token
+ * is dead (revoked, expired, wrong client) and we should wipe WHOOP
+ * fields so the user sees "Disconnected" until they OAuth again.
+ *
+ * Never treat network failures or WHOOP 5xx as permanent — those must
+ * retain tokens so the next sync / refresh can succeed without forcing
+ * another consent screen.
+ */
+export function isPermanentTokenFailure(err: unknown): boolean {
+  if (!(err instanceof WhoopOAuthError)) return false;
+  if (err.status >= 500) return false;
+  const code = err.oauthError?.toLowerCase();
+  if (code === 'invalid_grant') return true;
+  if (code === 'invalid_client') return true;
+  if (code === 'unauthorized_client') return true;
+  // Uncategorised 4xx — assume transient / ambiguous; keep tokens.
+  return false;
 }
 
 /**
@@ -76,9 +100,18 @@ export async function exchangeCodeForToken(
   });
 
   if (!res.ok) {
+    let oauthError: string | undefined;
+    try {
+      const j = (await res.json()) as { error?: string };
+      oauthError =
+        typeof j?.error === 'string' ? j.error : undefined;
+    } catch {
+      /* ignore malformed body */
+    }
     throw new WhoopOAuthError(
       `WHOOP token exchange failed (${res.status})`,
-      res.status
+      res.status,
+      oauthError
     );
   }
   return (await res.json()) as WhoopTokenResponse;
@@ -94,12 +127,15 @@ export async function refreshAccessToken(
 ): Promise<WhoopTokenResponse> {
   const { clientId, clientSecret } = getWhoopEnv();
 
+  // WHOOP docs require `scope: offline` on refresh — not the full
+  // authorization scope string. Sending every read:* scope here has
+  // been observed to break refresh and force users through OAuth again.
   const body = new URLSearchParams({
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
     client_id: clientId,
     client_secret: clientSecret,
-    scope: WHOOP_SCOPES,
+    scope: 'offline',
   });
 
   const res = await fetch(WHOOP_TOKEN_URL, {
@@ -110,9 +146,18 @@ export async function refreshAccessToken(
   });
 
   if (!res.ok) {
+    let oauthError: string | undefined;
+    try {
+      const j = (await res.json()) as { error?: string };
+      oauthError =
+        typeof j?.error === 'string' ? j.error : undefined;
+    } catch {
+      /* ignore */
+    }
     throw new WhoopOAuthError(
       `WHOOP token refresh failed (${res.status})`,
-      res.status
+      res.status,
+      oauthError
     );
   }
   return (await res.json()) as WhoopTokenResponse;
@@ -169,10 +214,9 @@ export async function persistWhoopTokens(
 }
 
 /**
- * Wipe every WHOOP-related field on the user row. Called when
- * WHOOP returns 401 / refresh fails / the user disconnects. Never
- * fails open — the user is treated as disconnected on any error
- * path.
+ * Wipe every WHOOP-related field on the user row. Called when the
+ * user disconnects, when WHOOP returns invalid_grant on refresh, or
+ * when API calls definitively fail after a retry. Never fails open.
  */
 export async function clearWhoopTokens(userId: string): Promise<void> {
   const { error } = await supabase
@@ -238,9 +282,9 @@ export function isTokenExpired(expiresAt: string | null): boolean {
 
 /**
  * Resolve a working access token for a user — refreshing on the fly
- * if needed. Returns null if WHOOP is not connected or if the
- * refresh failed irrecoverably (in which case tokens have been
- * cleared from the user's row).
+ * if needed. Returns null if WHOOP is not connected, if refresh fails
+ * transiently (tokens retained), or if refresh fails permanently
+ * (tokens cleared — caller should treat like disconnected).
  */
 export async function getValidAccessToken(
   userId: string
@@ -257,8 +301,18 @@ export async function getValidAccessToken(
     await persistWhoopTokens(userId, fresh, tokens.refreshToken);
     return fresh.access_token;
   } catch (err) {
-    console.error('WHOOP refresh failed; clearing tokens:', err);
-    await clearWhoopTokens(userId);
+    if (isPermanentTokenFailure(err)) {
+      console.error(
+        'WHOOP refresh failed permanently; clearing tokens:',
+        err
+      );
+      await clearWhoopTokens(userId);
+    } else {
+      console.warn(
+        'WHOOP refresh failed (tokens retained for retry):',
+        err
+      );
+    }
     return null;
   }
 }

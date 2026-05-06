@@ -65,6 +65,11 @@ export async function GET(request: NextRequest) {
   try {
     const tokens = await exchangeCodeForToken(code);
 
+    if (!tokens.refresh_token) {
+      console.warn(
+        '[WHOOP] Token response missing refresh_token — users will need to reconnect after access expires. Confirm the offline scope is enabled for this WHOOP app.'
+      );
+    }
     // 4. Best-effort: fetch WHOOP user id. Failure here doesn't
     //    fail the whole connection — tokens are still saved.
     let whoopUserId: number | null = null;

@@ -29,7 +29,10 @@ import { supabase } from '@/lib/supabase';
 import {
   clearWhoopTokens,
   getValidAccessToken,
+  isPermanentTokenFailure,
   loadWhoopTokens,
+  persistWhoopTokens,
+  refreshAccessToken,
 } from '@/lib/whoop/oauth';
 import {
   fetchCycle,
@@ -96,10 +99,21 @@ export async function POST(request: NextRequest) {
 
   const accessToken = await getValidAccessToken(userId);
   if (!accessToken) {
-    // Refresh failed; getValidAccessToken has already cleared tokens.
+    const after = await loadWhoopTokens(userId);
+    // Permanent refresh failures clear tokens — user must OAuth again.
+    if (!after.accessToken && !after.refreshToken) {
+      return NextResponse.json(
+        { error: 'WHOOP reconnect required' },
+        { status: 401 }
+      );
+    }
+    // Transient refresh failure — tokens retained; don't force consent.
     return NextResponse.json(
-      { error: 'WHOOP reconnect required' },
-      { status: 401 }
+      {
+        error:
+          'WHOOP is temporarily unavailable; try again in a moment.',
+      },
+      { status: 503 }
     );
   }
 
@@ -107,30 +121,80 @@ export async function POST(request: NextRequest) {
   const { date, start, end } = getDateWindow(url.searchParams.get('date'));
 
   // 3. Pull WHOOP records — settle in parallel so one slow endpoint
-  //    doesn't dominate. A 401 from any endpoint => clear tokens.
+  //    doesn't dominate. If any endpoint returns 401, try one forced
+  //    refresh + retry before clearing tokens (handles races where the
+  //    access token was revoked between refresh and fetch).
   let recoveryRaw: unknown = null;
   let sleepRaw: unknown = null;
   let cycleRaw: unknown = null;
 
   try {
-    const [recoveryRes, sleepRes, cycleRes] = await Promise.allSettled([
-      fetchRecovery(accessToken, start, end),
-      fetchSleep(accessToken, start, end),
-      fetchCycle(accessToken, start, end),
-    ]);
+    async function fetchTriplet(at: string) {
+      let recovery: unknown = null;
+      let sleep: unknown = null;
+      let cycle: unknown = null;
+      let unauthorized = false;
 
-    for (const r of [recoveryRes, sleepRes, cycleRes]) {
-      if (r.status === 'rejected' && r.reason instanceof WhoopUnauthorizedError) {
-        await clearWhoopTokens(userId);
-        return NextResponse.json(
-          { error: 'WHOOP reconnect required' },
-          { status: 401 }
-        );
+      const [recoveryRes, sleepRes, cycleRes] = await Promise.allSettled([
+        fetchRecovery(at, start, end),
+        fetchSleep(at, start, end),
+        fetchCycle(at, start, end),
+      ]);
+
+      for (const r of [recoveryRes, sleepRes, cycleRes]) {
+        if (
+          r.status === 'rejected' &&
+          r.reason instanceof WhoopUnauthorizedError
+        ) {
+          unauthorized = true;
+        }
+      }
+      if (recoveryRes.status === 'fulfilled') recovery = recoveryRes.value;
+      if (sleepRes.status === 'fulfilled') sleep = sleepRes.value;
+      if (cycleRes.status === 'fulfilled') cycle = cycleRes.value;
+
+      return { recovery, sleep, cycle, unauthorized };
+    }
+
+    let triple = await fetchTriplet(accessToken);
+
+    if (triple.unauthorized) {
+      const snap = await loadWhoopTokens(userId);
+      if (snap.refreshToken) {
+        try {
+          const fresh = await refreshAccessToken(snap.refreshToken);
+          await persistWhoopTokens(userId, fresh, snap.refreshToken);
+          triple = await fetchTriplet(fresh.access_token);
+        } catch (e) {
+          if (isPermanentTokenFailure(e)) {
+            await clearWhoopTokens(userId);
+            return NextResponse.json(
+              { error: 'WHOOP reconnect required' },
+              { status: 401 }
+            );
+          }
+          return NextResponse.json(
+            {
+              error:
+                'WHOOP is temporarily unavailable; try again in a moment.',
+            },
+            { status: 503 }
+          );
+        }
       }
     }
-    if (recoveryRes.status === 'fulfilled') recoveryRaw = recoveryRes.value;
-    if (sleepRes.status === 'fulfilled') sleepRaw = sleepRes.value;
-    if (cycleRes.status === 'fulfilled') cycleRaw = cycleRes.value;
+
+    if (triple.unauthorized) {
+      await clearWhoopTokens(userId);
+      return NextResponse.json(
+        { error: 'WHOOP reconnect required' },
+        { status: 401 }
+      );
+    }
+
+    recoveryRaw = triple.recovery;
+    sleepRaw = triple.sleep;
+    cycleRaw = triple.cycle;
   } catch (err) {
     console.error('WHOOP sync fetch error:', err);
     return NextResponse.json(

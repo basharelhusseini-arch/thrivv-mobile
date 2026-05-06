@@ -87,6 +87,13 @@ export default function WhoopIntegrationPage() {
         await fetchStatus();
         return;
       }
+      if (res.status === 503) {
+        setBanner({
+          kind: 'error',
+          text: 'WHOOP is temporarily unavailable. Try again shortly.',
+        });
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setBanner({
