@@ -23,7 +23,7 @@
  *   8. Return a safe JSON summary — never tokens, never raw payload.
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import {
@@ -48,28 +48,34 @@ import {
 } from '@/lib/health-score-v2';
 
 /**
- * Yesterday's calendar window in UTC, returned as a YYYY-MM-DD
- * date string plus full ISO start/end timestamps for the WHOOP
- * query window. UTC is used for consistency with the rest of the
- * app (lib/auth.ts and check-in routes both use new Date()
- * .toISOString().split('T')[0]).
+ * Calendar window for a given YYYY-MM-DD date in UTC. UTC is used
+ * for consistency with the rest of the app (lib/auth.ts and check-in
+ * routes both use `new Date().toISOString().split('T')[0]`).
+ *
+ * Default = today. The dashboard / check-in page auto-sync today so
+ * the live score reflects this morning's WHOOP recovery + last
+ * night's sleep + accumulating strain. Cron jobs can pass an
+ * explicit `?date=YYYY-MM-DD` to backfill yesterday or older days.
  */
-function getYesterdayWindow() {
-  const now = new Date();
-  const yesterday = new Date(now);
-  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+function getDateWindow(dateOverride?: string | null) {
+  const baseDate = (() => {
+    if (dateOverride && /^\d{4}-\d{2}-\d{2}$/.test(dateOverride)) {
+      return new Date(`${dateOverride}T00:00:00.000Z`);
+    }
+    return new Date();
+  })();
 
-  const date = yesterday.toISOString().split('T')[0]; // YYYY-MM-DD
+  const date = baseDate.toISOString().split('T')[0]; // YYYY-MM-DD
   const start = `${date}T00:00:00.000Z`;
 
-  const dayAfter = new Date(yesterday);
+  const dayAfter = new Date(baseDate);
   dayAfter.setUTCDate(dayAfter.getUTCDate() + 1);
   const end = `${dayAfter.toISOString().split('T')[0]}T00:00:00.000Z`;
 
   return { date, start, end };
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   // 1. Auth.
   let userId: string;
   try {
@@ -97,7 +103,8 @@ export async function POST() {
     );
   }
 
-  const { date, start, end } = getYesterdayWindow();
+  const url = new URL(request.url);
+  const { date, start, end } = getDateWindow(url.searchParams.get('date'));
 
   // 3. Pull WHOOP records — settle in parallel so one slow endpoint
   //    doesn't dominate. A 401 from any endpoint => clear tokens.

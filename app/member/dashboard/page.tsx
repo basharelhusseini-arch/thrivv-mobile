@@ -8,6 +8,7 @@ import ConfidenceBadge from '@/components/ConfidenceBadge';
 import { ConfidenceLevel } from '@/types';
 import PageHeader, { gradient } from '@/components/PageHeader';
 import Reveal from '@/components/Reveal';
+import { ensureWhoopAutoSync } from '@/lib/whoop/auto-sync';
 
 interface UserData {
   id: string;
@@ -76,11 +77,19 @@ export default function MemberDashboardPage() {
         setUser(authData.user);
 
         // Fetch today's health score
-        const scoreRes = await fetch('/api/score/today');
-        if (scoreRes.ok) {
-          const scoreData = await scoreRes.json();
-          setHealthScore(scoreData.score);
-        }
+        const refetchScore = async () => {
+          const r = await fetch('/api/score/today', { cache: 'no-store' });
+          if (r.ok) {
+            const d = await r.json();
+            setHealthScore(d.score);
+          }
+        };
+        await refetchScore();
+
+        // Auto-sync WHOOP for today (debounced per session). Silent —
+        // the dashboard stays usable if WHOOP is offline or the user
+        // isn't connected.
+        void ensureWhoopAutoSync({ onSynced: refetchScore });
 
         // Fetch score history (last 7 days)
         const historyRes = await fetch('/api/score/history?days=7');

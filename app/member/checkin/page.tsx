@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Activity, Dumbbell, UtensilsCrossed, Moon, CheckCircle, Loader2 } from 'lucide-react';
+import { Activity, Dumbbell, UtensilsCrossed, Moon, CheckCircle, Loader2, Watch } from 'lucide-react';
 import { getTodayLog, computeTotals } from '@/lib/nutrition-log';
 import PageHeader from '@/components/PageHeader';
+import {
+  ensureWhoopAutoSync,
+  type WhoopStatusSnapshot,
+} from '@/lib/whoop/auto-sync';
 
 interface CheckinForm {
   didWorkout: boolean;
@@ -31,6 +35,7 @@ export default function CheckinPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [currentScore, setCurrentScore] = useState<any>(null);
+  const [whoopStatus, setWhoopStatus] = useState<WhoopStatusSnapshot | null>(null);
 
   const [formData, setFormData] = useState<CheckinForm>({
     didWorkout: false,
@@ -92,12 +97,22 @@ export default function CheckinPage() {
         }
 
         // Also fetch current score
-        const scoreResponse = await fetch('/api/score/today');
-        if (scoreResponse.ok) {
-          const scoreData = await scoreResponse.json();
-          setCurrentScore(scoreData.score);
-        }
-        
+        const refetchScore = async () => {
+          const r = await fetch('/api/score/today', { cache: 'no-store' });
+          if (r.ok) {
+            const d = await r.json();
+            setCurrentScore(d.score);
+          }
+        };
+        await refetchScore();
+
+        // Auto-sync WHOOP for today (debounced per session). The
+        // hook short-circuits when the user isn't connected.
+        const status = await ensureWhoopAutoSync({
+          onSynced: refetchScore,
+        });
+        setWhoopStatus(status);
+
         // IMPORTANT: Sync nutrition data to health score if meals are logged
         // This ensures nutrition counts toward reward points
         try {
@@ -256,19 +271,78 @@ export default function CheckinPage() {
         </div>
       )}
 
+      {/* WHOOP status — additive, only renders when connected. */}
+      {whoopStatus?.connected && (
+        <div className="dark-card p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center flex-shrink-0">
+              <Watch className="w-5 h-5 text-thrivv-gold-500" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white">WHOOP connected</p>
+              <p className="text-xs text-gray-400 truncate">
+                {whoopStatus.lastSyncedAt
+                  ? `Last sync: ${new Date(whoopStatus.lastSyncedAt).toLocaleString()}`
+                  : 'Syncing today…'}
+              </p>
+            </div>
+          </div>
+          {whoopStatus.latest && (
+            <div className="hidden sm:flex gap-4 text-xs text-gray-300">
+              {whoopStatus.latest.recoveryScore != null && (
+                <div className="text-right">
+                  <div className="text-gray-500 uppercase tracking-wider">Recovery</div>
+                  <div className="text-white font-semibold">{whoopStatus.latest.recoveryScore}%</div>
+                </div>
+              )}
+              {whoopStatus.latest.dayStrain != null && (
+                <div className="text-right">
+                  <div className="text-gray-500 uppercase tracking-wider">Strain</div>
+                  <div className="text-white font-semibold">{whoopStatus.latest.dayStrain.toFixed(1)}</div>
+                </div>
+              )}
+              {whoopStatus.latest.sleepEfficiencyPct != null && (
+                <div className="text-right">
+                  <div className="text-gray-500 uppercase tracking-wider">Sleep eff.</div>
+                  <div className="text-white font-semibold">{whoopStatus.latest.sleepEfficiencyPct}%</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Current Score */}
       {currentScore && (
         <div className="dark-card p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">Today&apos;s Health Score</h3>
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-white">Today&apos;s Health Score</h3>
+            {currentScore.score_source && (
+              <span className="text-[10px] uppercase tracking-[0.2em] text-thrivv-gold-500/80 border border-thrivv-gold-500/30 rounded-full px-2 py-0.5">
+                {currentScore.score_source}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="text-5xl font-bold text-gradient">
                 {currentScore.score}
               </div>
-              <div className="text-sm text-gray-400">
-                <div>Training: {currentScore.training_score}/30</div>
-                <div>Diet: {currentScore.diet_score}/40</div>
-                <div>Sleep: {currentScore.sleep_score}/30</div>
+              <div className="text-sm text-gray-400 space-y-0.5">
+                {currentScore.activity_points != null ? (
+                  <>
+                    <div>Activity: {Math.round(Number(currentScore.activity_points))}/50</div>
+                    <div>Recovery + Sleep: {Math.round(Number(currentScore.recovery_sleep_points ?? 0))}/30</div>
+                    <div>Food: {Math.round(Number(currentScore.food_points ?? 0))}/20</div>
+                    <div>Habits: {Math.round(Number(currentScore.habit_points ?? 0))}/10</div>
+                  </>
+                ) : (
+                  <>
+                    <div>Training: {currentScore.training_score}/30</div>
+                    <div>Diet: {currentScore.diet_score}/40</div>
+                    <div>Sleep: {currentScore.sleep_score}/30</div>
+                  </>
+                )}
               </div>
             </div>
             <Activity className="w-12 h-12 text-yellow-400" />
