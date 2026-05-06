@@ -2,21 +2,24 @@
  * POST /api/whoop/sync
  *
  * Sync yesterday's WHOOP data for the logged-in Thrivv user and
- * recompute the hybrid health score for that date.
+ * recompute the v2 health score for that date.
  *
  * Flow:
  *   1. requireAuth (custom JWT — see lib/auth.ts).
  *   2. Resolve a valid access token (refresh if expiring).
  *   3. Pull yesterday's recovery / sleep / cycle records.
  *   4. Defensively extract metrics + upsert whoop_data.
- *   5. Load yesterday's daily_checkins for habit / workout context.
- *   6. Compute the 100-scale hybrid health score.
- *   7. Upsert health_scores: write hybrid score into the existing
- *      `score` column (the dashboard reads this) and store the
- *      WHOOP-derived component breakdown in the additive
- *      whoop_*_points / habit_points / score_source columns added
- *      by migration 016. Existing manual breakdown columns stay
- *      untouched.
+ *   5. Load yesterday's daily_checkins for habit / workout / food
+ *      context (food + habits are always manual signals).
+ *   6. Compute the v2 health score (Activity 50 / Recovery 15 /
+ *      Sleep 15 / Food 20 / Habits 10 → 110 raw → 100 normalised).
+ *   7. Upsert health_scores: write v2 score into the existing
+ *      `score` column (the dashboard reads this), populate the new
+ *      v2 component columns added by migration 017, keep the legacy
+ *      whoop_*_points / habit_points / score_source columns from
+ *      migration 016 in sync, and proportionally map the v2
+ *      components into the NOT NULL legacy training/diet/sleep/
+ *      habit_score columns so their CHECK constraints still pass.
  *   8. Return a safe JSON summary — never tokens, never raw payload.
  */
 
@@ -39,7 +42,10 @@ import {
   extractRecovery,
   extractSleep,
 } from '@/lib/whoop/extract';
-import { calculateHybridHealthScore } from '@/lib/whoop/scoring';
+import {
+  calculateHealthScore,
+  legacyColumnMapping,
+} from '@/lib/health-score-v2';
 
 /**
  * Yesterday's calendar window in UTC, returned as a YYYY-MM-DD
@@ -163,12 +169,12 @@ export async function POST() {
   }
 
   // 5. Load yesterday's manual context. Daily check-ins drive
-  //    habits + workout for the hybrid scorer; if no row exists we
-  //    treat all manual fields as null (no penalty, no synthetic
+  //    habits + workout + food for the v2 scorer; if no row exists
+  //    we treat all manual fields as null (no penalty, no synthetic
   //    values).
   const { data: checkin } = await supabase
     .from('daily_checkins')
-    .select('did_workout, sleep_hours, habits_completed')
+    .select('did_workout, sleep_hours, habits_completed, calories')
     .eq('user_id', userId)
     .eq('date', date)
     .maybeSingle();
@@ -178,59 +184,59 @@ export async function POST() {
         did_workout: boolean | null;
         sleep_hours: number | null;
         habits_completed: number | null;
+        calories: number | null;
       }
     | null;
 
-  // 6. Hybrid score.
-  const result = calculateHybridHealthScore(
-    {
-      whoopRecovery: recovery.recoveryScore,
-      whoopSleepPerformancePct: sleep.sleepPerformancePct,
-      whoopSleepEfficiencyPct: sleep.sleepEfficiencyPct,
-      whoopDayStrain: cycle.dayStrain,
-      manualDidWorkout: checkinRow?.did_workout ?? null,
-      manualSleepHours: checkinRow?.sleep_hours ?? null,
-      manualHabitsCompleted: checkinRow?.habits_completed ?? null,
+  // 6. v2 health score.
+  const result = calculateHealthScore({
+    whoop: {
+      recoveryScore: recovery.recoveryScore,
+      sleepPerformancePct: sleep.sleepPerformancePct,
+      sleepEfficiencyPct: sleep.sleepEfficiencyPct,
+      totalSleepMs: sleep.totalSleepMs,
+      dayStrain: cycle.dayStrain,
     },
-    date
-  );
+    manual: {
+      didWorkout: checkinRow?.did_workout ?? null,
+      sleepHours: checkinRow?.sleep_hours ?? null,
+      habitsCompleted: checkinRow?.habits_completed ?? null,
+      caloriesLogged: checkinRow?.calories ?? null,
+    },
+    date,
+  });
 
-  // 7. Upsert health_scores. We always write the new whoop_*_points
-  //    / habit_points / score_source columns. The existing manual
-  //    breakdown columns (training_score, diet_score, sleep_score,
-  //    habit_score) are NOT NULL with CHECK constraints, so on a
-  //    fresh insert we have to provide values; we read the
-  //    previous row if any and re-use its manual columns to avoid
-  //    clobbering them. If no prior row exists we default to 0.
-  const { data: existingScore } = await supabase
-    .from('health_scores')
-    .select('training_score, diet_score, sleep_score, habit_score')
-    .eq('user_id', userId)
-    .eq('date', date)
-    .maybeSingle();
-
-  const existing = existingScore as
-    | {
-        training_score: number | null;
-        diet_score: number | null;
-        sleep_score: number | null;
-        habit_score: number | null;
-      }
-    | null;
+  // 7. Upsert health_scores. We populate:
+  //      - score (final 0..100)
+  //      - the new v2 columns (migration 017)
+  //      - the legacy whoop_*_points + habit_points + score_source
+  //        columns (migration 016) for back-compat with anything
+  //        still reading them
+  //      - the legacy training/diet/sleep/habit_score columns via
+  //        proportional mapping so their NOT NULL + CHECK
+  //        constraints stay satisfied on a fresh insert.
+  const legacy = legacyColumnMapping(result.componentBreakdown);
 
   const scorePayload: Record<string, unknown> = {
     user_id: userId,
     date,
-    score: result.score,
-    training_score: existing?.training_score ?? 0,
-    diet_score: existing?.diet_score ?? 0,
-    sleep_score: existing?.sleep_score ?? 0,
-    habit_score: existing?.habit_score ?? 0,
-    whoop_recovery_points: result.components.recovery,
-    whoop_sleep_points: result.components.sleep,
-    whoop_activity_points: result.components.activity,
-    habit_points: result.components.habits,
-    score_source: result.source,
+    score: result.finalScore,
+    training_score: legacy.training_score,
+    diet_score: legacy.diet_score,
+    sleep_score: legacy.sleep_score,
+    habit_score: legacy.habit_score,
+    activity_points: result.componentBreakdown.activity,
+    recovery_points: result.componentBreakdown.recovery,
+    sleep_points: result.componentBreakdown.sleep,
+    recovery_sleep_points: result.componentBreakdown.recoverySleep,
+    food_points: result.componentBreakdown.food,
+    habit_points: result.componentBreakdown.habits,
+    raw_score: result.rawScore,
+    max_raw_score: result.maxRawScore,
+    whoop_recovery_points: result.componentBreakdown.recovery,
+    whoop_sleep_points: result.componentBreakdown.sleep,
+    whoop_activity_points: result.componentBreakdown.activity,
+    score_source: result.scoreSource,
   };
 
   const { error: scoreUpsertError } = await supabase
@@ -240,7 +246,7 @@ export async function POST() {
   if (scoreUpsertError) {
     console.error('health_scores upsert failed:', scoreUpsertError);
     return NextResponse.json(
-      { error: 'Failed to store hybrid health score' },
+      { error: 'Failed to store health score' },
       { status: 500 }
     );
   }
@@ -249,9 +255,11 @@ export async function POST() {
   return NextResponse.json({
     success: true,
     date,
-    healthScore: result.score,
-    scoreSource: result.source,
-    componentBreakdown: result.components,
+    healthScore: result.finalScore,
+    scoreSource: result.scoreSource,
+    rawScore: result.rawScore,
+    maxRawScore: result.maxRawScore,
+    componentBreakdown: result.componentBreakdown,
     inputsUsed: result.inputsUsed,
     whoopDataSummary: {
       recoveryScore: recovery.recoveryScore,

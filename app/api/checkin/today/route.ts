@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
-import { calculateHealthScore } from '@/lib/health-score';
+import {
+  calculateHealthScore,
+  legacyColumnMapping,
+} from '@/lib/health-score-v2';
 import { healthToRewardPoints } from '@/lib/reward-points';
 
 export async function POST(request: NextRequest) {
@@ -61,36 +64,69 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine which sections have been logged
-    const hasLoggedWorkout = didWorkout !== null && didWorkout !== undefined;
-    const hasLoggedNutrition = calories !== null && calories !== undefined && calories > 0;
-    const hasLoggedSleep = sleepHours !== null && sleepHours !== undefined && sleepHours > 0;
-    const hasLoggedHabits = habits && Object.values(habits).some(Boolean);
-    
-    // Calculate health score with habits and tracking flags
+    // If the user has already synced WHOOP for today, fold those
+    // signals into the v2 score so a manual check-in doesn't clobber
+    // a hybrid score. WHOOP rows are upserted by /api/whoop/sync.
+    const { data: whoopRow } = await supabase
+      .from('whoop_data')
+      .select(
+        'recovery_score, sleep_performance_pct, sleep_efficiency_pct, total_sleep_ms, day_strain'
+      )
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .maybeSingle();
+
+    const whoop = whoopRow as
+      | {
+          recovery_score: number | null;
+          sleep_performance_pct: number | null;
+          sleep_efficiency_pct: number | null;
+          total_sleep_ms: number | null;
+          day_strain: number | null;
+        }
+      | null;
+
     const score = calculateHealthScore({
-      didWorkout,
-      calories,
-      sleepHours,
-      habits: habits || undefined,
-      hasLoggedWorkout,
-      hasLoggedMeals: hasLoggedNutrition,
-      hasLoggedSleep,
-      hasLoggedHabits,
+      whoop: whoop
+        ? {
+            recoveryScore: whoop.recovery_score,
+            sleepPerformancePct: whoop.sleep_performance_pct,
+            sleepEfficiencyPct: whoop.sleep_efficiency_pct,
+            totalSleepMs: whoop.total_sleep_ms,
+            dayStrain: whoop.day_strain,
+          }
+        : null,
+      manual: {
+        didWorkout,
+        sleepHours: sleepHours ?? null,
+        habitsCompleted,
+        caloriesLogged: calories ?? null,
+      },
+      date: today,
     });
 
-    // Upsert health score
+    const legacy = legacyColumnMapping(score.componentBreakdown);
+
     const { data: healthScore, error: scoreError } = await supabase
       .from('health_scores')
       .upsert(
         {
           user_id: user.id,
           date: today,
-          score: score.totalScore,
-          training_score: score.trainingScore,
-          diet_score: score.dietScore,
-          sleep_score: score.sleepScore,
-          habit_score: score.habitScore,
+          score: score.finalScore,
+          training_score: legacy.training_score,
+          diet_score: legacy.diet_score,
+          sleep_score: legacy.sleep_score,
+          habit_score: legacy.habit_score,
+          activity_points: score.componentBreakdown.activity,
+          recovery_points: score.componentBreakdown.recovery,
+          sleep_points: score.componentBreakdown.sleep,
+          recovery_sleep_points: score.componentBreakdown.recoverySleep,
+          food_points: score.componentBreakdown.food,
+          habit_points: score.componentBreakdown.habits,
+          raw_score: score.rawScore,
+          max_raw_score: score.maxRawScore,
+          score_source: score.scoreSource,
         },
         {
           onConflict: 'user_id,date',
@@ -126,7 +162,7 @@ export async function POST(request: NextRequest) {
     const confidenceMultiplier = 1 + ((confidenceScore - 30) / 100) * 0.25;
     
     // Calculate total rewards score (health × confidence)
-    const totalRewardsScore = Math.round(score.totalScore * confidenceMultiplier);
+    const totalRewardsScore = Math.round(score.finalScore * confidenceMultiplier);
     
     // Calculate reward points from TOTAL score (not just health score)
     const rewardPointsEarned = healthToRewardPoints(totalRewardsScore);
@@ -138,7 +174,7 @@ export async function POST(request: NextRequest) {
         {
           user_id: user.id,
           date: today,
-          health_score: score.totalScore,
+          health_score: score.finalScore,
           confidence_score: confidenceScore,
           total_rewards_score: totalRewardsScore,
           confidence_multiplier: confidenceMultiplier,

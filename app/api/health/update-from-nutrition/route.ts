@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
-import { calculateHealthScore, hasMealsLogged, calculateConsumedFromMeals } from '@/lib/health-score';
+import {
+  calculateHealthScore,
+  legacyColumnMapping,
+} from '@/lib/health-score-v2';
 import { healthToRewardPoints } from '@/lib/reward-points';
-import { getTodayLog } from '@/lib/nutrition-log';
 
 /**
  * POST /api/health/update-from-nutrition
@@ -51,46 +53,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prepare consumed nutrition data
-    const consumed = {
-      calories: totalCalories || 0,
-      protein_g: totalProtein || 0,
-      carbs_g: totalCarbs || 0,
-      fat_g: totalFat || 0,
-    };
+    // Mark mealCount as observed even though the v2 scorer
+    // currently keys off raw calories. This avoids removing the
+    // existing payload contract.
+    void mealCount;
+    void totalProtein;
+    void totalCarbs;
+    void totalFat;
 
-    // Get user's nutrition targets (if they have a plan)
-    // For now, use defaults - in future, fetch from nutrition_plans table
-    const target = {
-      calories: 2200,
-      protein_g: 150,
-      carbs_g: 250,
-      fat_g: 70,
-    };
+    // Pull whoop_data for today if the user has it synced — keeps
+    // the score hybrid instead of regressing to manual on every
+    // nutrition update.
+    const { data: whoopRow } = await supabase
+      .from('whoop_data')
+      .select(
+        'recovery_score, sleep_performance_pct, sleep_efficiency_pct, total_sleep_ms, day_strain'
+      )
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .maybeSingle();
 
-    // Determine which sections are logged
-    const hasLoggedMeals = mealCount > 0;
-    const hasLoggedWorkout = existingCheckin?.did_workout !== null && existingCheckin?.did_workout !== undefined;
-    const hasLoggedSleep = existingCheckin?.sleep_hours !== null && existingCheckin?.sleep_hours !== undefined && existingCheckin.sleep_hours > 0;
-    const hasLoggedHabits = existingCheckin?.habit_details && Object.values(existingCheckin.habit_details).some(Boolean);
+    const whoop = whoopRow as
+      | {
+          recovery_score: number | null;
+          sleep_performance_pct: number | null;
+          sleep_efficiency_pct: number | null;
+          total_sleep_ms: number | null;
+          day_strain: number | null;
+        }
+      | null;
 
-    // Calculate updated health score
-    const score = calculateHealthScore(
-      {
-        didWorkout: existingCheckin?.did_workout || false,
-        calories: totalCalories,
-        sleepHours: existingCheckin?.sleep_hours || null,
-        habits: existingCheckin?.habit_details || undefined,
-        hasLoggedWorkout,
-        hasLoggedMeals,
-        hasLoggedSleep,
-        hasLoggedHabits,
+    const score = calculateHealthScore({
+      whoop: whoop
+        ? {
+            recoveryScore: whoop.recovery_score,
+            sleepPerformancePct: whoop.sleep_performance_pct,
+            sleepEfficiencyPct: whoop.sleep_efficiency_pct,
+            totalSleepMs: whoop.total_sleep_ms,
+            dayStrain: whoop.day_strain,
+          }
+        : null,
+      manual: {
+        didWorkout: existingCheckin?.did_workout ?? null,
+        sleepHours: existingCheckin?.sleep_hours ?? null,
+        habitsCompleted: existingCheckin?.habits_completed ?? null,
+        caloriesLogged: totalCalories,
+        calorieTarget: 2200,
       },
-      target,
-      consumed
-    );
+      date: today,
+    });
 
-    // Update or insert check-in with nutrition data
+    const legacy = legacyColumnMapping(score.componentBreakdown);
+
+    // Update or insert check-in with the latest calories from logged meals.
     const checkinPayload = {
       user_id: user.id,
       date: today,
@@ -107,18 +122,26 @@ export async function POST(request: NextRequest) {
         onConflict: 'user_id,date',
       });
 
-    // Upsert health score
     const { data: healthScore, error: scoreError } = await supabase
       .from('health_scores')
       .upsert(
         {
           user_id: user.id,
           date: today,
-          score: score.totalScore,
-          training_score: score.trainingScore,
-          diet_score: score.dietScore,
-          sleep_score: score.sleepScore,
-          habit_score: score.habitScore,
+          score: score.finalScore,
+          training_score: legacy.training_score,
+          diet_score: legacy.diet_score,
+          sleep_score: legacy.sleep_score,
+          habit_score: legacy.habit_score,
+          activity_points: score.componentBreakdown.activity,
+          recovery_points: score.componentBreakdown.recovery,
+          sleep_points: score.componentBreakdown.sleep,
+          recovery_sleep_points: score.componentBreakdown.recoverySleep,
+          food_points: score.componentBreakdown.food,
+          habit_points: score.componentBreakdown.habits,
+          raw_score: score.rawScore,
+          max_raw_score: score.maxRawScore,
+          score_source: score.scoreSource,
         },
         {
           onConflict: 'user_id,date',
@@ -147,7 +170,7 @@ export async function POST(request: NextRequest) {
     const confidenceMultiplier = 1 + ((confidenceScore - 30) / 100) * 0.25;
     
     // Calculate total rewards score (health × confidence)
-    const totalRewardsScore = Math.round(score.totalScore * confidenceMultiplier);
+    const totalRewardsScore = Math.round(score.finalScore * confidenceMultiplier);
     
     // Calculate reward points from TOTAL score (not just health score)
     const rewardPointsEarned = healthToRewardPoints(totalRewardsScore);
@@ -159,7 +182,7 @@ export async function POST(request: NextRequest) {
         {
           user_id: user.id,
           date: today,
-          health_score: score.totalScore,
+          health_score: score.finalScore,
           confidence_score: confidenceScore,
           total_rewards_score: totalRewardsScore,
           confidence_multiplier: confidenceMultiplier,
@@ -190,7 +213,12 @@ export async function POST(request: NextRequest) {
         earned: rewardPointsEarned,
         total: totalPoints,
       },
-      breakdown: score.breakdown,
+      healthScore: score.finalScore,
+      scoreSource: score.scoreSource,
+      rawScore: score.rawScore,
+      maxRawScore: score.maxRawScore,
+      componentBreakdown: score.componentBreakdown,
+      inputsUsed: score.inputsUsed,
       message: 'Health score updated from nutrition data',
     });
   } catch (error: any) {
