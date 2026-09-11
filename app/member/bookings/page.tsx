@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Calendar, Clock, Users, CheckCircle, Star, Award, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { trainersData, type Trainer } from '@/lib/trainers-data';
-import PageHeader from '@/components/PageHeader';
+import PageHeader from '@/components/MemberPageHeader';
 
 interface ClassData {
   id: string;
@@ -228,10 +228,11 @@ export default function MemberBookingsPage() {
   ).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
   return (
-    <div className="space-y-10">
+    <div className="member-future space-y-10" data-section="bookings">
       <PageHeader
+        section="bookings"
         eyebrow="Schedule"
-        title="Bookings"
+        title="Make time for progress."
         subtitle="Book classes and trainer sessions at your gym."
       />
 

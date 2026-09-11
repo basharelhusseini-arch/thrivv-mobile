@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Calendar, Clock, Users, CreditCard, LogOut, User, BookOpen, CheckCircle, Bell, DollarSign, Dumbbell, UtensilsCrossed, Target, Activity, Watch, Trophy, AlertCircle, Shield, TrendingUp } from 'lucide-react';
 import ConfidenceBadge from '@/components/ConfidenceBadge';
 import { ConfidenceLevel } from '@/types';
-import PageHeader, { gradient } from '@/components/PageHeader';
+import PageHeader, { gradient } from '@/components/MemberPageHeader';
 import Reveal from '@/components/Reveal';
 import { ensureWhoopAutoSync } from '@/lib/whoop/auto-sync';
 
@@ -165,8 +165,9 @@ export default function MemberDashboardPage() {
   const todayCheckedIn = !!todayCheckin;
 
   return (
-    <div className="space-y-10">
+    <div className="member-future space-y-10" data-section="dashboard">
       <PageHeader
+        section="dashboard"
         eyebrow={"Today\u2019s snapshot"}
         titleNode={<>Welcome back, {gradient(userDisplayName)}</>}
         subtitle={

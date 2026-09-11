@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Calendar, Target, TrendingUp, UtensilsCrossed, Trash2, ChefHat, CheckCircle } from 'lucide-react';
 import { NutritionPlan } from '@/types';
-import PageHeader from '@/components/PageHeader';
+import PageHeader from '@/components/MemberPageHeader';
 import { getTodayLog, removeMealFromToday, computeTotals, getRecipeFromMeal, type DailyLog } from '@/lib/nutrition-log';
 
 export default function MemberNutritionPage() {
@@ -120,11 +120,12 @@ export default function MemberNutritionPage() {
   const todayTotals = todayLog ? computeTotals(todayLog) : null;
 
   return (
-    <div className="space-y-10">
+    <div className="member-future space-y-10" data-section="nutrition">
       <PageHeader
+        section="nutrition"
         eyebrow="Fuel"
-        title="My Nutrition"
-        subtitle="Track today\u2019s meals and macros so your Health Score reflects what you ate."
+        title="Fuel your next move."
+        subtitle="Your meals, macros and recipes, together in one place. Nutrition tracking is separate from your Health Score."
       />
 
       <main className="space-y-8">

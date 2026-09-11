@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Trophy, Star, Gift, TrendingUp, Zap, Award, DollarSign, Users, Dumbbell, UtensilsCrossed, Lock, CheckCircle, AlertTriangle, Shield } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
+import PageHeader from '@/components/MemberPageHeader';
 
 interface HealthScore {
   total: number;
@@ -298,11 +298,12 @@ export default function RewardsPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="member-future space-y-10" data-section="rewards">
       <PageHeader
+        section="rewards"
         eyebrow="Rewards"
-        title="Rewards Marketplace"
-        subtitle="Your Health Score earns points. Redeem them for gear, supplements, and gym perks."
+        title="Explore your rewards."
+        subtitle="View your points balance and explore available rewards. New Health Score bonuses are not active yet."
       />
 
       <main>

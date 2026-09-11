@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Watch, Activity, CheckCircle, Apple, Bluetooth } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
+import PageHeader from '@/components/MemberPageHeader';
 
 interface WearableConnection {
   type: 'whoop' | 'garmin' | 'apple_health';
@@ -126,11 +126,12 @@ export default function WearablesPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="member-future space-y-10" data-section="wearables">
       <PageHeader
+        section="wearables"
         eyebrow="Wearables"
-        title="Connect Your Wearable"
-        subtitle="Sync workouts, sleep, and recovery automatically. Wearable integrations are rolling out."
+        title="Your effort. Connected."
+        subtitle="Connect WHOOP to bring your recorded training and recovery into Thrivv. More wearable integrations are coming."
       />
 
       <main>
@@ -144,10 +145,10 @@ export default function WearablesPage() {
               <h3 className="text-lg font-semibold text-white mb-2">Why Connect Your Wearable?</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-400">
                 <div>
-                  <span className="text-green-400 font-semibold">✓</span> Automatic data sync
+                  <span className="text-green-400 font-semibold">✓</span> Workout data in one place
                 </div>
                 <div>
-                  <span className="text-green-400 font-semibold">✓</span> Accurate health score
+                  <span className="text-green-400 font-semibold">✓</span> Understand your Health Score
                 </div>
                 <div>
                   <span className="text-green-400 font-semibold">✓</span> Personalized insights
@@ -159,7 +160,7 @@ export default function WearablesPage() {
                   <span className="text-green-400 font-semibold">✓</span> Optimize training
                 </div>
                 <div>
-                  <span className="text-green-400 font-semibold">✓</span> Earn more rewards
+                  <span className="text-green-400 font-semibold">✓</span> See your recorded activity
                 </div>
               </div>
             </div>

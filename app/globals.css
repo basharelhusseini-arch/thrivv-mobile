@@ -264,3 +264,96 @@
     }
   }
 }
+
+/* Member sections only: the landing page, gym admin and authentication retain their styles. */
+.member-future {
+  --member-accent: 255, 211, 61;
+  max-width: 1480px;
+  margin-inline: auto;
+  padding-bottom: 1rem;
+}
+.member-future[data-section="health"] { --member-accent: 106, 230, 195; }
+.member-future[data-section="nutrition"] { --member-accent: 190, 224, 120; }
+.member-future[data-section="wearables"] { --member-accent: 116, 210, 244; }
+.member-section-header {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 24px 32px 0;
+  border: 1px solid rgba(var(--member-accent), .2);
+  border-radius: 28px;
+  background: radial-gradient(ellipse at 95% 0%, rgba(var(--member-accent), .1), transparent 58%), linear-gradient(125deg, #181b20, #0c0f13 72%);
+  box-shadow: 0 24px 70px -40px #000, inset 0 1px 0 #ffffff08;
+}
+.member-section-header::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(#ffffff03 1px, transparent 1px), linear-gradient(90deg, #ffffff03 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: linear-gradient(90deg, transparent 25%, #000);
+}
+.member-header-topline { display: flex; justify-content: space-between; align-items: center; color: rgba(var(--member-accent), .8); }
+.member-section-id { display: inline-flex; align-items: center; gap: 12px; font-size: 10px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; }
+.member-section-id > span { border: 1px solid rgba(var(--member-accent), .3); padding: 5px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+.member-header-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; position: relative; padding: 34px 0 30px; }
+.member-header-copy { min-width: 0; max-width: 900px; }
+.member-header-copy h1 { max-width: 20ch; color: #f4f5f7; font-size: clamp(2rem, 3.6vw, 3.65rem); line-height: 1.08; font-weight: 550; letter-spacing: -.055em; text-wrap: balance; overflow-wrap: anywhere; }
+.member-header-copy p { color: #aab1bf; font-size: 15px; line-height: 1.75; max-width: 63ch; margin-top: 18px; }
+.member-header-action { flex-shrink: 0; }
+.member-header-footer { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding: 17px 0; border-top: 1px solid #ffffff0d; color: rgb(var(--member-accent)); }
+.member-header-footer span { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #aeb7c5; }
+.member-header-footer span + span::before { content: '/'; margin-right: 20px; color: #485160; }
+.member-header-art { pointer-events: none; position: absolute; z-index: -1; width: 300px; height: 300px; right: -25px; top: -36px; color: rgb(var(--member-accent)); opacity: .55; }
+.member-header-art > svg:first-child { width: 100%; height: 100%; }
+.member-header-art .member-header-symbol { position: absolute; width: 65px; height: 65px; top: 118px; left: 118px; opacity: .3; }
+.member-future :is(.premium-card, .dark-card, .glass-card) {
+  background: linear-gradient(140deg, #191d24f5, #101319fa);
+  border: 1px solid #ffffff12;
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 #ffffff04, 0 16px 38px -28px #000;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.member-future :is(a.premium-card, button.premium-card, .card-hover):hover {
+  border-color: rgba(var(--member-accent), .4);
+  box-shadow: 0 16px 40px -24px rgba(var(--member-accent), .15);
+}
+.member-future .glass-effect { background: #ffffff03; border: 1px solid #ffffff0b; border-radius: 16px; }
+.member-future :is(h2, h3) { letter-spacing: -.025em; }
+.member-future .icon-badge { border: 1px solid rgba(var(--member-accent), .2); border-radius: 14px; background: rgba(var(--member-accent), .06); box-shadow: inset 0 1px 0 #ffffff0a; }
+.member-future .btn-primary { border-radius: 12px; border: 1px solid #ffe783; background: linear-gradient(120deg, #ffe781, #ffd339); color: #101113; font-weight: 650; box-shadow: 0 6px 22px -12px #ffd33999; }
+.member-future :is(.btn-ghost, .btn-secondary) { border-radius: 12px; border: 1px solid #ffffff18; background: #ffffff05; }
+.member-future :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #ffe477; outline-offset: 4px; }
+.member-future :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border-radius: 12px; border-color: #ffffff20; background-color: #0b0e14; }
+.member-future table { font-variant-numeric: tabular-nums; border-collapse: separate; border-spacing: 0 4px; }
+.member-future table th { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #a8b0bf; }
+.member-future table td { border-block: 1px solid #ffffff06; }
+.member-future table tbody tr { background-color: #ffffff02; }
+.member-future table tbody tr:hover { background-color: #ffffff06; }
+.member-future table td:first-child { border-radius: 10px 0 0 10px; }
+.member-future table td:last-child { border-radius: 0 10px 10px 0; }
+.member-future .divider { background: linear-gradient(90deg, transparent, #ffffff15, transparent); }
+@media (max-width: 900px) {
+  .member-header-body { flex-direction: column; align-items: flex-start; gap: 22px; }
+  .member-header-art { opacity: .25; }
+}
+@media (max-width: 640px) {
+  .member-section-header { padding: 18px 20px 0; border-radius: 22px; }
+  .member-header-body { padding: 25px 0; }
+  .member-header-copy h1 { font-size: 2rem; }
+  .member-header-copy p { font-size: 14px; line-height: 1.65; }
+  .member-header-footer { gap: 12px; }
+  .member-header-footer span { font-size: 9px; letter-spacing: .04em; }
+  .member-header-footer span + span::before { margin-right: 12px; }
+  .member-header-action, .member-header-action > a { width: 100%; }
+  .member-header-action > a { justify-content: center; }
+  .member-future :is(.premium-card, .dark-card, .glass-card) { border-radius: 18px; }
+  .member-future[data-section="nutrition"] main > .premium-card > div:first-child { flex-wrap: wrap; gap: 14px; }
+  .member-future[data-section="health"] .grid-cols-7 { grid-template-columns: repeat(7, minmax(64px, 1fr)); overflow-x: auto; padding-bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .member-future *, .member-future *::before, .member-future *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+.member-future table tbody tr[class*="bg-thrivv-gold-500/10"] { background-color: #ffd33912; box-shadow: inset 2px 0 #ffd339; }

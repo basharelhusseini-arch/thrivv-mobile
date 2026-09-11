@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Clock, Target, TrendingUp, LogOut, Dumbbell, Plus, Sparkles } from 'lucide-react';
 import { WorkoutPlan } from '@/types';
-import PageHeader from '@/components/PageHeader';
+import PageHeader from '@/components/MemberPageHeader';
 
 export default function MemberWorkoutsPage() {
   const router = useRouter();
@@ -62,10 +62,11 @@ export default function MemberWorkoutsPage() {
   const completedPlans = workoutPlans.filter(p => p.status === 'completed');
 
   return (
-    <div className="space-y-10">
+    <div className="member-future space-y-10" data-section="workouts">
       <PageHeader
+        section="workouts"
         eyebrow="Training"
-        title="My Workouts"
+        title="Built for your next best."
         subtitle="Personalised plans built around your goals, equipment, and recovery."
         action={
           <Link

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Activity, TrendingUp, Zap, Moon, UtensilsCrossed, Target, Award, Sparkles, Watch, ArrowRight, Calendar, CheckCircle } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
+import PageHeader from '@/components/MemberPageHeader';
 
 interface HealthSummary {
   timezone: string;
@@ -100,10 +100,11 @@ export default function MemberHealthPage() {
   const streak = healthData?.streak || 0;
 
   return (
-    <div className="space-y-8">
+    <div className="member-future space-y-8" data-section="health">
       <PageHeader
+        section="health"
         eyebrow="Your data"
-        title="Health Statistics"
+        title="See the bigger picture."
         subtitle="Track your overall health and the components feeding your gym leaderboard rank."
         action={
           streak > 0 ? (
