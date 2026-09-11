@@ -56,7 +56,7 @@ export async function checkGymAccess(gymId: string): Promise<GymAccessResult> {
   }
 
   const gym = gymRow as GymRecord;
-  const userEmail = (userRow?.email || user.email || '').toLowerCase();
+  const userEmail = (user.email || '').toLowerCase();
   const isOwner = userEmail === gym.owner_email.toLowerCase();
 
   if (!isAdmin && !isOwner) {

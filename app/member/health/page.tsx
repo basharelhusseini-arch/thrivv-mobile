@@ -7,7 +7,11 @@ import { Activity, TrendingUp, Zap, Moon, UtensilsCrossed, Target, Award, Sparkl
 import PageHeader from '@/components/PageHeader';
 
 interface HealthSummary {
-  score: number;
+  timezone: string;
+  workouts: { id: string; start_at: string; duration_ms: number; sport_name: string | null; score_input_valid: boolean; workout_score: number | null; workout_breakdown: { label: string; breakdown: number[] } | null }[];
+  score: number | null;
+  subtotal: number | null;
+  complete: boolean;
   updatedAt: string;
   streak: number;
   last7Days: Array<{
@@ -19,9 +23,9 @@ interface HealthSummary {
     habit_score: number;
   }>;
   components: {
-    training: number;
+    training: number | null;
     diet: number;
-    sleep: number;
+    sleep: number | null;
     habits: number;
   };
   insights: string[];
@@ -89,8 +93,8 @@ export default function MemberHealthPage() {
   }
 
   // Show partial UI even if data fetch failed
-  const score = healthData?.score || 0;
-  const components = healthData?.components || { training: 0, diet: 0, sleep: 0, habits: 0 };
+  const score = healthData?.score ?? healthData?.subtotal ?? 0;
+  const components = healthData?.components || { training: null, diet: 0, sleep: null, habits: 0 };
   const insights = healthData?.insights || ['Complete your first check-in to start tracking your health score.'];
   const last7Days = healthData?.last7Days || [];
   const streak = healthData?.streak || 0;
@@ -133,7 +137,7 @@ export default function MemberHealthPage() {
               <h2 className="text-lg font-semibold text-thrivv-text-secondary mb-2">Your Health Score</h2>
               <div className="flex items-baseline space-x-3">
                 <span className={`text-6xl font-bold ${getScoreColor(score)}`}>
-                  {Math.round(score)}
+                  {healthData ? score : "—"}
                 </span>
                 <span className="text-2xl text-thrivv-text-muted">/ 110</span>
               </div>
@@ -149,32 +153,23 @@ export default function MemberHealthPage() {
           </div>
 
           {/* Score Breakdown */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div className="glass-effect rounded-lg p-4 card-hover">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-thrivv-text-secondary">Training</span>
                 <Zap className="w-4 h-4 text-thrivv-gold-500" />
               </div>
-              <p className="text-2xl font-bold text-thrivv-text-primary">{Math.round(components.training)}</p>
-              <p className="text-xs text-thrivv-text-muted mt-1">of 30 points</p>
+              <p className="text-2xl font-bold text-thrivv-text-primary">{components.training ?? "—"}</p>
+              <p className="text-xs text-thrivv-text-muted mt-1">of 80 points</p>
             </div>
 
             <div className="glass-effect rounded-lg p-4 card-hover">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-thrivv-text-secondary">Diet</span>
-                <UtensilsCrossed className="w-4 h-4 text-thrivv-neon-green" />
-              </div>
-              <p className="text-2xl font-bold text-thrivv-text-primary">{Math.round(components.diet)}</p>
-              <p className="text-xs text-thrivv-text-muted mt-1">of 40 points</p>
-            </div>
-
-            <div className="glass-effect rounded-lg p-4 card-hover">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-thrivv-text-secondary">Sleep</span>
+                <span className="text-sm text-thrivv-text-secondary">Recovery</span>
                 <Moon className="w-4 h-4 text-blue-400" />
               </div>
-              <p className="text-2xl font-bold text-thrivv-text-primary">{Math.round(components.sleep)}</p>
-              <p className="text-xs text-thrivv-text-muted mt-1">of 30 points</p>
+              <p className="text-2xl font-bold text-thrivv-text-primary">{components.sleep ?? "—"}</p>
+              <p className="text-xs text-thrivv-text-muted mt-1">of 20 points</p>
             </div>
 
             <div className="glass-effect rounded-lg p-4 card-hover">
@@ -182,13 +177,26 @@ export default function MemberHealthPage() {
                 <span className="text-sm text-thrivv-text-secondary">Habits</span>
                 <Target className="w-4 h-4 text-thrivv-gold-400" />
               </div>
-              <p className="text-2xl font-bold text-thrivv-text-primary">{Math.round(components.habits)}</p>
+              <p className="text-2xl font-bold text-thrivv-text-primary">{components.habits}</p>
               <p className="text-xs text-thrivv-text-muted mt-1">of 10 points</p>
             </div>
           </div>
         </div>
       </div>
 
+      <p className="text-sm text-thrivv-text-muted">{healthData?.complete ? 'Complete Health Score.' : 'Provisional — awaiting verified WHOOP inputs.'} Sleep component — based on WHOOP Recovery, the selected proxy rather than a direct measurement of sleep quality.</p>
+      <Link href="/member/checkin" className="inline-block text-thrivv-gold-500">Track today’s habits →</Link>
+      <Link href="/member/habits" className="inline-block ml-4 text-thrivv-gold-500">View habits →</Link>
+      {Boolean(healthData?.workouts?.length) && <div className="premium-card p-6">
+        <h2 className="text-lg font-semibold text-thrivv-text-primary">Recent WHOOP workouts</h2>
+        <p className="text-sm text-thrivv-text-muted mt-2">Your highest eligible workout each day supplies Training points. Additional workouts do not stack. Up to 100 recent workouts shown.</p>
+        <div className="divide-y divide-thrivv-gold-500/10 mt-4">{healthData!.workouts.map(workout => <div key={workout.id} className="py-4 text-sm">
+          <div className="flex justify-between gap-4"><span className="text-thrivv-text-primary capitalize">{workout.workout_breakdown?.label ?? workout.sport_name ?? 'Other'}</span>
+            <span className="text-thrivv-gold-500">{workout.score_input_valid && workout.workout_score !== null ? `${workout.workout_score.toFixed(1)}/100` : 'Pending score'}</span></div>
+          <p className="text-thrivv-text-muted">{new Date(workout.start_at).toLocaleString(undefined, { timeZone: healthData!.timezone })} · {(workout.duration_ms / 60000).toFixed(1)} elapsed minutes</p>
+          {workout.score_input_valid && workout.workout_breakdown && <p className="text-xs text-thrivv-text-muted mt-1">{['Strain', 'Duration', 'Zones', 'Calories'].map((label, i) => `${label}: ${workout.workout_breakdown!.breakdown[i].toFixed(1)}`).join(' · ')}</p>}
+        </div>)}</div>
+      </div>}
       {/* 7-Day Trend */}
       {last7Days.length > 0 && (
         <div className="premium-card">
@@ -203,11 +211,11 @@ export default function MemberHealthPage() {
               {last7Days.map((day, index) => (
                 <div key={index} className="text-center">
                   <div className="text-xs text-thrivv-text-muted mb-2">
-                    {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                    {new Date(`${day.date}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short' })}
                   </div>
                   <div className={`w-full h-24 rounded-lg border-2 flex items-end justify-center p-2 ${getScoreBgColor(day.score)}`}>
                     <span className={`text-lg font-bold ${getScoreColor(day.score)}`}>
-                      {Math.round(day.score)}
+                      {day.score}
                     </span>
                   </div>
                   <div className="mt-2 space-y-1">
@@ -217,7 +225,7 @@ export default function MemberHealthPage() {
                     </div>
                     <div className="text-xs text-thrivv-text-muted flex items-center justify-center">
                       <UtensilsCrossed className="w-3 h-3 mr-1 text-thrivv-neon-green" />
-                      {day.diet_score}
+                      Recovery {day.sleep_score} · Habits {day.habit_score}
                     </div>
                   </div>
                 </div>

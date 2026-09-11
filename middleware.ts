@@ -28,6 +28,7 @@ const GYM_HOSTNAME =
 /** Auth + signup pages and auth API are usable from either hostname. */
 function isShared(pathname: string): boolean {
   return (
+    pathname === '/api/gym/invitations/accept' ||
     pathname === '/member/login' ||
     pathname === '/member/signup' ||
     pathname.startsWith('/api/auth/')

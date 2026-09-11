@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Trophy, Star, Gift, TrendingUp, Zap, Award, DollarSign, Users, Dumbbell, UtensilsCrossed, Lock, CheckCircle, AlertTriangle, Shield } from 'lucide-react';
-import { useTypingFeatures } from '@/hooks/useTypingFeatures';
 import PageHeader from '@/components/PageHeader';
 
 interface HealthScore {
@@ -39,14 +38,13 @@ export default function RewardsPage() {
   const [healthScore, setHealthScore] = useState<HealthScore | null>(null);
   const [confidenceData, setConfidenceData] = useState<ConfidenceData | null>(null);
   const [points, setPoints] = useState(0);
+  const [activeOffers, setActiveOffers] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [memberId, setMemberId] = useState<string | null>(null);
   const [redeemedRewards, setRedeemedRewards] = useState<string[]>([]);
-  const [showStepUpModal, setShowStepUpModal] = useState(false);
-  const [pendingReward, setPendingReward] = useState<Reward | null>(null);
   const [riskCheckInProgress, setRiskCheckInProgress] = useState(false);
   
-  const typingFeatures = useTypingFeatures();
+  const redemptionRequests = useRef<Record<string, string>>({});
 
   const fetchHealthScore = useCallback(async (id: string) => {
     try {
@@ -55,6 +53,8 @@ export default function RewardsPage() {
       if (rewardsResponse.ok) {
         const rewardsData = await rewardsResponse.json();
         setPoints(rewardsData.points);
+        setActiveOffers(Object.fromEntries((rewardsData.offers || []).map((o: {id: string; points: number}) => [o.id, Number(o.points)])));
+        setRedeemedRewards((rewardsData.redemptions || []).map((r: { offer_id: string }) => r.offer_id));
       }
 
       // Fetch health score for display
@@ -110,78 +110,19 @@ export default function RewardsPage() {
     if (!confirm(`Redeem ${reward.name} for ${reward.points} points?`)) return;
 
     setRiskCheckInProgress(true);
-
+    const requestId = redemptionRequests.current[reward.id] ||= crypto.randomUUID();
     try {
-      // Call risk scoring API
-      const typingData = typingFeatures.getFeatures();
-      
-      const riskResponse = await fetch('/api/risk/score', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': memberId || '', // Pass user ID in header
-        },
-        body: JSON.stringify({
-          eventType: 'reward_redeem',
-          typingFeatures: typingData || undefined,
-        }),
+      const res = await fetch('/api/rewards/redeem', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offerId: reward.id, requestId }),
       });
-
-      if (!riskResponse.ok) {
-        throw new Error('Risk check failed');
-      }
-
-      const riskData = await riskResponse.json();
-      console.log('🔒 Risk check:', riskData);
-
-      // Handle different risk actions
-      switch (riskData.action) {
-        case 'allow':
-          // Proceed with redemption
-          setPoints(points - reward.points);
-          setRedeemedRewards([...redeemedRewards, reward.id]);
-          alert(`🎉 Success! ${reward.name} has been added to your account. Check your email for details.`);
-          typingFeatures.reset();
-          break;
-
-        case 'step_up':
-          // Show step-up authentication modal
-          setPendingReward(reward);
-          setShowStepUpModal(true);
-          break;
-
-        case 'hold':
-          // Hold for review
-          alert(`⏸️ Redemption on Hold\n\nYour redemption request is being reviewed for security. We'll email you within 24 hours.\n\nReason: ${riskData.reasons.join(', ')}`);
-          break;
-
-        case 'block':
-          // Block redemption
-          alert(`🚫 Redemption Blocked\n\nThis redemption was blocked for security reasons. Please contact support if you believe this is an error.\n\nReference: ${riskData.deviceId.slice(0, 8)}`);
-          break;
-
-        default:
-          throw new Error('Unknown risk action');
-      }
-    } catch (error) {
-      console.error('Risk check error:', error);
-      alert('Security check failed. Please try again or contact support.');
-    } finally {
-      setRiskCheckInProgress(false);
-    }
-  };
-
-  const handleStepUpVerify = () => {
-    // In production, this would trigger email verification or re-authentication
-    // For now, simulate verification and complete the redemption
-    if (pendingReward) {
-      setPoints(points - pendingReward.points);
-      setRedeemedRewards([...redeemedRewards, pendingReward.id]);
-      alert(`🎉 Verified! ${pendingReward.name} has been added to your account.`);
-      setShowStepUpModal(false);
-      setPendingReward(null);
-      typingFeatures.reset();
-    }
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+      setRedeemedRewards(previous => [...previous, reward.id]);
+      if (memberId) await fetchHealthScore(memberId);
+      alert(`Redemption recorded. Reference: ${result.redemption.id}. Partner fulfillment is pending.`);
+    } catch (error) { alert(error instanceof Error ? error.message : 'Unable to redeem. Please retry.'); }
+    finally { setRiskCheckInProgress(false); }
   };
 
   const rewards: Reward[] = [
@@ -485,9 +426,11 @@ export default function RewardsPage() {
 
         {/* Rewards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rewards.map((reward) => {
+          {rewards.map((listedReward) => {
+            const available = Object.prototype.hasOwnProperty.call(activeOffers, listedReward.id);
+            const reward = { ...listedReward, points: activeOffers[listedReward.id] ?? listedReward.points };
             const Icon = reward.icon;
-            const canAfford = points >= reward.points;
+            const canAfford = available && points >= reward.points;
             const isRedeemed = reward.redeemed;
 
             return (
@@ -547,7 +490,7 @@ export default function RewardsPage() {
                       className="w-full px-4 py-2 bg-gray-800/50 text-gray-500 rounded-lg border border-gray-700/50 flex items-center justify-center cursor-not-allowed"
                     >
                       <Lock className="w-4 h-4 mr-2" />
-                      Need {reward.points - points} more points
+                      {available ? `Need ${reward.points - points} more points` : 'Coming soon'}
                     </button>
                   )}
                 </div>
@@ -569,61 +512,13 @@ export default function RewardsPage() {
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-thrivv-gold-400 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-gray-300">
-              <span className="font-semibold text-thrivv-gold-400">Security Protected</span> - All redemptions are monitored for fraud prevention to protect your account.
+              <span className="font-semibold text-thrivv-gold-400">Security Protected</span> - Points and redemptions are recorded securely in your account.
             </div>
           </div>
         </div>
       </main>
 
-      {/* Step-Up Authentication Modal */}
-      {showStepUpModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="dark-card max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-thrivv-gold-500/20 rounded-xl">
-                <AlertTriangle className="w-6 h-6 text-thrivv-gold-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white">Additional Verification Required</h3>
-                <p className="text-sm text-gray-400">Security check for high-value redemption</p>
-              </div>
-            </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-4 mb-4 border border-gray-700/50">
-              <p className="text-sm text-gray-300 mb-3">
-                For your security, we need to verify this redemption. This helps protect your account from unauthorized access.
-              </p>
-              <div className="text-xs text-gray-500">
-                <strong className="text-gray-400">Redeeming:</strong> {pendingReward?.name}
-                <br />
-                <strong className="text-gray-400">Points:</strong> {pendingReward?.points}
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowStepUpModal(false);
-                  setPendingReward(null);
-                }}
-                className="flex-1 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleStepUpVerify}
-                className="flex-1 px-4 py-2 bg-thrivv-gold-500 text-white rounded-lg hover:opacity-90 transition-all font-semibold"
-              >
-                Verify & Redeem
-              </button>
-            </div>
-
-            <p className="text-xs text-gray-500 text-center mt-4">
-              In production, this would send a verification email or require re-authentication.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

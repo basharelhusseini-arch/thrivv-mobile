@@ -3,16 +3,8 @@ import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 import bcrypt from 'bcryptjs';
 import { getJWTSecret } from './env';
 
-// Get JWT secret - will throw clear error if missing
-let JWT_SECRET: Uint8Array;
-try {
-  JWT_SECRET = new TextEncoder().encode(getJWTSecret());
-} catch (error) {
-  // Fallback for build time - runtime will fail with helpful error
-  JWT_SECRET = new TextEncoder().encode('build-time-placeholder-secret');
-  if (process.env.NODE_ENV === 'development') {
-    console.warn('⚠️  JWT_SECRET not set. Using placeholder for build.');
-  }
+function sessionSecret(): Uint8Array {
+  return new TextEncoder().encode(getJWTSecret());
 }
 
 const COOKIE_NAME = 'thrivv-session';
@@ -72,7 +64,7 @@ export async function createSession(user: SessionUser): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d') // 7 days
     .setIssuedAt()
-    .sign(JWT_SECRET);
+    .sign(sessionSecret());
 
   return token;
 }
@@ -80,7 +72,7 @@ export async function createSession(user: SessionUser): Promise<string> {
 // Verify JWT session token
 export async function verifySession(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, sessionSecret(), { algorithms: ['HS256'] });
     
     // Check if payload has user property
     if (!hasUserProperty(payload)) {

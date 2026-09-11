@@ -94,6 +94,7 @@ export async function exchangeCodeForToken(
 
   const res = await fetch(WHOOP_TOKEN_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(10000),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
     cache: 'no-store',
@@ -140,6 +141,7 @@ export async function refreshAccessToken(
 
   const res = await fetch(WHOOP_TOKEN_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(10000),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
     cache: 'no-store',
@@ -204,8 +206,8 @@ export async function persistWhoopTokens(
   }
 
   const { error } = await supabase
-    .from('users')
-    .update(update)
+    .from('whoop_connections')
+    .upsert({ id: userId, ...update })
     .eq('id', userId);
 
   if (error) {
@@ -220,7 +222,7 @@ export async function persistWhoopTokens(
  */
 export async function clearWhoopTokens(userId: string): Promise<void> {
   const { error } = await supabase
-    .from('users')
+    .from('whoop_connections')
     .update({
       whoop_user_id: null,
       whoop_access_token: null,
@@ -245,7 +247,7 @@ export async function loadWhoopTokens(
   userId: string
 ): Promise<WhoopTokenSnapshot> {
   const { data, error } = await supabase
-    .from('users')
+    .from('whoop_connections')
     .select('whoop_access_token, whoop_refresh_token, whoop_token_expires_at')
     .eq('id', userId)
     .single();

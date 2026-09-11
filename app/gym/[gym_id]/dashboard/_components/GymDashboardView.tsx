@@ -1,5 +1,6 @@
 'use client';
 
+import GymInvitation from './GymInvitation';
 import GymHeader from './GymHeader';
 import Week4RetentionCard from './Week4RetentionCard';
 import ActiveThisWeekCard from './ActiveThisWeekCard';
@@ -99,6 +100,7 @@ export default function GymDashboardView({ data }: { data: GymAnalytics }) {
 
       <main className="relative max-w-7xl mx-auto px-6 lg:px-10 py-10 lg:py-14 space-y-10">
         <GymHeader data={data} />
+        <GymInvitation gymId={data.gym.id} />
 
         <Reveal delay={100}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

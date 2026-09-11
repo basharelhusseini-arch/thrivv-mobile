@@ -1,3 +1,4 @@
+import { requireAuth } from '@/lib/auth';
 /**
  * POST /api/risk/score
  * 
@@ -45,32 +46,12 @@ interface RiskScoreResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authenticate user via Supabase cookies
-    const authHeader = request.headers.get('cookie');
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Get user ID from the request (you might need to extract from session)
+    let user;
+    try { user = await requireAuth(); }
+    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
     const body: RiskScoreRequest = await request.json();
     const { eventType, typingFeatures } = body;
-
-    // For now, extract user from a custom header or session
-    // In production, parse the Supabase session from cookies
-    const userIdHeader = request.headers.get('x-user-id');
-    
-    if (!userIdHeader) {
-      console.warn('⚠️ Risk scoring: No user ID provided');
-      return NextResponse.json(
-        { error: 'User ID required for risk scoring' },
-        { status: 400 }
-      );
-    }
-
-    const userId = userIdHeader;
+    const userId = user.id;
 
     console.log(`🔒 Risk scoring request: user=${userId}, event=${eventType}`);
 

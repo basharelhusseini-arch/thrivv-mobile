@@ -47,7 +47,7 @@ export async function GET() {
 
   // Connection state lives on users; never select tokens.
   const { data: userRow } = await supabase
-    .from('users')
+    .from('whoop_connections')
     .select('whoop_connected_at, whoop_access_token')
     .eq('id', userId)
     .maybeSingle();

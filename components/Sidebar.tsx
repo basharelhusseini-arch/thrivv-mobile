@@ -39,12 +39,10 @@ const memberNavigation = [
   { name: 'Dashboard', label: 'Dashboard', href: '/member/dashboard', icon: LayoutDashboard },
   { name: 'My Workouts', label: 'Workouts', href: '/member/workouts', icon: Dumbbell },
   { name: 'My Nutrition', label: 'Nutrition', href: '/member/nutrition', icon: UtensilsCrossed },
-  { name: 'Recipes', label: 'Recipes', href: '/member/recipes', icon: ChefHat },
   { name: 'Bookings', label: 'Bookings', href: '/member/bookings', icon: Calendar },
   { name: 'Health Score', label: 'Health', href: '/member/health', icon: Activity },
-  { name: 'Habits', label: 'Habits', href: '/member/habits', icon: Target },
   { name: 'Rewards', label: 'Rewards', href: '/member/rewards', icon: Trophy },
-  { name: 'Wearables', label: 'Wearables', href: '/member/wearables', icon: Heart },
+  { name: 'Wearable', label: 'Wearable', href: '/member/wearables', icon: Heart },
 ];
 
 // Hrefs surfaced as the 4 primary tabs on the mobile bottom nav.

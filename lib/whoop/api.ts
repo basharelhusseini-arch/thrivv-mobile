@@ -40,6 +40,7 @@ async function whoopGet(
 
   const res = await fetch(url.toString(), {
     method: 'GET',
+    signal: AbortSignal.timeout(10000),
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Accept: 'application/json',
@@ -108,7 +109,7 @@ export async function fetchProfile(accessToken: string): Promise<{
 } | null> {
   try {
     const payload = (await whoopGet(
-      '/developer/v1/user/profile/basic',
+      '/developer/v2/user/profile/basic',
       accessToken
     )) as Record<string, unknown> | null;
     if (!payload) return null;
@@ -124,3 +125,24 @@ export async function fetchProfile(accessToken: string): Promise<{
     return null;
   }
 }
+
+export async function fetchCollection(path: string, accessToken: string, start: string, end: string): Promise<any[]> {
+  const records: unknown[] = [];
+  const deadline = Date.now() + 20000;
+  let next = '';
+  const seen = new Set<string>();
+  for (let page = 0; page < 40; page++) {
+    if (Date.now() > deadline) throw new Error('WHOOP sync time budget exhausted');
+    const payload = await whoopGet(path, accessToken, {
+      start, end, limit: '25', ...(next ? { nextToken: next } : {}),
+    }) as { records?: unknown[]; next_token?: string };
+    if (!Array.isArray(payload.records)) throw new Error('Invalid WHOOP workout collection');
+    records.push(...payload.records);
+    if (!payload.next_token) return records;
+    if (seen.has(payload.next_token)) throw new Error('Repeated WHOOP pagination token');
+    seen.add(payload.next_token); next = payload.next_token;
+  }
+  throw new Error('WHOOP pagination limit reached; retry a smaller window');
+}
+
+export const fetchWorkouts = (token: string, start: string, end: string) => fetchCollection('/developer/v2/activity/workout', token, start, end);

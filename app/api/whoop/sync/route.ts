@@ -1,28 +1,5 @@
-/**
- * POST /api/whoop/sync
- *
- * Sync yesterday's WHOOP data for the logged-in Thrivv user and
- * recompute the v2 health score for that date.
- *
- * Flow:
- *   1. requireAuth (custom JWT — see lib/auth.ts).
- *   2. Resolve a valid access token (refresh if expiring).
- *   3. Pull yesterday's recovery / sleep / cycle records.
- *   4. Defensively extract metrics + upsert whoop_data.
- *   5. Load yesterday's daily_checkins for habit / workout / food
- *      context (food + habits are always manual signals).
- *   6. Compute the v2 health score (Activity 50 / Recovery 15 /
- *      Sleep 15 / Food 20 / Habits 10 → 110 raw → 100 normalised).
- *   7. Upsert health_scores: write v2 score into the existing
- *      `score` column (the dashboard reads this), populate the new
- *      v2 component columns added by migration 017, keep the legacy
- *      whoop_*_points / habit_points / score_source columns from
- *      migration 016 in sync, and proportionally map the v2
- *      components into the NOT NULL legacy training/diet/sleep/
- *      habit_score columns so their CHECK constraints still pass.
- *   8. Return a safe JSON summary — never tokens, never raw payload.
- */
-
+import { scoreSnapshot } from '@/lib/daily-health-score';
+import { withWhoopLock, importWorkouts, SyncBusyError } from '@/lib/whoop/sync';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -45,10 +22,7 @@ import {
   extractRecovery,
   extractSleep,
 } from '@/lib/whoop/extract';
-import {
-  calculateHealthScore,
-  legacyColumnMapping,
-} from '@/lib/health-score-v2';
+
 
 /**
  * Calendar window for a given YYYY-MM-DD date in UTC. UTC is used
@@ -78,16 +52,7 @@ function getDateWindow(dateOverride?: string | null) {
   return { date, start, end };
 }
 
-export async function POST(request: NextRequest) {
-  // 1. Auth.
-  let userId: string;
-  try {
-    const user = await requireAuth();
-    userId = user.id;
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+async function syncDaily(request: NextRequest, userId: string) {
   // 2. Tokens — short-circuit before talking to WHOOP if not connected.
   const tokenSnap = await loadWhoopTokens(userId);
   if (!tokenSnap.accessToken || !tokenSnap.refreshToken) {
@@ -97,7 +62,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const accessToken = await getValidAccessToken(userId);
+  let accessToken = await getValidAccessToken(userId);
   if (!accessToken) {
     const after = await loadWhoopTokens(userId);
     // Permanent refresh failures clear tokens — user must OAuth again.
@@ -149,6 +114,7 @@ export async function POST(request: NextRequest) {
           unauthorized = true;
         }
       }
+      if (!unauthorized && [recoveryRes, sleepRes, cycleRes].some(r => r.status === 'rejected')) throw new Error('Incomplete WHOOP response');
       if (recoveryRes.status === 'fulfilled') recovery = recoveryRes.value;
       if (sleepRes.status === 'fulfilled') sleep = sleepRes.value;
       if (cycleRes.status === 'fulfilled') cycle = cycleRes.value;
@@ -164,6 +130,7 @@ export async function POST(request: NextRequest) {
         try {
           const fresh = await refreshAccessToken(snap.refreshToken);
           await persistWhoopTokens(userId, fresh, snap.refreshToken);
+          accessToken = fresh.access_token;
           triple = await fetchTriplet(fresh.access_token);
         } catch (e) {
           if (isPermanentTokenFailure(e)) {
@@ -208,6 +175,21 @@ export async function POST(request: NextRequest) {
   const sleep = extractSleep(sleepRaw);
   const cycle = extractCycle(cycleRaw);
 
+  const { data: previousWhoop, error: previousError } = await supabase
+    .from('whoop_data')
+    .select('recovery_score,hrv,resting_hr,sleep_performance_pct,sleep_efficiency_pct,total_sleep_ms,day_strain,kilojoules')
+    .eq('user_id', userId).eq('date', date).maybeSingle();
+  if (previousError) return NextResponse.json({ error: 'Unable to read previous WHOOP data' }, { status: 503 });
+  // Missing/unscored fields must not erase previously verified measurements.
+  recovery.recoveryScore ??= previousWhoop?.recovery_score ?? null;
+  recovery.hrv ??= previousWhoop?.hrv ?? null;
+  recovery.restingHr ??= previousWhoop?.resting_hr ?? null;
+  sleep.sleepPerformancePct ??= previousWhoop?.sleep_performance_pct ?? null;
+  sleep.sleepEfficiencyPct ??= previousWhoop?.sleep_efficiency_pct ?? null;
+  sleep.totalSleepMs ??= previousWhoop?.total_sleep_ms ?? null;
+  cycle.dayStrain ??= previousWhoop?.day_strain ?? null;
+  cycle.kilojoules ??= previousWhoop?.kilojoules ?? null;
+
   const whoopRow = {
     user_id: userId,
     date,
@@ -239,99 +221,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 5. Load yesterday's manual context. Daily check-ins drive
-  //    habits + workout + food for the v2 scorer; if no row exists
-  //    we treat all manual fields as null (no penalty, no synthetic
-  //    values).
-  const { data: checkin } = await supabase
-    .from('daily_checkins')
-    .select('did_workout, sleep_hours, habits_completed, calories')
-    .eq('user_id', userId)
-    .eq('date', date)
-    .maybeSingle();
-
-  const checkinRow = checkin as
-    | {
-        did_workout: boolean | null;
-        sleep_hours: number | null;
-        habits_completed: number | null;
-        calories: number | null;
-      }
-    | null;
-
-  // 6. v2 health score.
-  const result = calculateHealthScore({
-    whoop: {
-      recoveryScore: recovery.recoveryScore,
-      sleepPerformancePct: sleep.sleepPerformancePct,
-      sleepEfficiencyPct: sleep.sleepEfficiencyPct,
-      totalSleepMs: sleep.totalSleepMs,
-      dayStrain: cycle.dayStrain,
-    },
-    manual: {
-      didWorkout: checkinRow?.did_workout ?? null,
-      sleepHours: checkinRow?.sleep_hours ?? null,
-      habitsCompleted: checkinRow?.habits_completed ?? null,
-      caloriesLogged: checkinRow?.calories ?? null,
-    },
-    date,
-  });
-
-  // 7. Upsert health_scores. We populate:
-  //      - score (final 0..100)
-  //      - the new v2 columns (migration 017)
-  //      - the legacy whoop_*_points + habit_points + score_source
-  //        columns (migration 016) for back-compat with anything
-  //        still reading them
-  //      - the legacy training/diet/sleep/habit_score columns via
-  //        proportional mapping so their NOT NULL + CHECK
-  //        constraints stay satisfied on a fresh insert.
-  const legacy = legacyColumnMapping(result.componentBreakdown);
-
-  const scorePayload: Record<string, unknown> = {
-    user_id: userId,
-    date,
-    score: result.finalScore,
-    training_score: legacy.training_score,
-    diet_score: legacy.diet_score,
-    sleep_score: legacy.sleep_score,
-    habit_score: legacy.habit_score,
-    activity_points: result.componentBreakdown.activity,
-    recovery_points: result.componentBreakdown.recovery,
-    sleep_points: result.componentBreakdown.sleep,
-    recovery_sleep_points: result.componentBreakdown.recoverySleep,
-    food_points: result.componentBreakdown.food,
-    habit_points: result.componentBreakdown.habits,
-    raw_score: result.rawScore,
-    max_raw_score: result.maxRawScore,
-    whoop_recovery_points: result.componentBreakdown.recovery,
-    whoop_sleep_points: result.componentBreakdown.sleep,
-    whoop_activity_points: result.componentBreakdown.activity,
-    score_source: result.scoreSource,
-  };
-
-  const { error: scoreUpsertError } = await supabase
-    .from('health_scores')
-    .upsert(scorePayload, { onConflict: 'user_id,date' });
-
-  if (scoreUpsertError) {
-    console.error('health_scores upsert failed:', scoreUpsertError);
-    return NextResponse.json(
-      { error: 'Failed to store health score' },
-      { status: 500 }
-    );
-  }
+  await importWorkouts(userId, accessToken);
+  const snapshot = await scoreSnapshot(userId);
 
   // 8. Safe response — never include tokens or raw_payload.
   return NextResponse.json({
     success: true,
     date,
-    healthScore: result.finalScore,
-    scoreSource: result.scoreSource,
-    rawScore: result.rawScore,
-    maxRawScore: result.maxRawScore,
-    componentBreakdown: result.componentBreakdown,
-    inputsUsed: result.inputsUsed,
+    healthScore: snapshot.score?.score ?? null,
+    scoreSource: 'whoop',
+    rawScore: snapshot.score?.subtotal ?? null,
+    maxRawScore: 110,
+    componentBreakdown: snapshot.score,
+
     whoopDataSummary: {
       recoveryScore: recovery.recoveryScore,
       hrv: recovery.hrv,
@@ -343,4 +245,15 @@ export async function POST(request: NextRequest) {
       kilojoules: cycle.kilojoules,
     },
   });
+}
+
+export async function POST(request: NextRequest) {
+  let user;
+  try { user = await requireAuth(); }
+  catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+  try { return await withWhoopLock(user.id, () => syncDaily(request, user.id)); }
+  catch (error) {
+    return NextResponse.json({ error: error instanceof SyncBusyError ? 'Sync already running' : 'Sync failed; retry shortly' },
+      { status: error instanceof SyncBusyError ? 409 : 503 });
+  }
 }

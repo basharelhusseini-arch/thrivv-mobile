@@ -20,10 +20,7 @@ import {
   ensureWhoopAutoSync,
   type WhoopStatusSnapshot,
 } from '@/lib/whoop/auto-sync';
-import {
-  calculateHealthScore,
-  type HealthScoreV2Output,
-} from '@/lib/health-score-v2';
+import { calculateHealthScoreV3 } from '@/lib/health-score-v3';
 
 interface CheckinForm {
   didWorkout: boolean;
@@ -53,17 +50,17 @@ function ScoreBar({
   tone,
 }: {
   label: string;
-  value: number;
+  value: number | null;
   max: number;
   tone: string;
 }) {
-  const pct = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
+  const pct = max > 0 ? Math.min(100, Math.max(0, ((value ?? 0) / max) * 100)) : 0;
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between text-[11px] uppercase tracking-[0.14em] text-gray-500">
         <span>{label}</span>
         <span className="font-mono text-gray-300 tabular-nums">
-          {value.toFixed(1)} / {max}
+          {value === null ? "Pending" : value.toFixed(1)} / {max}
         </span>
       </div>
       <div className="h-2 rounded-full bg-white/5 overflow-hidden border border-white/10">
@@ -133,43 +130,13 @@ export default function CheckinPage() {
     },
   });
 
-  const whoopPreviewPayload = useMemo(() => {
-    if (!whoopStatus?.connected || !whoopStatus.latest) return null;
-    if (whoopStatus.latest.date !== todayStr) return null;
-    return {
-      recoveryScore: whoopStatus.latest.recoveryScore,
-      sleepPerformancePct: null as number | null,
-      sleepEfficiencyPct: whoopStatus.latest.sleepEfficiencyPct,
-      totalSleepMs: whoopStatus.latest.totalSleepMs,
-      dayStrain: whoopStatus.latest.dayStrain,
-    };
-  }, [whoopStatus, todayStr]);
-
-  const preview: HealthScoreV2Output = useMemo(() => {
-    const calsRaw = formData.calories.trim();
-    let caloriesLogged: number | null = null;
-    if (calsRaw !== '') {
-      const n = parseInt(calsRaw, 10);
-      if (Number.isFinite(n)) caloriesLogged = n;
-    }
-    const sleepRaw = formData.sleepHours.trim();
-    let sleepHours: number | null = null;
-    if (sleepRaw !== '') {
-      const n = parseFloat(sleepRaw);
-      if (Number.isFinite(n)) sleepHours = n;
-    }
-
-    return calculateHealthScore({
-      whoop: whoopPreviewPayload,
-      manual: {
-        didWorkout: formData.didWorkout,
-        sleepHours,
-        habitsCompleted: habitCount(formData.habits),
-        caloriesLogged,
-      },
-      date: todayStr,
-    });
-  }, [formData, whoopPreviewPayload, todayStr]);
+  const preview = useMemo(() => {
+    const result = calculateHealthScoreV3(
+      typeof currentScore?.workout_score === 'number' ? currentScore.workout_score : null,
+      currentScore?.recovery_complete && typeof currentScore?.whoop_recovery === 'number' ? currentScore.whoop_recovery : null,
+      formData.habits, currentScore?.workouts_complete === true);
+    return result;
+  }, [formData.habits, currentScore]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -340,10 +307,7 @@ export default function CheckinPage() {
   };
 
   const whoopConnected = Boolean(whoopStatus?.connected);
-  const whoopTodaySynced =
-    whoopConnected &&
-    whoopStatus?.latest?.date === todayStr &&
-    whoopStatus.latest != null;
+  const whoopTodaySynced = currentScore?.complete === true;
 
   if (loading) {
     return (
@@ -387,7 +351,7 @@ export default function CheckinPage() {
         subtitle={
           hasCheckedIn
             ? 'Update today’s signals — your preview refreshes as you go.'
-            : 'Log food and habits; WHOOP carries verified strain, recovery, and sleep when synced.'
+            : 'Track your habits; WHOOP carries verified workouts and recovery when synced.'
         }
       />
 
@@ -397,7 +361,7 @@ export default function CheckinPage() {
           <div>
             <p className="text-lg font-semibold text-white">Check-in complete</p>
             <p className="text-sm text-gray-400 mt-1">
-              Health score saved. Taking you to the dashboard…
+              Check-in saved. Taking you to the dashboard…
             </p>
           </div>
         </div>
@@ -415,14 +379,13 @@ export default function CheckinPage() {
           <p>
             <span className="font-semibold text-white">WHOOP connected</span>
             {' — '}
-            activity, recovery, and sleep are verified automatically when today’s
+            workouts and recovery are verified automatically when today’s
             data has synced. Use check-in for{' '}
             <span className="text-thrivv-gold-400">food</span> and{' '}
             <span className="text-thrivv-gold-400">habits</span>.
             {!whoopTodaySynced && (
               <span className="block mt-2 text-xs text-gray-500">
-                Preview uses manual activity / sleep until today’s WHOOP row is
-                available after sync.
+                Training and Recovery stay pending until verified WHOOP data is available.
               </span>
             )}
           </p>
@@ -458,15 +421,10 @@ export default function CheckinPage() {
 
               <div className="relative flex items-end gap-4 mb-6">
                 <div className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-amber-200 via-thrivv-gold-400 to-amber-700 leading-none tabular-nums">
-                  {preview.finalScore}
+                  {preview.score ?? `${preview.subtotal} provisional`}
                 </div>
                 <div className="pb-1 text-sm text-gray-400">
-                  / 100{' '}
-                  <span className="text-gray-600 mx-1">·</span>{' '}
-                  <span className="text-gray-300 tabular-nums">
-                    {preview.rawScore.toFixed(1)}
-                  </span>{' '}
-                  <span className="text-gray-600">/ 110 raw</span>
+                  / 110
                 </div>
               </div>
 
@@ -487,44 +445,30 @@ export default function CheckinPage() {
                   <span className="text-[11px] uppercase tracking-[0.14em] text-gray-500">
                     Activity
                   </span>
-                  <SourcePill verified={preview.inputsUsed.whoopActivity} />
+                  <SourcePill verified={preview.training_score !== null} />
                 </div>
                 <ScoreBar
-                  label="Activity"
-                  value={preview.componentBreakdown.activity}
-                  max={50}
+                  label="Training"
+                  value={preview.training_score}
+                  max={80}
                   tone="from-amber-600 to-yellow-400"
                 />
 
                 <div className="flex items-center justify-between gap-2 pt-1">
                   <span className="text-[11px] uppercase tracking-[0.14em] text-gray-500">
-                    Recovery + sleep
+                    Recovery
                   </span>
                   <SourcePill
                     verified={
-                      preview.inputsUsed.whoopRecovery ||
-                      preview.inputsUsed.whoopSleep
+                      preview.recovery_score !== null
                     }
                   />
                 </div>
                 <ScoreBar
-                  label="Recovery + sleep"
-                  value={preview.componentBreakdown.recoverySleep}
-                  max={30}
-                  tone="from-sky-700 to-cyan-400"
-                />
-
-                <div className="flex items-center justify-between gap-2 pt-1">
-                  <span className="text-[11px] uppercase tracking-[0.14em] text-gray-500">
-                    Food
-                  </span>
-                  <SourcePill verified={false} />
-                </div>
-                <ScoreBar
-                  label="Food"
-                  value={preview.componentBreakdown.food}
+                  label="Recovery"
+                  value={preview.recovery_score}
                   max={20}
-                  tone="from-emerald-800 to-emerald-400"
+                  tone="from-sky-700 to-cyan-400"
                 />
 
                 <div className="flex items-center justify-between gap-2 pt-1">
@@ -535,7 +479,7 @@ export default function CheckinPage() {
                 </div>
                 <ScoreBar
                   label="Habits"
-                  value={preview.componentBreakdown.habits}
+                  value={preview.habit_score}
                   max={10}
                   tone="from-violet-900 to-violet-400"
                 />
@@ -592,7 +536,7 @@ export default function CheckinPage() {
                     <h2 className="text-sm font-semibold text-white tracking-wide">
                       Activity
                     </h2>
-                    <p className="text-[11px] text-gray-500">Up to 50 raw pts</p>
+                    <p className="text-[11px] text-gray-500">Manual tracking · no verified points</p>
                   </div>
                 </div>
                 {whoopTodaySynced && (
@@ -626,8 +570,7 @@ export default function CheckinPage() {
                 </span>
               </label>
               <p className="text-xs text-gray-500 mt-3 ml-9 leading-relaxed">
-                Manual workouts refine scoring when WHOOP doesn’t show strain yet,
-                or when you’re not on WHOOP.
+                Manual activity is saved for tracking. Verified training points use your best scored WHOOP workout, up to 80 points.
               </p>
             </section>
 
@@ -642,7 +585,7 @@ export default function CheckinPage() {
                     Nutrition
                   </h2>
                   <p className="text-[11px] text-gray-500">
-                    Food score · up to 20 raw pts
+                    Nutrition tracking · no Health Score points
                   </p>
                 </div>
               </div>
@@ -689,8 +632,7 @@ export default function CheckinPage() {
                   ))}
                 </div>
                 <p className="text-[11px] text-gray-500 leading-relaxed">
-                  Macros are optional UI helpers — scoring uses calories toward your
-                  targets (preview matches saved check-in logic).
+                  Macros and calories are for nutrition tracking only. Food contributes no Health Score points.
                 </p>
               </div>
             </section>
@@ -707,7 +649,7 @@ export default function CheckinPage() {
                       Sleep
                     </h2>
                     <p className="text-[11px] text-gray-500">
-                      Recovery + sleep · up to 30 raw pts combined
+                      Recovery · up to 20 points from WHOOP only
                     </p>
                   </div>
                 </div>
@@ -733,8 +675,7 @@ export default function CheckinPage() {
                 className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-thrivv-gold-500/50 transition-all"
               />
               <p className="text-xs text-gray-500 mt-2">
-                Used when WHOOP sleep isn’t available yet — aim for roughly 7.5–9h
-                for solid manual credit.
+                For your own tracking. Health Score uses WHOOP Recovery only.
               </p>
             </section>
 
@@ -749,7 +690,7 @@ export default function CheckinPage() {
                     Habits
                   </h2>
                   <p className="text-[11px] text-gray-500">
-                    Up to 10 raw pts · 2+ habits = full credit
+                    Up to 10 points · each of the six habits counts equally
                   </p>
                 </div>
               </div>

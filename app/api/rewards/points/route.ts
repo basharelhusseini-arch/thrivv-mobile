@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
 import { getRewardTier } from '@/lib/reward-points';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const user = await requireAuth();
@@ -38,7 +40,14 @@ export async function GET() {
       .order('date', { ascending: false })
       .limit(30);
 
+    const { data: redemptions, error: redemptionError } = await supabase
+      .from('reward_redemptions').select('id,offer_id,status,created_at').eq('user_id', user.id);
+    if (redemptionError) throw new Error('Unable to read redemptions');
+    const { data: offers, error: offerError } = await supabase.from('reward_offers').select('id,points').eq('active', true);
+    if (offerError) throw new Error('Unable to read offers');
     return NextResponse.json({
+      offers: offers || [],
+      redemptions: redemptions || [],
       points,
       tier: tier.tier,
       nextTier: tier.nextTier,

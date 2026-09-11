@@ -1,3 +1,4 @@
+import { ensureMemberProfile } from '@/lib/member-profile';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseEnv } from '@/lib/env';
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
       lastName,
     };
     
+    await ensureMemberProfile(data.user);
     await setSessionCookie(sessionUser);
 
     return NextResponse.json({

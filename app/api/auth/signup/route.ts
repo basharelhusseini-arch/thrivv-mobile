@@ -1,3 +1,4 @@
+import { ensureMemberProfile } from '@/lib/member-profile';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseEnv, getSupabaseServiceKey } from '@/lib/env';
@@ -98,37 +99,7 @@ export async function POST(request: NextRequest) {
     if (data.user && data.session) {
       console.log('User created with session:', data.user.id);
       
-      // Try to create profile record in users table (if it exists)
-      // This is OPTIONAL and should not fail the signup
-      try {
-        const supabaseServiceKey = getSupabaseServiceKey();
-        
-        if (supabaseServiceKey) {
-          const supabaseService = createClient(
-            supabaseUrl,
-            supabaseServiceKey,
-            {
-              auth: {
-                autoRefreshToken: false,
-                persistSession: false,
-              },
-            }
-          );
-
-          await supabaseService.from('users').insert({
-            id: data.user.id,
-            first_name: firstName,
-            last_name: lastName,
-            email: email,
-            phone: phone || null,
-          });
-        } else {
-          console.warn('SUPABASE_SERVICE_ROLE_KEY not set, skipping profile creation');
-        }
-      } catch (profileError: any) {
-        // Log but don't fail - auth signup succeeded
-        console.warn('Profile creation failed (non-critical):', profileError.message);
-      }
+      await ensureMemberProfile(data.user);
 
       return NextResponse.json({
         success: true,
