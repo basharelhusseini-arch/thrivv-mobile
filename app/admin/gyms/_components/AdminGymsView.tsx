@@ -117,7 +117,8 @@ export default function AdminGymsView() {
                       </div>
                     </div>
                     <AssignUser gymId={g.id} onAssigned={reload} />
-                    <GymJoinCode gymId={g.id} />
+                    <div className="mt-4"><GymJoinCode gymId={g.id} /></div>
+                    <GymOperators gymId={g.id} />
                   </li>
                 ))}
               </ul>
@@ -348,4 +349,41 @@ function Field({
       {children}
     </label>
   );
+}
+
+function GymOperators({ gymId }: { gymId: string }) {
+  const [open, setOpen] = useState(false);
+  const [operators, setOperators] = useState<{ user_id: string }[]>([]);
+  const [userId, setUserId] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  async function load() {
+    try {
+      const res = await fetch(`/api/admin/gyms/${gymId}/operators`, { cache: 'no-store' });
+      const data = await res.json(); if (!res.ok) throw new Error(data.error);
+      setOperators(data.operators); setMessage('');
+    } catch { setMessage('Unable to load operator access. Retry before changing permissions.'); }
+  }
+  async function update(id: string, grant: boolean) {
+    if (busy || !window.confirm(grant ? `Grant gym dashboard access to account ${id}? Verify this account belongs to the intended operator.` : 'Revoke this account’s gym dashboard access?')) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/gyms/${gymId}/operators`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id, grant }) });
+      const data = await res.json(); if (!res.ok) throw new Error(data.error);
+      setUserId(''); await load();
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'Unable to update access'); }
+    finally { setBusy(false); }
+  }
+  return <section className="mt-4 border-t border-thrivv-gold-500/10 pt-4 space-y-3">
+    <button type="button" className="text-sm text-thrivv-gold-500 underline" onClick={() => { if (!open) load(); setOpen(!open); }}>Manage dashboard access</button>
+    {open && <>
+      <p className="text-sm text-thrivv-text-secondary">Assign a registered account’s user ID from Supabase. Verify the person first. This grants access only to this gym; it does not change membership or platform-admin status.</p>
+      <form onSubmit={e => { e.preventDefault(); update(userId.trim(), true); }} className="flex flex-wrap gap-2">
+        <input aria-label="Operator account ID" required value={userId} onChange={e => setUserId(e.target.value)} placeholder="Registered account UUID" className="input-premium min-w-0 flex-1 px-3 py-2 text-sm" />
+        <button disabled={busy} className="btn-primary px-4 py-2 text-sm disabled:opacity-50">Grant access</button>
+      </form>
+      <ul className="space-y-2">{operators.map(operator => <li key={operator.user_id} className="flex flex-wrap items-center gap-3 text-sm"><span className="break-all">{operator.user_id}</span><button disabled={busy} className="text-thrivv-gold-500 underline disabled:opacity-50" onClick={() => update(operator.user_id, false)}>Revoke</button></li>)}</ul>
+      {message && <p role="alert" className="text-sm text-red-400">{message} <button onClick={load} className="underline">Retry</button></p>}
+    </>}
+  </section>;
 }

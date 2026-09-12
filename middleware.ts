@@ -66,7 +66,7 @@ export function middleware(req: NextRequest) {
   // gyms.thrivv.dev/ → land on the natural entry point for the gym surface.
   if (isGymHost && pathname === '/') {
     const target = url.clone();
-    target.pathname = '/admin/gyms';
+    target.pathname = '/gym';
     return NextResponse.redirect(target);
   }
 

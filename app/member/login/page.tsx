@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { gymReturnPath, isGymLogin } from '@/lib/gym-routing';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Mail, Lock } from 'lucide-react';
@@ -14,6 +15,10 @@ export default function MemberLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [gymMode, setGymMode] = useState(false);
+  useEffect(() => {
+    setGymMode(isGymLogin(window.location.hostname, new URLSearchParams(window.location.search).get('portal')));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +41,9 @@ export default function MemberLoginPage() {
           `${data.user.firstName} ${data.user.lastName}`
         );
         localStorage.setItem('memberEmail', data.user.email);
-        router.push('/member/dashboard');
+        const params = new URLSearchParams(window.location.search);
+        const gym = isGymLogin(window.location.hostname, params.get('portal'));
+        router.push(gym ? gymReturnPath(params.get('redirect')) : '/member/dashboard');
       } else {
         setError(data.error || 'Login failed');
       }
@@ -68,7 +75,7 @@ export default function MemberLoginPage() {
             <Reveal>
               <div className="text-center mb-10">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
-                  Member access
+                  {gymMode ? 'Gym portal sign-in' : 'Member access'}
                 </span>
                 <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold tracking-tighter leading-[1.02]">
                   Welcome{' '}
@@ -78,7 +85,7 @@ export default function MemberLoginPage() {
                   .
                 </h1>
                 <p className="mt-4 text-thrivv-text-secondary text-base lg:text-lg">
-                  Sign in to keep climbing your gym&apos;s leaderboard.
+                  {gymMode ? 'Your members. Your community. Your gym dashboard.' : "Sign in to keep climbing your gym’s leaderboard."}
                 </p>
               </div>
             </Reveal>
@@ -144,7 +151,7 @@ export default function MemberLoginPage() {
                 </form>
 
                 <div className="mt-7 text-center text-sm text-thrivv-text-secondary">
-                  Don&apos;t have an account?{' '}
+                  {gymMode ? 'Need a Thrivv account? ' : "Don't have an account? "}
                   <Link
                     href="/member/signup"
                     className="text-thrivv-gold-500 hover:text-thrivv-gold-400 font-medium transition-colors"
@@ -157,7 +164,7 @@ export default function MemberLoginPage() {
 
             <Reveal delay={200}>
               <p className="mt-8 text-center text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
-                Built for gyms · Powered by Thrivv
+                {gymMode ? 'Authorised gym access · Powered by Thrivv' : 'Built for gyms · Powered by Thrivv'}
               </p>
             </Reveal>
           </div>

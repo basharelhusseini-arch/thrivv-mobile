@@ -1,6 +1,5 @@
 'use client';
 
-import GymJoinCode from '@/components/GymJoinCode';
 import GymInvitation from './GymInvitation';
 import GymHeader from './GymHeader';
 import Week4RetentionCard from './Week4RetentionCard';
@@ -28,6 +27,10 @@ export type GymAnalytics = {
     active_this_week_pct: number;
     active_prev_week: number;
   };
+  activity_definition: string;
+  unknown_membership_dates: number;
+  earned_points: { status: 'not_activated'; value: null; reason: string };
+  verified_scans: { status: 'not_activated'; total: null; last_seven_days: null; reason: string };
   week4_retention: {
     eligible: number;
     retained: number;
@@ -41,17 +44,7 @@ export type GymAnalytics = {
     last_checkin_date: string | null;
   }>;
   daily_checkins_30d: Array<{ date: string; count: number }>;
-  recent_activity: Array<{
-    id: string;
-    user_id: string;
-    name: string;
-    email: string;
-    date: string;
-    did_workout: boolean;
-    calories: number | null;
-    sleep_hours: number | null;
-    created_at: string;
-  }>;
+  recent_activity: Array<{ id: string; user_id: string; name: string; date: string; created_at: string }>;
   viewer: { is_admin: boolean; is_owner: boolean };
 };
 
@@ -101,7 +94,8 @@ export default function GymDashboardView({ data }: { data: GymAnalytics }) {
 
       <main className="relative max-w-7xl mx-auto px-6 lg:px-10 py-10 lg:py-14 space-y-10">
         <GymHeader data={data} />
-        <GymJoinCode gymId={data.gym.id} />
+        <p className="text-sm text-thrivv-text-secondary">{data.activity_definition}</p>
+        {data.unknown_membership_dates > 0 && <p className="text-sm text-thrivv-text-secondary">{data.unknown_membership_dates} member(s) have no recorded gym membership start date. Their past check-ins are excluded from engagement metrics.</p>}
         <GymInvitation gymId={data.gym.id} />
 
         <Reveal delay={100}>
