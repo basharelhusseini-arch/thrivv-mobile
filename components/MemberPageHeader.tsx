@@ -6,6 +6,7 @@ import PageHeader from './PageHeader';
 export { gradient } from './PageHeader';
 
 const sections = {
+  account: { number: '08', name: 'Account', icon: Fingerprint, words: ['Your profile', 'Your gym', 'Your community'] },
   dashboard: { number: '01', name: 'Overview', icon: Activity, words: ['Performance', 'Progress', 'Your gym'] },
   workouts: { number: '02', name: 'Workouts', icon: Dumbbell, words: ['Your plans', 'Your sessions', 'Your pace'] },
   nutrition: { number: '03', name: 'Nutrition', icon: Utensils, words: ['Meals', 'Macros', 'Recipes'] },

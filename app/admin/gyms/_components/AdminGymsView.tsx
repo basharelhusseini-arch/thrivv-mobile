@@ -1,5 +1,7 @@
 'use client';
 
+import GymJoinCode from '@/components/GymJoinCode';
+
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Building2, Plus, ExternalLink, UserPlus, Calendar, Mail } from 'lucide-react';
@@ -115,6 +117,7 @@ export default function AdminGymsView() {
                       </div>
                     </div>
                     <AssignUser gymId={g.id} onAssigned={reload} />
+                    <GymJoinCode gymId={g.id} />
                   </li>
                 ))}
               </ul>

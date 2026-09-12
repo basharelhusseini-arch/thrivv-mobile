@@ -43,6 +43,7 @@ const memberNavigation = [
   { name: 'Health Score', label: 'Health', href: '/member/health', icon: Activity },
   { name: 'Rewards', label: 'Rewards', href: '/member/rewards', icon: Trophy },
   { name: 'Wearable', label: 'Wearable', href: '/member/wearables', icon: Heart },
+  { name: 'Account', label: 'Account', href: '/member/account', icon: UserCog },
 ];
 
 // Hrefs surfaced as the 4 primary tabs on the mobile bottom nav.
@@ -60,6 +61,7 @@ type NavItem = (typeof memberNavigation)[number];
 function isItemActive(item: NavItem, pathname: string | null): boolean {
   if (!pathname) return false;
   if (pathname === item.href) return true;
+  if (item.href === '/member/account' && pathname.startsWith('/member/account/')) return true;
   // Bookings tab also activates on the legacy /member/classes redirect target.
   if (item.href === '/member/bookings' && pathname === '/member/classes') return true;
   return false;
