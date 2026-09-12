@@ -38,12 +38,15 @@ test('only authorized gym administrators can generate a code', async () => {
  expect(res.status).toBe(403); expect(supabase.from).not.toHaveBeenCalled();
 });
 test('code generation stores a hash and scopes it to the authorized gym', async () => {
+ const previousKey = process.env.GYM_CODE_ENCRYPTION_KEY;
+ process.env.GYM_CODE_ENCRYPTION_KEY = Buffer.alloc(32, 1).toString('base64');
  (checkGymAccess as jest.Mock).mockResolvedValue({ ok: true, user: { id: 'admin' } });
  const upsert = jest.fn().mockResolvedValue({ error: null }); (supabase.from as jest.Mock).mockReturnValue({ upsert });
  const res = await createCode(request({}), { params: { gym_id: 'authorized-gym' } });
  const data = await res.json(); expect(res.status).toBe(200);
  expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ gym_id: 'authorized-gym', code_hash: gymCodeHash(data.code), created_by: 'admin' }));
  expect(JSON.stringify(upsert.mock.calls)).not.toContain(data.code);
+ if (previousKey === undefined) delete process.env.GYM_CODE_ENCRYPTION_KEY; else process.env.GYM_CODE_ENCRYPTION_KEY = previousKey;
 });
 test('account loads only the signed-in profile and never requests passwords or tokens', async () => {
  const single = jest.fn().mockResolvedValue({ data: { first_name: 'Test', last_name: 'Member', email: 'test@example.test', gym_id: null }, error: null });

@@ -1,7 +1,8 @@
+import { gymLoginPath } from '@/lib/gym-routing';
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
+import { gymDashboardData } from '@/lib/gym-dashboard-data';
 import { checkGymAccess } from '@/lib/gym-auth';
-import GymDashboardView, { type GymAnalytics } from './_components/GymDashboardView';
+import GymDashboardView from './_components/GymDashboardView';
 import NotAuthorized from './_components/NotAuthorized';
 
 export const dynamic = 'force-dynamic';
@@ -15,29 +16,15 @@ export default async function GymDashboardPage({
 
   if (!access.ok) {
     if (access.status === 401) {
-      redirect('/member/login');
+      redirect(gymLoginPath(`/gym/${params.gym_id}/dashboard`));
     }
     return <NotAuthorized status={access.status} reason={access.reason} />;
   }
 
-  // Server-side fetch through our own analytics route so logic stays
-  // in one place. Forward the session cookie so checkGymAccess passes
-  // again inside the route handler.
-  const h = headers();
-  const proto = h.get('x-forwarded-proto') ?? 'http';
-  const host = h.get('host');
-  const cookie = h.get('cookie') ?? '';
-  const baseUrl = `${proto}://${host}`;
-
-  const res = await fetch(`${baseUrl}/api/gym/${params.gym_id}/analytics`, {
-    cache: 'no-store',
-    headers: { cookie },
-  });
-
-  if (!res.ok) {
-    return <NotAuthorized status={500} reason="Failed to load analytics" />;
+  try {
+    const data = await gymDashboardData(access.gym, access.isAdmin, access.isOwner);
+    return <GymDashboardView data={data} />;
+  } catch {
+    return <main className="min-h-screen bg-thrivv-bg-darker flex items-center justify-center p-6"><section className="glass-card p-8 space-y-4"><h1 className="text-2xl font-semibold">Gym analytics unavailable</h1><p role="alert">We could not load your gym’s data.</p><a href={`/gym/${params.gym_id}/dashboard`} className="btn-primary inline-block px-5 py-3">Retry</a></section></main>;
   }
-
-  const data = (await res.json()) as GymAnalytics;
-  return <GymDashboardView data={data} />;
 }

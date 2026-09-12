@@ -1,16 +1,12 @@
 'use client';
 
-import { Activity, Dumbbell, Moon, UtensilsCrossed } from 'lucide-react';
+import { Activity } from 'lucide-react';
 
 type Row = {
   id: string;
   user_id: string;
   name: string;
-  email: string;
   date: string;
-  did_workout: boolean;
-  calories: number | null;
-  sleep_hours: number | null;
   created_at: string;
 };
 
@@ -29,26 +25,8 @@ function relativeTime(iso: string): string {
   });
 }
 
-function describe(row: Row): { icon: React.ReactNode; text: string } {
-  const parts: string[] = [];
-  if (row.did_workout) parts.push('logged a workout');
-  if (row.calories && row.calories > 0) parts.push(`${row.calories} kcal`);
-  if (row.sleep_hours && row.sleep_hours > 0)
-    parts.push(`${row.sleep_hours}h sleep`);
-  const text = parts.length ? parts.join(' · ') : 'completed a check-in';
-
-  const Icon = row.did_workout
-    ? Dumbbell
-    : row.calories && row.calories > 0
-    ? UtensilsCrossed
-    : row.sleep_hours && row.sleep_hours > 0
-    ? Moon
-    : Activity;
-
-  return {
-    icon: <Icon className="w-4 h-4 text-thrivv-gold-500" />,
-    text,
-  };
+function describe(_row: Row): { icon: React.ReactNode; text: string } {
+  return { icon: <Activity className="w-4 h-4" />, text: 'Submitted a daily check-in' };
 }
 
 export default function RecentActivityFeed({ rows }: { rows: Row[] }) {
@@ -104,7 +82,7 @@ export default function RecentActivityFeed({ rows }: { rows: Row[] }) {
                     </span>
                   </div>
                   <p className="text-[11px] text-thrivv-text-muted truncate">
-                    {row.email}
+                    {row.date}
                   </p>
                 </div>
               </li>

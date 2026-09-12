@@ -223,3 +223,12 @@ export function displayName(m: MemberRow): string {
   const full = `${first} ${last}`.trim();
   return full || m.email;
 }
+
+/** Unknown membership dates cannot establish that activity happened in this gym. */
+export function membershipCheckins(members: MemberRow[], checkins: CheckinRow[], through = todayYmd()) {
+  const starts = new Map(members.map(member => [member.id, member.membership_start_date]));
+  return checkins.filter(checkin => {
+    const start = starts.get(checkin.user_id);
+    return Boolean(start && checkin.date >= start && checkin.date <= through);
+  });
+}
