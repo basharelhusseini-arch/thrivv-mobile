@@ -1,3 +1,4 @@
+import { reconcileDailyRewards, rewardBackfillWindow } from '@/lib/rewards/ledger';
 import { bestDailyWorkout } from '@/lib/workout-score';
 import { randomUUID } from 'crypto';
 import { supabase } from '@/lib/supabase';
@@ -18,11 +19,12 @@ export async function withWhoopLock<T>(userId: string, action: () => Promise<T>)
   finally { await supabase.rpc('thrivv_release_sync', { p_user: userId, p_owner: owner }); }
 }
 
-/** Call under the per-user lock. No rewards until the owner approves a formula. */
-export async function importWorkouts(userId: string, accessToken: string) {
+/** Call under the per-user lock. Rewards remain separately gated. */
+export async function importWorkouts(userId: string, accessToken: string, backfill?: { first: string; after: string; start: string; end: string }) {
   const context = await scoreContext(userId);
-  const startDate = addDays(context.today, -7);
-  const window = { start: dayStart(startDate, context.timezone), end: new Date().toISOString() };
+  const startDate = backfill?.first ?? addDays(context.today, -7);
+  const window = backfill ?? { start: dayStart(startDate, context.timezone), end: new Date().toISOString() };
+  const lastDate = backfill ? addDays(backfill.after, -1) : context.today;
   // Fetch the preceding two days as well: main sleep begins before its recovery day.
   const sleepStart = dayStart(addDays(startDate, -2), context.timezone);
   const results = await Promise.allSettled([
@@ -42,20 +44,30 @@ export async function importWorkouts(userId: string, accessToken: string) {
   const { data: workouts, error: readError } = await supabase.from('whoop_workouts').select('start_at,workout_score,score_input_valid,score_state')
     .eq('user_id', userId).is('deleted_at', null).gte('start_at', window.start).lt('start_at', window.end);
   if (readError) throw new Error('Failed to read workouts');
-  for (let date = startDate; date <= context.today; date = addDays(date, 1)) {
+  for (let date = startDate; date <= lastDate; date = addDays(date, 1)) {
     const daily = (workouts || []).filter(w => localDate(w.start_at, context.timezone) === date);
     const recovery = recoveryForDay(sleeps, recoveries, date, context.timezone);
     await saveDay(context, date, { ...bestDailyWorkout(daily), recovery: recovery.value, sleepId: recovery.sleepId });
   }
+  const rewards = await reconcileDailyRewards(userId, window.start, window.end);
+  if (backfill) {
+    const { error: cursorError } = await supabase.from('whoop_connections').update({ reward_sync_cursor: backfill.after }).eq('id', userId);
+    if (cursorError) throw new Error('Failed to advance reward recovery');
+    return { imported: records.length, workoutRewardsEnabled: false, dailyRewards: rewards };
+  }
   const { error: syncError } = await supabase.from('whoop_connections').update({ last_sync_at: new Date().toISOString(), next_sync_at: new Date(Date.now() + 3600000).toISOString() }).eq('id', userId);
   if (syncError) throw new Error('Failed to record completed sync');
-  return { imported: records.length, workoutRewardsEnabled: false };
+  return { imported: records.length, workoutRewardsEnabled: false, dailyRewards: rewards };
 }
 
 export async function syncMemberWorkouts(userId: string) {
   return withWhoopLock(userId, async () => {
     const token = await getValidAccessToken(userId);
     if (!token) throw new Error('WHOOP connection unavailable');
-    return importWorkouts(userId, token);
+    const result = await importWorkouts(userId, token);
+    const context = await scoreContext(userId);
+    const backfill = await rewardBackfillWindow(userId, context.today, context.timezone);
+    if (backfill) await importWorkouts(userId, token, backfill);
+    return result;
   });
 }
