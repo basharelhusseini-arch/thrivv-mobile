@@ -31,6 +31,7 @@ interface HealthScore {
 }
 
 interface LeaderboardEntry {
+  scored_days: number;
   rank: number;
   training_score: number;
   recovery_score: number;
@@ -171,7 +172,7 @@ export default function MemberDashboardPage() {
         eyebrow={"Today\u2019s snapshot"}
         titleNode={<>Welcome back, {gradient(userDisplayName)}</>}
         subtitle={
-          "Your training, recovery, and habits \u2014 distilled into one Health Score that ranks you on your gym\u2019s leaderboard."
+          "Your daily training, recovery, and habit scores add up to your weekly total on your gym\u2019s leaderboard."
         }
 
       />
@@ -206,7 +207,7 @@ export default function MemberDashboardPage() {
               />
               <HudTile
                 icon={Trophy}
-                label="Gym Rank"
+                label="Weekly Gym Rank"
                 value={userRank !== null ? `#${userRank}` : '\u2014'}
                 sub={
                   leaderboard.length > 0
@@ -387,7 +388,7 @@ export default function MemberDashboardPage() {
               <div className="relative px-6 py-5 flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-thrivv-text-primary flex items-center">
                   <Trophy className="w-5 h-5 mr-3 text-thrivv-gold-500" />
-                  Gym Leaderboard
+                  Weekly Gym Leaderboard
                 </h2>
                 <span className="text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">Top 10</span>
               </div>
@@ -395,18 +396,22 @@ export default function MemberDashboardPage() {
               <div className="p-6">
                 {board?.hasGym === false ? <p className="text-thrivv-text-secondary">Join a gym to view your leaderboard.</p> : (
                   <>
+                    <p className="mb-4 text-sm text-thrivv-text-secondary">
+                      {board?.weekStart} – {board?.weekEnd} · {board?.timezone}. Total of completed daily Health Scores, Monday–Sunday.
+                      Missing or incomplete days add no points until completed. These are leaderboard scores, not redeemable points.
+                    </p>
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[560px] text-sm text-left">
-                        <thead className="text-thrivv-text-muted"><tr>{['Rank', 'Member', 'Health /110', 'Training /80', 'Recovery /20', 'Habits /10'].map(label => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead>
+                        <thead className="text-thrivv-text-muted"><tr>{['Rank', 'Member', 'Weekly total /770', 'Training /560', 'Recovery /140', 'Habits /70', 'Days scored'].map(label => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead>
                         <tbody>{leaderboard.map(entry => <tr key={entry.id} className={entry.id === user.id ? 'bg-thrivv-gold-500/10 text-thrivv-gold-500' : 'text-thrivv-text-primary'}>
                           <td className="p-3">{entry.rank}</td><td className="p-3">{entry.name}{entry.id === user.id ? ' · You' : ''}</td>
-                          <td className="p-3 font-semibold">{entry.score}</td><td className="p-3">{entry.training_score}</td><td className="p-3">{entry.recovery_score}</td><td className="p-3">{entry.habit_score}</td>
+                          <td className="p-3 font-semibold">{entry.score}</td><td className="p-3">{entry.training_score}</td><td className="p-3">{entry.recovery_score}</td><td className="p-3">{entry.habit_score}</td><td className="p-3">{entry.scored_days}/7</td>
                         </tr>)}</tbody>
                       </table>
                     </div>
-                    {!leaderboard.length && <p className="text-thrivv-text-secondary py-4">No complete scores yet.</p>}
+                    {!leaderboard.length && <p className="text-thrivv-text-secondary py-4">No complete daily scores this week yet.</p>}
                     {board?.pendingCount > 0 && <div className="mt-4 border-t border-thrivv-gold-500/10 pt-4 text-sm text-thrivv-text-muted">
-                      <p>{board.pendingCount} members pending — not ranked</p>
+                      <p>{board.pendingCount} members without a complete score this week — not ranked</p>
                       <p className="mt-2">{board.pending.map((p: { name: string }) => p.name).join(', ')}</p>
                     </div>}
                   </>
@@ -473,7 +478,7 @@ export default function MemberDashboardPage() {
             <div className="icon-badge mb-6">
               <Trophy className="w-6 h-6 text-thrivv-gold-500" />
             </div>
-            <h3 className="text-xl font-semibold text-thrivv-text-primary mb-2">Your Rank</h3>
+            <h3 className="text-xl font-semibold text-thrivv-text-primary mb-2">Your Weekly Rank</h3>
             {leaderboard.length > 0 ? (
               <>
                 <p className="text-thrivv-text-secondary text-sm mb-6">
