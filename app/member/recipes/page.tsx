@@ -2,13 +2,16 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Search, Filter, X, UtensilsCrossed, Trash2 } from 'lucide-react';
-import { recipesData, filterRecipes, sortRecipes, searchRecipes, type Recipe } from '@/lib/recipes';
-import { getRecipeImage, FALLBACK_IMAGE_URL } from '@/lib/recipe-images';
+import { Search, Filter, UtensilsCrossed, Trash2 } from 'lucide-react';
+import { recipesData, type Recipe } from '@/lib/recipes';
+import FoodQuantityPicker from '@/components/FoodQuantityPicker';
+import { searchBasicIngredients } from '@/lib/basic-ingredients';
+import { recipeFood, formatNutrient, type BrowserFood } from '@/lib/food-portions';
 import PageHeader from '@/components/PageHeader';
 
 export default function MemberRecipesPage() {
+  const [tab, setTab] = useState<'recipes' | 'ingredients'>('recipes');
+  const [customError, setCustomError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<'protein' | 'calories' | 'carbs'>('protein');
@@ -31,12 +34,13 @@ export default function MemberRecipesPage() {
   const fetchCustomRecipes = async () => {
     try {
       const response = await fetch('/api/custom-recipes');
-      if (response.ok) {
-        const data = await response.json();
-        setCustomRecipes(data);
-      }
+      if (!response.ok) throw new Error('Unable to load custom recipes');
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error('Invalid recipe response');
+      setCustomRecipes(data);
+      setCustomError(false);
     } catch (error) {
-      console.error('Error fetching custom recipes:', error);
+      setCustomError(true);
     }
   };
 
@@ -62,34 +66,20 @@ export default function MemberRecipesPage() {
     }
   };
 
-  // Convert custom recipes to Recipe format and combine with default recipes.
-  // getRecipeImage() is called for every recipe so IMAGE_IDS is the single
-  // source of truth — no stale hardcoded imageUrls from lib/recipes.ts leaking in.
+  // Preserve the existing static and custom recipe sources. Images are unused only here.
   const allRecipes = useMemo(() => {
-    const builtInWithCorrectImages = recipesData.map(recipe => {
-      const { imageUrl, imageId } = getRecipeImage(recipe);
-      return { ...recipe, imageUrl, imageId };
-    });
-
     const formattedCustomRecipes: Recipe[] = customRecipes.map(cr => {
-      const ingredients = cr.ingredients.map((ing: any) => ({
+      const ingredients = (cr.ingredients || []).map((ing: any) => ({
         item: ing.ingredientName,
         quantity: ing.grams,
         unit: 'g',
       }));
-      const { imageUrl, imageId } = getRecipeImage({
-        id: cr.id,
-        name: cr.name,
-        description: cr.description || '',
-        ingredients,
-        tags: ['custom'],
-      });
       return {
         id: cr.id,
         name: cr.name,
         description: cr.description || 'Custom recipe',
-        imageUrl,
-        imageId,
+        imageUrl: '',
+        imageId: '',
         calories: cr.calories_per_serving,
         protein_g: cr.protein_per_serving,
         carbs_g: cr.carbs_per_serving,
@@ -104,7 +94,7 @@ export default function MemberRecipesPage() {
       };
     });
 
-    return [...builtInWithCorrectImages, ...formattedCustomRecipes];
+    return [...recipesData, ...formattedCustomRecipes];
   }, [customRecipes]);
 
   const toggleFilter = (filter: keyof typeof filters) => {
@@ -139,9 +129,10 @@ export default function MemberRecipesPage() {
     const activeFilters = Object.entries(filters).some(([_, value]) => value);
     if (activeFilters) {
       recipes = recipes.filter(recipe => {
-        if (filters.highProtein && recipe.protein_g < 30) return false;
-        if (filters.lowCarb && recipe.carbs_g > 30) return false;
-        if (filters.lowCalorie && recipe.calories > 400) return false;
+        const nutrition = recipeFood(recipe, Boolean((recipe as Recipe & { isCustom?: boolean }).isCustom)).nutrition;
+        if (filters.highProtein && !(nutrition.protein_g >= 30)) return false;
+        if (filters.lowCarb && !(nutrition.carbs_g <= 30)) return false;
+        if (filters.lowCalorie && !(nutrition.calories <= 400)) return false;
         if (filters.vegetarian && !recipe.tags.includes('vegetarian')) return false;
         if (filters.mealPrep && !recipe.tags.includes('meal-prep')) return false;
         return true;
@@ -149,7 +140,14 @@ export default function MemberRecipesPage() {
     }
 
     // Apply sorting
-    recipes = sortRecipes(recipes, sortBy);
+    const nutrient = sortBy === 'protein' ? 'protein_g' : sortBy === 'carbs' ? 'carbs_g' : 'calories';
+    recipes = [...recipes].sort((a, b) => {
+      const left = recipeFood(a, Boolean((a as Recipe & { isCustom?: boolean }).isCustom)).nutrition[nutrient];
+      const right = recipeFood(b, Boolean((b as Recipe & { isCustom?: boolean }).isCustom)).nutrition[nutrient];
+      if (!Number.isFinite(left)) return Number.isFinite(right) ? 1 : 0;
+      if (!Number.isFinite(right)) return -1;
+      return sortBy === 'protein' ? right - left : left - right;
+    });
 
     return recipes;
   }, [searchQuery, filters, sortBy, allRecipes]);
@@ -160,8 +158,8 @@ export default function MemberRecipesPage() {
     <div className="space-y-8">
       <PageHeader
         eyebrow="Recipes"
-        title="Recipe Library"
-        subtitle="Macro-friendly recipes to fuel your goals."
+        title="Browse Recipes"
+        subtitle="Your existing meals and everyday ingredients, ready to log."
         action={
           <Link
             href="/recipes/builder"
@@ -173,11 +171,17 @@ export default function MemberRecipesPage() {
         }
       />
 
+      <div className="flex flex-wrap gap-3" aria-label="Food categories">
+        <button type="button" aria-pressed={tab === 'recipes'} onClick={() => setTab('recipes')} className={tab === 'recipes' ? 'btn-primary px-5 py-3' : 'btn-ghost px-5 py-3'}>Meals &amp; Recipes</button>
+        <button type="button" aria-pressed={tab === 'ingredients'} onClick={() => setTab('ingredients')} className={tab === 'ingredients' ? 'btn-primary px-5 py-3' : 'btn-ghost px-5 py-3'}>Basic Ingredients</button>
+      </div>
+      {customError && tab === 'recipes' && <p role="status" className="text-sm text-thrivv-gold-500">Your custom recipes could not be loaded. <button onClick={fetchCustomRecipes} className="underline">Retry</button></p>}
+      {tab === 'ingredients' ? <IngredientList /> : <>
       {/* Search and Filters Bar */}
       <div className="mb-8 space-y-4">
         {/* Search and Filter Toggle */}
         <div className="flex gap-3">
-          <div className="flex-1 relative">
+          <div className="flex-1 min-w-0 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-thrivv-text-muted" />
             <input
               type="text"
@@ -224,7 +228,7 @@ export default function MemberRecipesPage() {
                     : 'bg-thrivv-bg-card text-thrivv-text-secondary hover:bg-thrivv-gold-500/10 border border-thrivv-gold-500/20'
                 }`}
               >
-                High Protein (≥35g)
+                High Protein (≥30g)
               </button>
               <button
                 onClick={() => toggleFilter('lowCarb')}
@@ -234,7 +238,7 @@ export default function MemberRecipesPage() {
                     : 'bg-thrivv-bg-card text-thrivv-text-secondary hover:bg-thrivv-gold-500/10 border border-thrivv-gold-500/20'
                 }`}
               >
-                Low Carb (≤25g)
+                Low Carb (≤30g)
               </button>
               <button
                 onClick={() => toggleFilter('lowCalorie')}
@@ -244,7 +248,7 @@ export default function MemberRecipesPage() {
                     : 'bg-thrivv-bg-card text-thrivv-text-secondary hover:bg-thrivv-gold-500/10 border border-thrivv-gold-500/20'
                 }`}
               >
-                Low Calorie (≤450)
+                Low Calorie (≤400)
               </button>
               <button
                 onClick={() => toggleFilter('vegetarian')}
@@ -272,7 +276,7 @@ export default function MemberRecipesPage() {
 
         {/* Sort Options */}
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-thrivv-text-secondary">Sort by:</span>
+          <span className="text-sm text-thrivv-text-secondary">Sort per serving:</span>
           <button
             onClick={() => setSortBy('protein')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -318,115 +322,62 @@ export default function MemberRecipesPage() {
         </p>
       </div>
 
-      {/* Recipe Grid */}
+      {/* Text-only browsing; detail pages retain their existing images. */}
       {filteredAndSortedRecipes.length === 0 ? (
-        <div className="premium-card p-12 text-center">
-          <X className="w-16 h-16 text-thrivv-text-muted mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-thrivv-text-primary mb-2">No recipes found</h3>
-          <p className="text-thrivv-text-secondary mb-6">Try adjusting your filters or search query</p>
-          <button
-            onClick={clearAllFilters}
-            className="btn-primary px-6 py-3"
-          >
-            Clear Filters
-          </button>
+        <div className="premium-card p-8 text-center">
+          <p className="text-thrivv-text-secondary">No recipes found. Try another search or clear the filters.</p>
+          <button onClick={clearAllFilters} className="btn-primary px-5 py-3 mt-4">Clear Filters</button>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedRecipes.map((recipe) => (
-            <div key={recipe.id} className="relative">
-              <Link
-                href={`/member/recipes/${recipe.id}`}
-                className="premium-card p-0 overflow-hidden group cursor-pointer block"
-              >
-                {/* Recipe Image */}
-                <div className="relative h-48 overflow-hidden bg-thrivv-bg-card">
-                  <Image
-                    src={recipe.imageUrl}
-                    alt={recipe.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = FALLBACK_IMAGE_URL;
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  
-                  {/* Custom Recipe Badge */}
-                  {(recipe as any).isCustom && (
-                    <div className="absolute top-3 left-3 px-3 py-1 bg-thrivv-gold-500 text-black text-xs font-semibold rounded-full">
-                      Your Recipe
-                    </div>
-                  )}
-                </div>
-
-                {/* Recipe Info */}
-                <div className="p-5">
-                  <h3 className="text-lg font-semibold text-thrivv-text-primary mb-2 line-clamp-1">
-                    {recipe.name}
-                  </h3>
-                <p className="text-sm text-thrivv-text-secondary mb-4 line-clamp-2">
-                  {recipe.description}
-                </p>
-
-                {/* Macros */}
-                <div className="grid grid-cols-4 gap-2 mb-4 p-3 bg-thrivv-bg-card/50 rounded-xl">
-                  <div className="text-center">
-                    <p className="text-xs text-thrivv-text-muted mb-1">Calories</p>
-                    <p className="text-sm font-semibold text-thrivv-gold-500">{recipe.calories}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-thrivv-text-muted mb-1">Protein</p>
-                    <p className="text-sm font-semibold text-thrivv-text-primary">{recipe.protein_g}g</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-thrivv-text-muted mb-1">Carbs</p>
-                    <p className="text-sm font-semibold text-thrivv-text-primary">{recipe.carbs_g}g</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-thrivv-text-muted mb-1">Fat</p>
-                    <p className="text-sm font-semibold text-thrivv-text-primary">{recipe.fat_g}g</p>
-                  </div>
-                </div>
-
-                {/* Tags */}
-                <div className="flex flex-wrap gap-2">
-                  {recipe.tags.slice(0, 3).map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-1 bg-thrivv-gold-500/10 text-thrivv-gold-500 text-xs rounded-lg border border-thrivv-gold-500/20"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                  {recipe.tags.length > 3 && (
-                    <span className="px-2 py-1 text-thrivv-text-muted text-xs">
-                      +{recipe.tags.length - 3} more
-                    </span>
-                  )}
-                </div>
+      ) : <ul className="space-y-4">
+        {filteredAndSortedRecipes.map(recipe => {
+          const custom = Boolean((recipe as Recipe & { isCustom?: boolean }).isCustom);
+          const food = recipeFood(recipe, custom);
+          return <li key={recipe.id} className="premium-card p-5 sm:p-6">
+            <div className="flex justify-between items-start gap-4">
+              <div className="min-w-0">
+                <Link href={`/member/recipes/${recipe.id}`} className="text-lg font-semibold text-thrivv-text-primary hover:text-thrivv-gold-500">{recipe.name}</Link>
+                {custom && <span className="block text-xs text-thrivv-gold-500 mt-1">Your recipe</span>}
+                <p className="text-sm text-thrivv-text-secondary mt-1">{recipe.description}</p>
+                <p className="text-xs text-thrivv-text-muted mt-2">Per 1 serving · Recipe yield: {recipe.servings} {recipe.servings === 1 ? 'serving' : 'servings'}</p>
               </div>
-            </Link>
-            
-            {/* Delete button for custom recipes */}
-            {(recipe as any).isCustom && (
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  deleteCustomRecipe(recipe.id);
-                }}
-                className="absolute top-3 right-3 p-2 bg-red-500/90 hover:bg-red-600 text-white rounded-lg transition-colors z-10"
-                title="Delete recipe"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-          ))}
-        </div>
-      )}
+              {custom && <button onClick={() => deleteCustomRecipe(recipe.id)} aria-label={`Delete ${recipe.name}`} className="btn-ghost p-2 shrink-0"><Trash2 className="w-4 h-4" /></button>}
+            </div>
+            <FoodMacros food={food} />
+            <FoodQuantityPicker food={food} />
+          </li>;
+        })}
+      </ul>}
+      </>}
     </div>
   );
+}
+
+function FoodMacros({ food }: { food: BrowserFood }) {
+  return <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
+    {([['Calories', 'calories', 'kcal'], ['Protein', 'protein_g', 'g'], ['Carbs', 'carbs_g', 'g'], ['Fat', 'fat_g', 'g']] as const).map(([label, key, unit]) => (
+      <div key={key}><dt className="text-thrivv-text-muted">{label}</dt><dd className="font-semibold text-thrivv-text-primary">{formatNutrient(food.nutrition[key])} {unit}</dd></div>
+    ))}
+  </dl>;
+}
+
+function IngredientList() {
+  const [query, setQuery] = useState('');
+  const foods = searchBasicIngredients(query);
+  return <section className="space-y-4" aria-label="Basic Ingredients">
+    <label className="block text-sm text-thrivv-text-secondary">Search ingredients
+      <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Chicken, rice, egg whites…" className="input-premium w-full px-4 py-3 mt-2" />
+    </label>
+    <p className="text-sm text-thrivv-text-muted">{foods.length} ingredients · Nutrition per 100 g of edible food. Choose the preparation that matches what you weighed.</p>
+    {foods.length === 0 && <p role="status" className="premium-card p-6">No ingredients found. Try another search.</p>}
+    <ul className="space-y-4">{foods.map(food => <li key={food.id} className="premium-card p-5 sm:p-6">
+      <h2 className="text-lg font-semibold text-thrivv-text-primary">{food.name}</h2>
+      <p className="text-xs text-thrivv-text-muted mt-1">Per 100 g</p>
+      <FoodMacros food={food} />
+      <details className="mt-3 text-xs text-thrivv-text-muted"><summary className="cursor-pointer">Nutrition source</summary>
+        <p className="mt-2">{food.sourceDescription}</p>
+        <a href={food.sourceUrl} target="_blank" rel="noreferrer" className="text-thrivv-gold-500 underline">USDA FoodData Central · FDC {food.fdcId}</a>
+      </details>
+      <FoodQuantityPicker food={food} />
+    </li>)}</ul>
+  </section>;
 }

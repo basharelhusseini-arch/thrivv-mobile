@@ -158,18 +158,20 @@ export default function MemberNutritionPage() {
                   <div key={`${meal.recipeId}-${index}`} className="p-4 bg-thrivv-bg-card/50 rounded-xl hover:bg-thrivv-bg-card transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Link
-                            href={`/member/recipes/${recipe.id}`}
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                          {meal.foodPortion?.kind === 'ingredient' ? (
+                            <span className="text-lg font-semibold text-thrivv-text-primary">{recipe.name}</span>
+                          ) : <Link
+                            href={`/member/recipes/${meal.foodPortion?.sourceId ?? recipe.id}`}
                             className="text-lg font-semibold text-thrivv-text-primary hover:text-thrivv-gold-500 transition-colors"
                           >
                             {recipe.name}
-                          </Link>
+                          </Link>}
                           <span className="text-sm text-thrivv-text-muted">
-                            ({meal.servings} {meal.servings === 1 ? 'serving' : 'servings'})
+                            ({meal.foodPortion?.label ?? `${meal.servings} ${meal.servings === 1 ? 'serving' : 'servings'}`})
                           </span>
                         </div>
-                        <div className="grid grid-cols-4 gap-3 text-sm">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                           <div>
                             <span className="text-thrivv-text-muted">Calories:</span>
                             <span className="ml-2 text-thrivv-gold-500 font-semibold">{mealCalories}</span>

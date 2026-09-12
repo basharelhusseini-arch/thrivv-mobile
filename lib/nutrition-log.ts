@@ -8,10 +8,12 @@
  */
 
 import { recipesData, getRecipeById, type Recipe } from '@/lib/recipes';
+import { scaleFood, portionLabel, type BrowserFood, type LoggedFoodPortion } from '@/lib/food-portions';
 
 // ===== TYPES =====
 
 export interface LoggedMeal {
+  foodPortion?: LoggedFoodPortion;
   id?: string; // Supabase ID (optional for localStorage)
   recipeId: string;
   servings: number;
@@ -67,7 +69,7 @@ export function computeTotals(log: DailyLog): NutritionTotals {
 
   log.meals.forEach(meal => {
     // First, try to use stored nutrition data (for custom recipes)
-    if (meal.calories && meal.protein_g !== undefined && meal.carbs_g !== undefined && meal.fat_g !== undefined) {
+    if ((meal.foodPortion?.version === 1 || meal.calories) && meal.calories !== undefined && meal.protein_g !== undefined && meal.carbs_g !== undefined && meal.fat_g !== undefined) {
       calories += meal.calories * meal.servings;
       protein_g += meal.protein_g * meal.servings;
       carbs_g += meal.carbs_g * meal.servings;
@@ -175,6 +177,34 @@ export async function getTodayLog(memberId: string): Promise<DailyLog> {
     return await getTodayLogFromSupabase(memberId);
   }
   return getTodayLogFromLocalStorage(memberId);
+}
+
+/** Adds a browser portion atomically within this tab, with a stable ID for retries.
+ * Uses the existing storage key; never merges into or rewrites legacy meal entries.
+ */
+export async function addFoodPortionToToday(
+  memberId: string, food: BrowserFood, quantity: number,
+  unit: LoggedFoodPortion['unit'], submissionId: string
+): Promise<DailyLog> {
+  if (!memberId || !submissionId || typeof window === 'undefined') throw new Error('Sign in before adding food.');
+  const nutrition = scaleFood(food, quantity, unit);
+  const date = getTodayDate();
+  const key = getStorageKey(memberId, date);
+  // Unlike the legacy reader, do not overwrite an unreadable existing log.
+  const stored = localStorage.getItem(key);
+  const log: DailyLog = stored ? JSON.parse(stored) : { date, meals: [] };
+  if (log.date !== date || !Array.isArray(log.meals)) throw new Error('Your food log could not be read. Nothing was changed.');
+  const recipeId = `food-entry:${submissionId}`;
+  if (log.meals.some(meal => meal.recipeId === recipeId)) return log;
+  log.meals.push({
+    recipeId, recipeName: food.name, servings: 1, addedAt: new Date().toISOString(), ...nutrition,
+    foodPortion: {
+      version: 1, sourceId: food.id, kind: food.kind, quantity, unit,
+      label: portionLabel(food, quantity, unit), sourceUrl: food.sourceUrl,
+    },
+  });
+  saveTodayLogToLocalStorage(memberId, log);
+  return log;
 }
 
 export async function addMealToToday(
