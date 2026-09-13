@@ -1,4 +1,5 @@
 'use client';
+import GymWorkoutVerification from '@/components/GymWorkoutVerification';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,7 +9,7 @@ import PageHeader from '@/components/MemberPageHeader';
 
 interface HealthSummary {
   timezone: string;
-  workouts: { id: string; start_at: string; duration_ms: number; sport_name: string | null; score_input_valid: boolean; workout_score: number | null; workout_breakdown: { label: string; breakdown: number[] } | null }[];
+  workouts: { id: string; start_at: string; duration_ms: number; strain: number | null; kilojoule: number | null; zone_durations_ms: (number | null)[] | null; score_state: string; sport_name: string | null; score_input_valid: boolean; workout_score: number | null; workout_breakdown: { label: string; breakdown: number[] } | null }[];
   score: number | null;
   subtotal: number | null;
   complete: boolean;
@@ -120,6 +121,7 @@ export default function MemberHealthPage() {
           ) : undefined
         }
       />
+      <GymWorkoutVerification />
 
       {/* Error Warning (if any) */}
       {error && (
@@ -195,6 +197,8 @@ export default function MemberHealthPage() {
           <div className="flex justify-between gap-4"><span className="text-thrivv-text-primary capitalize">{workout.workout_breakdown?.label ?? workout.sport_name ?? 'Other'}</span>
             <span className="text-thrivv-gold-500">{workout.score_input_valid && workout.workout_score !== null ? `${workout.workout_score.toFixed(1)}/100` : 'Pending score'}</span></div>
           <p className="text-thrivv-text-muted">{new Date(workout.start_at).toLocaleString(undefined, { timeZone: healthData!.timezone })} · {(workout.duration_ms / 60000).toFixed(1)} elapsed minutes</p>
+          <p className="text-thrivv-text-muted">Strain: {workout.strain ?? 'Unavailable'}/21 · Calories: {workout.kilojoule === null ? 'Unavailable' : `${(workout.kilojoule / 4.184).toFixed(0)} kcal`} · WHOOP status: {workout.score_state}</p>
+          <p className="text-xs text-thrivv-text-muted">{[0,1,2,3,4,5].map(zone => `Zone ${zone}: ${workout.zone_durations_ms?.[zone] == null ? 'Unavailable' : `${(workout.zone_durations_ms[zone]! / 60000).toFixed(1)} min`}`).join(' · ')}</p>
           {workout.score_input_valid && workout.workout_breakdown && <p className="text-xs text-thrivv-text-muted mt-1">{['Strain', 'Duration', 'Zones', 'Calories'].map((label, i) => `${label}: ${workout.workout_breakdown!.breakdown[i].toFixed(1)}`).join(' · ')}</p>}
         </div>)}</div>
       </div>}
@@ -242,7 +246,7 @@ export default function MemberHealthPage() {
           <div className="px-6 py-4 border-b border-thrivv-gold-500/20">
             <h2 className="text-lg font-semibold text-thrivv-text-primary flex items-center">
               <Sparkles className="w-5 h-5 mr-2 text-thrivv-gold-500" />
-              Health Insights
+              Health Insights · Rule-based
             </h2>
           </div>
           <div className="p-6 space-y-3">

@@ -108,6 +108,7 @@ export async function ensureWhoopAutoSync(opts?: {
       method: 'POST',
       cache: 'no-store',
     });
+    if (res.ok) window.dispatchEvent(new Event('thrivv:workouts-synced'));
     if (res.ok && opts?.onSynced) {
       opts.onSynced();
     }

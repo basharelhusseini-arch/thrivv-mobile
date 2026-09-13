@@ -1,4 +1,5 @@
 'use client';
+import GymWorkoutVerification from '@/components/GymWorkoutVerification';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -176,6 +177,7 @@ export default function MemberDashboardPage() {
         }
 
       />
+      <GymWorkoutVerification />
 
       <main className="space-y-8">
         {loadError && <p role="alert" className="text-thrivv-gold-500">Score data is unavailable. Please try again shortly.</p>}

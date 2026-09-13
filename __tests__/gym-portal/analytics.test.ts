@@ -1,4 +1,4 @@
-jest.mock('@/lib/supabase', () => ({ supabase: { from: jest.fn() } }));
+jest.mock('@/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn() } }));
 import { supabase } from '@/lib/supabase';
 import { gymDashboardData } from '@/lib/gym-dashboard-data';
 import { activeInWindow, membershipCheckins, type CheckinRow, type MemberRow } from '@/lib/gym-analytics';
@@ -13,11 +13,11 @@ test('activity excludes pre-membership, other members, future dates and unknown 
 test('pagination counts all members; no email, sleep, calorie or token data is requested', async () => {
   const requests: any[]=[];
   (supabase.from as jest.Mock).mockImplementation(table => {
-    const chain: any={ select:jest.fn().mockReturnThis(),eq:jest.fn().mockReturnThis(),order:jest.fn().mockReturnThis(),in:jest.fn().mockReturnThis(),gte:jest.fn().mockReturnThis(),lte:jest.fn().mockReturnThis(),range:jest.fn(async (from:number) => ({error:null,data:table==='users' ? Array.from({length:from===0?500:1},(_,i)=>({id:`u${from+i}`,first_name:'Test',last_name:'Member',created_at:'2026-09-01',membership_start_date:'2026-09-01'})):[]}))};
+    const chain: any={ single:async()=>({error:{message:'Not migrated'},data:null}), select:jest.fn().mockReturnThis(),eq:jest.fn().mockReturnThis(),order:jest.fn().mockReturnThis(),in:jest.fn().mockReturnThis(),gte:jest.fn().mockReturnThis(),lte:jest.fn().mockReturnThis(),range:jest.fn(async (from:number) => ({error:null,data:table==='users' ? Array.from({length:from===0?500:1},(_,i)=>({id:`u${from+i}`,first_name:'Test',last_name:'Member',created_at:'2026-09-01',membership_start_date:'2026-09-01'})):[]}))};
     requests.push({table,chain});return chain;
   });
   const data=await gymDashboardData(gym,false,true); expect(data.totals.total_members).toBe(501); expect(data.totals.active_this_week).toBe(0);
-  expect(data.earned_points).toMatchObject({status:'not_activated',value:null}); expect(data.verified_scans.total).toBeNull();
+  expect(data.earned_points).toMatchObject({status:'unavailable',value:null}); expect(data.verified_scans.total).toBeNull();
   for (const {table,chain} of requests) {
     expect(chain.select.mock.calls[0][0]).not.toMatch(/email|calories|sleep|token|reward_points/);
     if(table==='users') expect(chain.eq).toHaveBeenCalledWith('gym_id','gym-a');
