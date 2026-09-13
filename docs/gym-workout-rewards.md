@@ -1,5 +1,11 @@
 # Gym and workout rewards branch
 
+> Production-readiness update (2026-09-13): Vercel now schedules a protected daily
+> WHOOP queue run, and member reward/verification screens also trigger the existing
+> debounced sync during active use. Gym verification is activated in Supabase by a
+> separate migration. Redeemable daily points remain disabled until a conversion
+> rate and daily cap are explicitly approved.
+
 This branch is NOT a production rollout. Do not deploy the branch against the current database without reconciling its schema and applying the reviewed migration first.
 
 ## Implemented
@@ -27,9 +33,13 @@ This branch is NOT a production rollout. Do not deploy the branch against the cu
 
 Existing: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET, WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, WHOOP_REDIRECT_URI, NEXT_PUBLIC_SITE_URL, COOKIE_DOMAIN.
 
-New: WHOOP_BACKGROUND_SYNC_ENABLED (default off), CRON_SECRET (server-only).
+New: CRON_SECRET (server-only). `GYM_WORKOUT_QR_SECRET` is an optional dedicated
+32-byte base64 override; when absent, the app derives a domain-separated QR key
+from the required `JWT_SECRET`.
 
-A scheduler can POST /api/internal/whoop/process with Authorization: Bearer <CRON_SECRET> only after approval. Use the main app host. No secret values should be committed or logged. Background processing remains off without WHOOP_BACKGROUND_SYNC_ENABLED=true.
+Vercel calls `GET /api/internal/whoop/process` daily with `Authorization: Bearer
+<CRON_SECRET>`. `POST` remains available for an authorized manual run. No secret
+values should be committed or logged.
 
 ## Verification
 

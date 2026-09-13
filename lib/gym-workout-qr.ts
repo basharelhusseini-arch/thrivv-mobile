@@ -1,4 +1,6 @@
+import { createHmac } from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
+import { getJWTSecret } from '@/lib/env';
 
 export const QR_ROTATION_SECONDS = 30;
 export const QR_LIFETIME_SECONDS = 60;
@@ -7,7 +9,10 @@ const issuer = 'thrivv';
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function secret() {
   const value = process.env.GYM_WORKOUT_QR_SECRET;
-  if (!value || !/^[A-Za-z0-9+/]{43}=$/.test(value)) throw new Error('QR setup required');
+  if (!value) {
+    return createHmac('sha256', getJWTSecret()).update('thrivv:gym-workout-qr:v1').digest();
+  }
+  if (!/^[A-Za-z0-9+/]{43}=$/.test(value)) throw new Error('QR setup required');
   const bytes = Buffer.from(value, 'base64');
   if (bytes.length !== 32 || bytes.toString('base64') !== value) throw new Error('QR setup required');
   return bytes;

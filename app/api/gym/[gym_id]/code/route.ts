@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkGymAccess } from '@/lib/gym-auth';
 import { supabase } from '@/lib/supabase';
 import { newGymCode } from '@/lib/gym-codes';
-import { decryptGymCode, encryptGymCode } from '@/lib/gym-code-encryption';
+import { decryptGymCode, encryptGymCode, GymCodeConfigurationError } from '@/lib/gym-code-encryption';
 export const dynamic = 'force-dynamic';
 const headers = { 'Cache-Control': 'private, no-store', 'Vary': 'Cookie' };
 type Context = { params: { gym_id: string } };
@@ -30,10 +30,14 @@ export async function POST(request: NextRequest, { params }: Context) {
     // Validate encryption before replacing any existing hash.
     const encrypted = encryptGymCode(code, params.gym_id);
     const { error } = await supabase.from('gym_join_codes').upsert({ gym_id: params.gym_id, code_hash: hash,
-      code_ciphertext: encrypted, code_encryption_version: 1, created_by: access.user.id, updated_at: new Date().toISOString() });
-    if (error) throw new Error('Storage unavailable');
+      code_ciphertext: encrypted, code_encryption_version: 1, created_by: access.user.id, updated_at: new Date().toISOString() }, { onConflict: 'gym_id' });
+    if (error) {
+      console.error('Gym code storage failure', { code: error.code });
+      throw new Error('Storage unavailable');
+    }
     return NextResponse.json({ status: 'available', code }, { headers });
-  } catch {
+  } catch (error) {
+    if (error instanceof GymCodeConfigurationError) return NextResponse.json({ error: 'Gym joining-code setup is incomplete. Ask your platform administrator to configure the encryption key.', code: 'GYM_CODE_SETUP_REQUIRED' }, { status: 503, headers });
     return NextResponse.json({ error: 'Unable to save a gym code. Please retry or contact Thrivv.' }, { status: 503, headers });
   }
 }

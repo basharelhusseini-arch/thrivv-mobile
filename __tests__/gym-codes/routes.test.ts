@@ -44,7 +44,7 @@ test('code generation stores a hash and scopes it to the authorized gym', async 
  const upsert = jest.fn().mockResolvedValue({ error: null }); (supabase.from as jest.Mock).mockReturnValue({ upsert });
  const res = await createCode(request({}), { params: { gym_id: 'authorized-gym' } });
  const data = await res.json(); expect(res.status).toBe(200);
- expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ gym_id: 'authorized-gym', code_hash: gymCodeHash(data.code), created_by: 'admin' }));
+  expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ gym_id: 'authorized-gym', code_hash: gymCodeHash(data.code), created_by: 'admin' }), { onConflict: 'gym_id' });
  expect(JSON.stringify(upsert.mock.calls)).not.toContain(data.code);
  if (previousKey === undefined) delete process.env.GYM_CODE_ENCRYPTION_KEY; else process.env.GYM_CODE_ENCRYPTION_KEY = previousKey;
 });

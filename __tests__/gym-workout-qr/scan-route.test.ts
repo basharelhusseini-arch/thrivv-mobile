@@ -12,7 +12,7 @@ import { POST } from '@/app/api/member/workout-verification/route';
 import { NextRequest } from 'next/server';
 const user='00000000-0000-4000-8000-000000000001',gym='00000000-0000-4000-8000-000000000002',operator='00000000-0000-4000-8000-000000000003',workout='00000000-0000-4000-8000-000000000004';
 const saved={...process.env};
-beforeEach(()=>{jest.clearAllMocks();process.env.GYM_WORKOUT_VERIFICATION_ENABLED='true';process.env.GYM_WORKOUT_QR_SECRET=Buffer.alloc(32,9).toString('base64');
+beforeEach(()=>{jest.clearAllMocks();process.env.GYM_WORKOUT_QR_SECRET=Buffer.alloc(32,9).toString('base64');
  (getCurrentUser as jest.Mock).mockResolvedValue({id:user});
  (supabase.from as jest.Mock).mockReturnValue({select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:user},error:null})})})});
  (scoreContext as jest.Mock).mockResolvedValue({gymId:gym});(supabase.rpc as jest.Mock).mockResolvedValue({data:{date:'2026-09-13'},error:null});(reconcileDailyReward as jest.Mock).mockResolvedValue({status:'credited',awarded:43.5});
@@ -23,5 +23,4 @@ test('uses session identity, not supplied header; credits only after database ac
 test('no session rejects forged user header',async()=>{(getCurrentUser as jest.Mock).mockResolvedValue(null);expect((await POST(await request())).status).toBe(401);expect(supabase.rpc).not.toHaveBeenCalled();});
 test.each([{amount:999},{score:110},{userId:operator},{gymId:operator}])('rejects client trusted fields %j',async fields=>{expect((await POST(await request(fields))).status).toBe(400);expect(supabase.rpc).not.toHaveBeenCalled();});
 test('rejects cross-site requests and wrong gym signatures',async()=>{expect((await POST(await request({},'https://evil.invalid'))).status).toBe(403);expect((await POST(await request({},'https://thrivv.dev',operator))).status).toBe(400);});
-test('disabled feature rejects without awarding',async()=>{delete process.env.GYM_WORKOUT_VERIFICATION_ENABLED;expect((await POST(await request())).status).toBe(503);expect(supabase.rpc).not.toHaveBeenCalled();});
 test('database rejection never credits; accounting outage preserves accepted verification',async()=>{(supabase.rpc as jest.Mock).mockResolvedValueOnce({error:{}});expect((await POST(await request())).status).toBe(409);expect(reconcileDailyReward).not.toHaveBeenCalled();(reconcileDailyReward as jest.Mock).mockRejectedValue(new Error('outage'));const res=await POST(await request());expect(res.status).toBe(200);expect(await res.json()).toMatchObject({verified:true,reward:{status:'retry_pending'}});});

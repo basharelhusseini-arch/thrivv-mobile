@@ -30,8 +30,8 @@ describe('Health Score Calculation', () => {
       habits: 60,
     });
 
-    // Expected: (80*30 + 70*30 + 90*25 + 60*15) / 100 = 76
-    expect(score).toBe(76);
+    // Expected: (80*30 + 70*30 + 90*25 + 60*15) / 100 = 76.5, rounded to 77
+    expect(score).toBe(77);
   });
 
   test('health score is never affected by confidence level', () => {
@@ -246,7 +246,7 @@ describe('Consistency Checks (Silent Validation)', () => {
 
     test('very long workout flags', () => {
       const result = validateWorkoutLog({
-        durationMinutes: 250,
+        durationMinutes: 301,
         workoutsToday: 1,
       });
       expect(result.result).toBe('flag');

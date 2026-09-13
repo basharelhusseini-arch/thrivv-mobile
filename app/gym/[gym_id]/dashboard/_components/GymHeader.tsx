@@ -1,5 +1,4 @@
 'use client';
-import Link from 'next/link';
 import GymJoinCode from '@/components/GymJoinCode';
 import type { GymAnalytics } from './GymDashboardView';
 
@@ -8,7 +7,6 @@ export default function GymHeader({ data }: { data: GymAnalytics }) {
     <section className="glass-card p-6 sm:p-8 lg:p-12 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs uppercase tracking-[0.28em] text-thrivv-gold-500">Thrivv / Gym dashboard</p>
-        <Link href="/gym" className="text-sm text-thrivv-text-secondary hover:text-thrivv-gold-500">Gym portal →</Link>
       </div>
       <h1 className="text-balance break-words text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tighter text-thrivv-text-primary">{data.gym.name}</h1>
       <GymJoinCode gymId={data.gym.id} />

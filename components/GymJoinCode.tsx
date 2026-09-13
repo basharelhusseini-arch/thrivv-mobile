@@ -1,29 +1,31 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 export default function GymJoinCode({ gymId }: { gymId: string }) {
   const [code, setCode] = useState('');
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [message, setMessage] = useState('');
   const submitting = useRef(false);
-  async function load() {
+  const load = useCallback(async () => {
     setCode(''); setError(''); setStatus('loading'); setCopied(false);
     try {
-      const res = await fetch(`/api/gym/${gymId}/code`, { cache: 'no-store' });
+      const res = await fetch(`/api/gym/${gymId}/code`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Unable to load gym code');
       setCode(data.code || ''); setStatus(data.status);
     } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load gym code'); setStatus('error'); }
-  }
-  useEffect(() => { load(); }, [gymId]);
+  }, [gymId]);
+  useEffect(() => { void load(); }, [load]);
   async function generate() {
     if (submitting.current) return;
     if (!window.confirm(status === 'missing' ? 'Create a joining code for your gym?' : 'Replace the joining code? The previous code will stop working. Existing members stay in the gym.')) return;
-    submitting.current = true; setBusy(true); setError(''); setCopied(false);
+    submitting.current = true; setBusy(true); setError(''); setMessage(''); setCopied(false);
     try {
-      const res = await fetch(`/api/gym/${gymId}/code`, { method: 'POST' });
+      const res = await fetch(`/api/gym/${gymId}/code`, { method: 'POST', signal: AbortSignal.timeout(10000) });
       const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Unable to create code');
       setCode(data.code); setStatus('available');
+      setMessage('Gym code saved. Share it with your members.');
     } catch (e) { setError(e instanceof Error ? e.message : 'Unable to save code. Please retry.'); }
     finally { submitting.current = false; setBusy(false); }
   }
@@ -38,7 +40,8 @@ export default function GymJoinCode({ gymId }: { gymId: string }) {
       <button type="button" onClick={copy} className="btn-ghost px-4 py-3">{copied ? 'Copied' : 'Copy code'}</button>
     </div> : status === 'legacy' ? <p className="text-sm text-thrivv-text-secondary">Your existing code still works, but its original text was not saved. Replace it only when you are ready to share a new code.</p> : status === 'missing' ? <p className="text-sm text-thrivv-text-secondary">No joining code yet.</p> : null}
     <p className="text-sm text-thrivv-text-secondary">Share with members to join your gym. This is not a workout-verification QR code.</p>
+    {message && <p role="status" className="text-sm text-thrivv-gold-500">{message}</p>}
     {status !== 'error' && status !== 'loading' && <button type="button" onClick={generate} disabled={busy} className="text-sm text-thrivv-gold-500 underline disabled:opacity-50">{busy ? 'Saving…' : status === 'missing' ? 'Create code' : 'Replace code'}</button>}
-    {error && <p role="alert" className="text-sm text-red-400">{error} <button type="button" onClick={load} disabled={busy} className="underline">Retry loading</button></p>}
+    {error && <p role="alert" className="text-sm text-red-400">{error} <button type="button" onClick={() => void load()} disabled={busy} className="underline">Retry loading</button></p>}
   </section>;
 }

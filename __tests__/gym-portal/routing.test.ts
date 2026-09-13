@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { middleware } from '@/middleware';
-import { gymDestination, gymLoginPath, gymReturnPath, isGymLogin } from '@/lib/gym-routing';
+import { gymDestination, gymLoginPath, gymReturnPath, isGymLogin, portalLoginUrl } from '@/lib/gym-routing';
 import { readFileSync } from 'fs';
 test('gym hostname entry goes to portal, and cross-host routes preserve the path', () => {
   for (const [url, expected] of [
@@ -15,6 +15,13 @@ test('gym hostname entry goes to portal, and cross-host routes preserve the path
     const target = new URL(expected);
     expect(middleware(new NextRequest(expected, { headers: { host: target.host } })).headers.get('location')).toBeNull();
   }
+});
+test('portal switching uses the target production host and explicit member mode', () => {
+  expect(isGymLogin('gyms.thrivv.dev', 'member')).toBe(false);
+  expect(portalLoginUrl('gyms.thrivv.dev', false)).toBe('https://thrivv.dev/member/login?portal=member');
+  expect(portalLoginUrl('www.thrivv.dev', true)).toBe('https://gyms.thrivv.dev/member/login?portal=gym&redirect=%2Fgym');
+  expect(portalLoginUrl('localhost', false)).toBe('/member/login?portal=member');
+  expect(portalLoginUrl('preview.vercel.app', true)).toBe('/member/login?portal=gym&redirect=%2Fgym');
 });
 test('shared login and API stay on gym hostname; preview routing stays local', () => {
   for (const url of ['https://gyms.thrivv.dev/member/login?portal=gym', 'https://gyms.thrivv.dev/api/auth/login', 'http://localhost:3000/gym']) {

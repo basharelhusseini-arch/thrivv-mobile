@@ -33,11 +33,13 @@ export default function GymWorkoutQr({ gymId }: { gymId: string }) {
         }
       } catch (e) {
         if (active && !document.hidden) {
-          current = null; setCode(null); setError(e instanceof Error ? e.message : 'Unable to refresh workout QR.');
+          if (!current || performance.now() >= current.expires) { current = null; setCode(null); }
+          setError(e instanceof Error ? e.message : 'Unable to refresh workout QR.');
         }
       } finally { clearTimeout(timeout); busy = false; nextAttempt = performance.now() + 5000; }
     }
     function tick() {
+      if (document.hidden) return;
       if (current && performance.now() >= current.expires) { current = null; setCode(null); }
       if (current) setSeconds(Math.max(0, Math.ceil((current.refresh - performance.now()) / 1000)));
       if ((!current || performance.now() >= current.refresh) && performance.now() >= nextAttempt) void load();
@@ -46,7 +48,7 @@ export default function GymWorkoutQr({ gymId }: { gymId: string }) {
       current = null; setCode(null); controller?.abort(); nextAttempt = 0;
       if (!document.hidden) void load();
     }
-    void load(); const timer = setInterval(tick, 500);
+    void load(); const timer = setInterval(tick, 1000);
     document.addEventListener('visibilitychange', visibility);
     return () => { active = false; clearInterval(timer); controller?.abort(); document.removeEventListener('visibilitychange', visibility); };
   }, [open, gymId, retry]);
@@ -63,7 +65,7 @@ export default function GymWorkoutQr({ gymId }: { gymId: string }) {
         <img src={code.image} width={512} height={512} className="w-full max-w-lg h-auto bg-white rounded-xl" alt="Rotating gym workout verification QR" />
         <p className="text-sm text-thrivv-text-secondary">{seconds > 0 ? `Next code in ${seconds}s` : 'Refreshing code…'} · Expires after 60 seconds</p>
       </> : <p role="status" className="p-8 text-center">{error || 'Preparing your gym QR…'}</p>}
-      {error && <button className="text-thrivv-gold-500 underline" onClick={() => setRetry(n => n + 1)}>Retry</button>}
+      {error && <><p role="alert" className="text-amber-300">{error}</p><button className="text-thrivv-gold-500 underline" onClick={() => setRetry(n => n + 1)}>Retry</button></>}
       <p className="text-xs text-thrivv-text-secondary text-center">This is separate from your member joining code. Keep this screen online; do not print it.</p>
     </div>}
   </section>;

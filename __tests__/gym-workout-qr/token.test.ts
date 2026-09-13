@@ -2,8 +2,12 @@ import { createGymWorkoutQr, verifyGymWorkoutQr } from '@/lib/gym-workout-qr';
 const gym = '00000000-0000-4000-8000-000000000001', operator = '00000000-0000-4000-8000-000000000002';
 const start = 1800000000000;
 const original = process.env.GYM_WORKOUT_QR_SECRET;
-beforeEach(() => { process.env.GYM_WORKOUT_QR_SECRET = Buffer.alloc(32, 9).toString('base64'); });
-afterAll(() => { if (original === undefined) delete process.env.GYM_WORKOUT_QR_SECRET; else process.env.GYM_WORKOUT_QR_SECRET = original; });
+const originalJwt = process.env.JWT_SECRET;
+beforeEach(() => { process.env.GYM_WORKOUT_QR_SECRET = Buffer.alloc(32, 9).toString('base64'); process.env.JWT_SECRET = 'test-session-secret-for-domain-separated-qr-key'; });
+afterAll(() => {
+ if (original === undefined) delete process.env.GYM_WORKOUT_QR_SECRET; else process.env.GYM_WORKOUT_QR_SECRET = original;
+ if (originalJwt === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = originalJwt;
+});
 test('same slot is stable, next 30-second slot rotates, expiry is 60 seconds', async () => {
  const a = await createGymWorkoutQr(gym, operator, start), b = await createGymWorkoutQr(gym, operator, start+1000), c = await createGymWorkoutQr(gym, operator, start+30000);
  expect(a.token).toBe(b.token); expect(c.token).not.toBe(a.token); expect(a.expiresAt).toBe(start+60000); expect(a.refreshAt).toBe(start+30000);
@@ -17,7 +21,7 @@ test('rejects another gym, future code and tampered signature', async () => {
  const parts=a.token.split('.');parts[2]=(parts[2][0]==='A'?'B':'A')+parts[2].slice(1);
  await expect(verifyGymWorkoutQr(parts.join('.'),gym,start)).rejects.toThrow();
 });
-test('missing or malformed dedicated secret fails closed',async()=>{
- delete process.env.GYM_WORKOUT_QR_SECRET;await expect(createGymWorkoutQr(gym,operator,start)).rejects.toThrow('QR setup required');
+test('uses a domain-separated session-secret fallback and rejects a malformed explicit override',async()=>{
+ delete process.env.GYM_WORKOUT_QR_SECRET;await expect(createGymWorkoutQr(gym,operator,start)).resolves.toEqual(expect.objectContaining({token:expect.any(String)}));
  process.env.GYM_WORKOUT_QR_SECRET='short';await expect(createGymWorkoutQr(gym,operator,start)).rejects.toThrow('QR setup required');
 });

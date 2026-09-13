@@ -29,7 +29,7 @@ await db.query("insert into whoop_workouts values($1,$2,$3,now()-interval '1 hou
 await db.query("insert into health_score_days values($1,current_date,'health-v3',$2,'UTC',49.4,true,true,true,43.5)",[member,ga]);
 await db.exec('SET ROLE service_role');
 assert.equal((await reconcile()).status,'not_activated'); await assert.rejects(verify());
-await db.exec('RESET ROLE; UPDATE gym_reward_config SET verification_enabled=true,rewards_enabled=true,effective_date=current_date; SET ROLE service_role;');
+await db.exec('RESET ROLE; UPDATE gym_reward_config SET verification_enabled=true,rewards_enabled=true,effective_date=current_date,points_per_health_point=2,max_daily_points=100; SET ROLE service_role;');
 await assert.rejects(verify(other)); await assert.rejects(verify(member,workout,gb)); await assert.rejects(verify(member,workout,ga,other)); await assert.rejects(verify(member,workout,ga,admin,id(10),0));
 assert.equal((await reconcile()).awarded,0);
 await assert.rejects(verify(member,id(999))); // no imported workout
@@ -45,32 +45,32 @@ await db.query('update whoop_workouts set deleted_at=null where id=$1',[workout]
 await verify(); await verify();
 assert.equal(await scalar('select count(*)::int from gym_workout_verifications'),1);
 await Promise.all(Array.from({length:8},()=>reconcile()));
-assert.equal((await reconcile()).awarded,43.5);
+assert.equal((await reconcile()).awarded,87);
 assert.equal(await scalar("select count(*)::int from reward_transactions where kind='daily_credit'"),1);
-assert.equal(await scalar('select reward_points from users where id=$1',[member]),'55.845');
+assert.equal(await scalar('select reward_points from users where id=$1',[member]),'99.345');
 // Pending sync must preserve valid prior credits.
 await db.exec('RESET ROLE; UPDATE health_score_days SET complete=false,score=null; SET ROLE service_role');
 assert.equal((await reconcile()).status,'score_pending');
-assert.equal(await scalar('select reward_points from users where id=$1',[member]),'55.845');
+assert.equal(await scalar('select reward_points from users where id=$1',[member]),'99.345');
 await db.exec('RESET ROLE; UPDATE health_score_days SET complete=true,score=50; SET ROLE service_role');
-assert.equal((await reconcile()).awarded,50);
-assert.equal(await scalar('select reward_points from users where id=$1',[member]),'62.345');
+assert.equal((await reconcile()).awarded,100);
+assert.equal(await scalar('select reward_points from users where id=$1',[member]),'112.345');
 // A larger unverified workout cannot be unlocked by the smaller verified workout.
 await db.query("insert into whoop_workouts values($1,$2,$3,now()-interval '45 minutes',now()-interval '1 minute',null,true,'SCORED',60)",[id(7),member,ga]);
 await db.query('update health_score_days set workout_score=60,score=52 where user_id=$1',[member]);
 assert.equal((await reconcile()).awarded,0);
-await verify(member,id(7),ga,admin,id(11)); assert.equal((await reconcile()).awarded,52);
+await verify(member,id(7),ga,admin,id(11)); assert.equal((await reconcile()).awarded,100);
 // Spending does not reduce gym earned points. Duplicate request returns same redemption.
 await db.exec("RESET ROLE; INSERT INTO reward_offers VALUES('synthetic','Synthetic offer',60,true); SET ROLE service_role");
 const redeem=()=>scalar('select thrivv_redeem($1,$2,$3)',[member,'synthetic',id(12)]);
 const receipt=await redeem(); assert.equal((await redeem()).id,receipt.id);
-assert.equal((await scalar('select thrivv_gym_reward_metrics($1)',[ga])).earned,52);
-assert.equal(await scalar('select reward_points from users where id=$1',[member]),'4.345');
+assert.equal((await scalar('select thrivv_gym_reward_metrics($1)',[ga])).earned,100);
+assert.equal(await scalar('select reward_points from users where id=$1',[member]),'52.345');
 // A reduction beyond spendable funds creates a hold, not a negative balance.
 await db.query('update health_score_days set score=10 where user_id=$1',[member]);
 assert.equal((await reconcile()).status,'review_required');
 await assert.rejects(scalar('select thrivv_redeem($1,$2,$3)',[member,'synthetic',id(13)]));
-assert.equal(await scalar('select reward_points from users where id=$1',[member]),'4.345');
+assert.equal(await scalar('select reward_points from users where id=$1',[member]),'52.345');
 // Membership changes never transfer historical earned points or create a second entitlement.
 await db.query('update users set gym_id=$2 where id=$1',[member,gb]);
 assert.equal((await reconcile()).status,'historical_membership');
@@ -89,4 +89,4 @@ for (const role of ['anon','authenticated']) {
  await assert.rejects(db.query('insert into reward_history values($1,current_date,900)',[member]));
 }
 await db.close();
-console.log('PASS synthetic SQL: activation gates, ownership/operator/expiry, one accepted scan, repeated credits once, decimal opening balance, pending preservation, delta corrections, highest workout, idempotent redemption, review hold, gym attribution, immutable records and client-role denial. PGlite is not a multi-connection concurrency load test.');
+console.log('PASS synthetic SQL: activation gates, configurable non-1:1 conversion, ownership/operator/expiry, one accepted scan, repeated credits once, decimal opening balance, pending preservation, delta corrections, highest workout, idempotent redemption, review hold, gym attribution, immutable records and client-role denial. PGlite is not a multi-connection concurrency load test.');

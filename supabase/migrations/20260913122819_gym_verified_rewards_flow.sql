@@ -5,7 +5,11 @@ CREATE TABLE public.gym_reward_config (
  verification_enabled boolean NOT NULL DEFAULT false,
  rewards_enabled boolean NOT NULL DEFAULT false,
  effective_date date,
- CHECK(NOT rewards_enabled OR (verification_enabled AND effective_date IS NOT NULL))
+ points_per_health_point numeric(8,4),
+ max_daily_points numeric(12,1),
+ CHECK(points_per_health_point IS NULL OR points_per_health_point>0),
+ CHECK(max_daily_points IS NULL OR max_daily_points>0),
+ CHECK(NOT rewards_enabled OR (verification_enabled AND effective_date IS NOT NULL AND points_per_health_point IS NOT NULL AND max_daily_points IS NOT NULL))
 );
 INSERT INTO public.gym_reward_config(singleton) VALUES(true);
 CREATE TABLE public.gym_workout_verifications (
@@ -19,8 +23,8 @@ CREATE INDEX ON public.gym_workout_verifications(gym_id,scanned_at);
 CREATE TABLE public.daily_reward_entitlements (
  user_id uuid NOT NULL REFERENCES public.users(id), score_date date NOT NULL,
  gym_id uuid NOT NULL REFERENCES public.gyms(id), timezone text NOT NULL,
- awarded numeric(12,1) NOT NULL DEFAULT 0 CHECK(awarded BETWEEN 0 AND 110),
- desired numeric(12,1) NOT NULL DEFAULT 0 CHECK(desired BETWEEN 0 AND 110),
+ awarded numeric(12,1) NOT NULL DEFAULT 0 CHECK(awarded>=0),
+ desired numeric(12,1) NOT NULL DEFAULT 0 CHECK(desired>=0),
  status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','credited','verification_required','review_required')),
  updated_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(user_id,score_date)
 );
@@ -71,11 +75,12 @@ BEGIN
 END $$;
 CREATE FUNCTION public.thrivv_reconcile_gym_reward(p_user uuid,p_date date)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-DECLARE u users%ROWTYPE; s health_score_days%ROWTYPE; e daily_reward_entitlements%ROWTYPE;
+DECLARE u users%ROWTYPE; s health_score_days%ROWTYPE; e daily_reward_entitlements%ROWTYPE; cfg gym_reward_config%ROWTYPE;
  target numeric; delta numeric; best numeric; verified boolean; tz text;
 BEGIN
  SELECT * INTO STRICT u FROM users WHERE id=p_user FOR UPDATE;
- IF NOT EXISTS(SELECT 1 FROM gym_reward_config WHERE rewards_enabled AND effective_date<=p_date) THEN RETURN jsonb_build_object('status','not_activated'); END IF;
+ SELECT * INTO STRICT cfg FROM gym_reward_config WHERE singleton;
+ IF NOT cfg.rewards_enabled OR cfg.effective_date>p_date THEN RETURN jsonb_build_object('status','not_activated'); END IF;
  SELECT * INTO e FROM daily_reward_entitlements WHERE user_id=p_user AND score_date=p_date;
  -- A membership transfer never moves a historical entitlement into the next gym.
  IF FOUND AND e.gym_id IS DISTINCT FROM u.gym_id THEN RETURN jsonb_build_object('status','historical_membership','awarded',e.awarded); END IF;
@@ -94,7 +99,9 @@ BEGIN
  WHERE w.user_id=p_user AND w.deleted_at IS NULL AND w.score_input_valid AND w.score_state='SCORED'
  AND w.workout_score=best AND (w.start_at AT TIME ZONE tz)::date=p_date
  AND v.user_id=p_user AND v.gym_id=u.gym_id AND v.timezone=tz AND v.score_date=p_date AND v.start_at=w.start_at AND v.end_at=w.end_at) INTO verified;
- target:=CASE WHEN verified THEN round(least(110,greatest(0,s.score))::numeric,1) ELSE 0 END;
+ -- Health Score and redeemable points remain separate. The product-approved
+ -- conversion rate and cap must be configured before rewards can be enabled.
+ target:=CASE WHEN verified THEN round(least(cfg.max_daily_points,greatest(0,s.score*cfg.points_per_health_point))::numeric,1) ELSE 0 END;
  INSERT INTO daily_reward_entitlements(user_id,score_date,gym_id,timezone) VALUES(p_user,p_date,u.gym_id,tz) ON CONFLICT DO NOTHING;
  SELECT * INTO STRICT e FROM daily_reward_entitlements WHERE user_id=p_user AND score_date=p_date FOR UPDATE;
  delta:=target-e.awarded;

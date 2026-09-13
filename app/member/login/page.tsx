@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { gymReturnPath, isGymLogin } from '@/lib/gym-routing';
-import { useRouter } from 'next/navigation';
+import { gymReturnPath, isGymLogin, portalLoginUrl } from '@/lib/gym-routing';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Mail, Lock } from 'lucide-react';
 import BackgroundLayers from '@/components/BackgroundLayers';
@@ -14,10 +13,16 @@ export default function MemberLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const [gymMode, setGymMode] = useState(false);
+  const [switchUrl, setSwitchUrl] = useState('/member/login?portal=gym');
   useEffect(() => {
-    setGymMode(isGymLogin(window.location.hostname, new URLSearchParams(window.location.search).get('portal')));
+    const mode = isGymLogin(window.location.hostname, new URLSearchParams(window.location.search).get('portal'));
+    const target = portalLoginUrl(window.location.hostname, mode);
+    if (target.startsWith('https://') && new URL(target).hostname !== window.location.hostname && window.location.hostname !== `www.${new URL(target).hostname}`) {
+      window.location.replace(target); return;
+    }
+    setGymMode(mode);
+    setSwitchUrl(portalLoginUrl(window.location.hostname, !mode));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,7 +48,7 @@ export default function MemberLoginPage() {
         localStorage.setItem('memberEmail', data.user.email);
         const params = new URLSearchParams(window.location.search);
         const gym = isGymLogin(window.location.hostname, params.get('portal'));
-        router.push(gym ? gymReturnPath(params.get('redirect')) : '/member/dashboard');
+        window.location.replace(gym ? gymReturnPath(params.get('redirect')) : '/member/dashboard');
       } else {
         setError(data.error || 'Login failed');
       }
@@ -151,6 +156,12 @@ export default function MemberLoginPage() {
                 </form>
 
                 <div className="mt-7 text-center text-sm text-thrivv-text-secondary">
+                  <p className="mb-4">
+                    {gymMode ? 'Are you a member? ' : 'Are you a gym owner or manager? '}
+                    <a href={switchUrl} className="text-thrivv-gold-500 underline focus-visible:outline">
+                      {gymMode ? 'Member login' : 'Gym login'}
+                    </a>
+                  </p>
                   {gymMode ? 'Need a Thrivv account? ' : "Don't have an account? "}
                   <Link
                     href="/member/signup"

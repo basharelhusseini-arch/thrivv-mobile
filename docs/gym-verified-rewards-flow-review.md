@@ -1,5 +1,10 @@
 # Gym-verified daily rewards — implementation review
 
+> Production-readiness update (2026-09-13): the database is now the single
+> activation authority. Workout verification is enabled by the follow-up migration;
+> redeemable points remain disabled until an explicit conversion rate and daily cap
+> are approved. The reward schema supports that future decision without assuming 1:1.
+
 Local implementation on `feat/gym-verified-rewards-flow`, building on the unpushed rotating-QR display commit `21dcb88`. No production migration, configuration, scheduled-job activation, push or deployment was performed for this work.
 
 ## Resulting flow
@@ -9,20 +14,20 @@ Local implementation on `feat/gym-verified-rewards-flow`, building on the unpush
 3. Camera access begins only on a button press. jsQR decodes on-device; camera frames are never uploaded. The camera stops after decoding, when hidden, on cancellation, on processing failure and on unmount. The server receives only the signed payload, workout ID and idempotency request ID.
 4. The server checks the actual session, same-origin request, current gym membership, operator authorization, signed QR expiry, imported workout ownership and the two-hour window after workout end. A pending WHOOP score may be verified, but cannot credit an incomplete score.
 5. One accepted record is stored per WHOOP workout. The day’s highest eligible workout must have matching gym verification. A smaller verified workout does not unlock a larger unverified workout. Tied highest workouts may use any verified tied workout.
-6. A complete eligible Health Score earns the same number of points (43.5 → 43.5; maximum 110 per day). The UI distinguishes estimates, actual credits and spendable balance. Score changes create signed ledger adjustments, never another full entitlement.
+6. A complete eligible Health Score can earn points only after an approved conversion rate and daily cap are stored in `gym_reward_config`. The UI distinguishes estimates, actual credits and spendable balance. Score changes create signed ledger adjustments, never another full entitlement.
 7. Existing successful WHOOP sync and habit-save paths reconcile credits through the shared `saveDay` hook. Accounting failure leaves the saved score/accepted scan intact; later successful syncs retry. Existing background infrastructure is reused; no jobs are activated.
 8. Health shows workout strain, elapsed duration, sport, calories converted from recorded kilojoules, time in zones 0–5 and the existing score breakdown. Rule-based explanations use actual components, distinguish zero/missing data and avoid urging more intensity when recovery is low. No AI provider receives data.
 9. Gym analytics count unique accepted workout verifications and net gym-attributed earnings, excluding spending and opening balances. Admin member inspection includes daily entitlement status and new point transactions.
 
 ## Rules and activation decisions
 
-Both server environment flags and database switches default off. Approve these defaults explicitly when approving activation:
+Database switches default off and are the authoritative activation controls:
 
 - Verification: imported and ended workout, current gym membership covering the workout’s start date, scan within two hours after workout end. The joining code is separate and never verifies exercise.
 - Calendar: gym timezone; workouts belong to their start date, even when finishing/scanning after midnight. Members without a gym retain existing Health Scores but cannot earn these gym-verified rewards.
 - Eligibility: the existing `complete` Health Score flag means required WHOOP inputs are available, **not** that the calendar day has ended. Credits may appear on that day and be adjusted after later updates. No change to the scoring formula or completeness calculation.
 - One entitlement per application user/scoring date across formula versions and gym changes. Current implementation reads `health-v3`; any future formula requires a separate review.
-- Conversion: one point per score unit, new daily awards stored to one decimal. Existing balances/opening entries are copied without rounding, including older finer decimal precision. No beginner/consistency multiplier; nutrition contributes zero.
+- Conversion: deliberately unset. `points_per_health_point` and `max_daily_points` must both be explicitly configured before `rewards_enabled` can be turned on. New daily awards are stored to one decimal. Existing balances/opening entries are copied without rounding.
 - Activation date: database `effective_date` must be explicitly chosen. No historical backfill is run. Do not choose a past date without a separate reviewed reconciliation. Existing nonzero legacy daily rewards block another daily award for that date.
 - Rest days and verified zero workouts remain scored but do not earn a gym-verified award. Recovery and habits contribute to an eligible gym-verified day’s full score.
 - Updated strain/score is adjusted normally. A changed workout start/end or gym calendar invalidates the old verification for reward matching and requires review; the scan record is immutable. Deletion/removal of the verified highest workout can reduce the entitlement after a successful complete resync.
@@ -43,11 +48,9 @@ The verified live target did not have these new reward tables/functions. Do **no
 
 ## Required configuration names
 
-- `GYM_WORKOUT_QR_SECRET`: dedicated server-only canonical base64 encoding of 32 random bytes. No value was generated, exposed or configured in production.
-- `GYM_WORKOUT_VERIFICATION_ENABLED`: default off; must match approved database verification activation.
-- `GYM_DAILY_REWARDS_ENABLED`: default off; must match approved database rewards activation/effective date.
+- `GYM_WORKOUT_QR_SECRET`: optional dedicated server-only canonical base64 encoding of 32 random bytes. If absent, a domain-separated key is derived from the required `JWT_SECRET`; a malformed explicit value fails closed.
 - Existing `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and session configuration remain unchanged.
-- Existing `WHOOP_BACKGROUND_SYNC_ENABLED` and `CRON_SECRET` are used by existing background processing. Scheduler deployment/activation requires separate approval. No new cron definition was introduced.
+- Existing `CRON_SECRET` protects the daily Vercel background sync route.
 - Existing `GYM_CODE_ENCRYPTION_KEY` relates to joining-code display, **not** the workout QR secret.
 
 No offers are seeded or made redeemable automatically. Partner fulfillment is not implemented by this task.

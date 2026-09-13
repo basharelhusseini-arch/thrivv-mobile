@@ -240,7 +240,7 @@ export default function WearablesPage() {
           <h3 className="text-lg font-semibold text-white mb-3">Need Help?</h3>
           <div className="text-sm text-gray-400 space-y-2">
             <p>• You can connect multiple wearables at once to sync all your data</p>
-            <p>• Data syncs automatically every hour when connected</p>
+            <p>• Data syncs automatically while you use Thrivv and through the daily background sync</p>
             <p>• Your connected devices contribute to your Health Score</p>
             <p>• Disconnect anytime from the device settings page</p>
           </div>

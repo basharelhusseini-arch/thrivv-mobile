@@ -2,6 +2,8 @@ import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 import bcrypt from 'bcryptjs';
 import { getJWTSecret } from './env';
+import { createHash, randomUUID } from 'crypto';
+import { supabase } from './supabase';
 
 function sessionSecret(): Uint8Array {
   return new TextEncoder().encode(getJWTSecret());
@@ -61,6 +63,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 // Create JWT session token
 export async function createSession(user: SessionUser): Promise<string> {
   const token = await new SignJWT({ user })
+    .setJti(randomUUID())
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d') // 7 days
     .setIssuedAt()
@@ -133,6 +136,12 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       return null;
     }
 
+    // Fail closed if revocation storage is unavailable. Apply its migration first.
+    const { data: revoked, error } = await supabase.from('revoked_app_sessions')
+      .select('token_hash').eq('token_hash', createHash('sha256').update(token).digest('hex')).maybeSingle();
+    if (error) throw new Error('Session verification unavailable');
+    if (revoked) return null;
+
     return session.user;
   } catch (error) {
     console.error('Error getting current user:', error);
@@ -140,18 +149,21 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   }
 }
 
-// Clear session cookie
-export async function clearSessionCookie(): Promise<void> {
+// Revoke before the logout route emits cookie deletions. Do not mutate the
+// cookie store here: it deduplicates same-name cookies with different domains.
+export async function revokeCurrentSession(rawCookies?: string | null): Promise<void> {
   const cookieStore = await cookies();
-  if (COOKIE_DOMAIN) {
-    // Domain-scoped cookies must be cleared with the same domain attribute.
-    cookieStore.set(COOKIE_NAME, '', {
-      expires: new Date(0),
-      path: '/',
-      domain: COOKIE_DOMAIN,
+  // Raw header preserves duplicate names across host-only/shared cookie scopes.
+  const tokens = rawCookies ? rawCookies.split(';').flatMap(part => {
+    const [name, ...value] = part.trim().split('=');
+    return name === COOKIE_NAME ? [value.join('=')] : [];
+  }) : cookieStore.getAll(COOKIE_NAME).map(cookie => cookie.value).filter(Boolean);
+  for (const token of new Set(tokens)) {
+    if (!await verifySession(token)) continue;
+    const { error } = await supabase.from('revoked_app_sessions').insert({
+      token_hash: createHash('sha256').update(token).digest('hex'),
     });
-  } else {
-    cookieStore.delete(COOKIE_NAME);
+    if (error && error.code !== '23505') throw new Error('Session revocation unavailable');
   }
 }
 
