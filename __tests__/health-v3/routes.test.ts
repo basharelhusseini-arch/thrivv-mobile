@@ -32,13 +32,14 @@ test('nutrition only stores nutrition, never recalculates a score or issues rewa
   expect(upsert.mock.calls[0][0]).toEqual([{user_id:'member',date:'2026-09-11',calories:0}]);
   expect(saveDay).not.toHaveBeenCalled(); expect(supabase.rpc).not.toHaveBeenCalled();
 });
-test('check-in rejects forged habit keys and does not credit held rewards', async () => {
+test('check-in filters forged habits and delegates reward eligibility to the server RPC', async () => {
+  (supabase.rpc as jest.Mock).mockResolvedValue({data:{status:'verification_required'},error:null});
   const res=await checkin(request({didWorkout:true,habits:{sauna:true,admin:true,meditation:'true'},calories:1000}));
   expect(res.status).toBe(200);
   expect(upsert.mock.calls[0][0].habits_completed).toBe(1);
   expect(upsert.mock.calls[0][0].habit_details.admin).toBeUndefined();
   expect((await res.json()).rewardPoints).toEqual({earned:0,total:123});
-  expect(supabase.rpc).not.toHaveBeenCalled();
+  expect(supabase.rpc).toHaveBeenCalledWith('thrivv_reconcile_gym_reward',{p_user:'member',p_date:'2026-09-11'});
 });
 test('leaderboard only passes the authenticated identity to its tenant-restricted RPC', async () => {
   expect((await leaderboard()).status).toBe(200);

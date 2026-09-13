@@ -275,7 +275,7 @@ export default function CheckinPage() {
         setHasCheckedIn(true);
 
         setTimeout(() => {
-          router.push('/member/dashboard');
+          router.push(!whoopConnected && formData.didWorkout ? '/member/scan-workout' : '/member/dashboard');
         }, 2000);
       } else {
         if (response.status === 401) {
@@ -361,7 +361,7 @@ export default function CheckinPage() {
           <div>
             <p className="text-lg font-semibold text-white">Check-in complete</p>
             <p className="text-sm text-gray-400 mt-1">
-              Check-in saved. Taking you to the dashboard…
+              {!whoopConnected && formData.didWorkout ? 'Check-in saved. Next, scan your gym QR to claim your reward points.' : 'Check-in saved. Taking you to the dashboard…'}
             </p>
           </div>
         </div>

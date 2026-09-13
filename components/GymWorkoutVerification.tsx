@@ -5,6 +5,7 @@ import { ensureWhoopAutoSync } from '@/lib/whoop/auto-sync';
 export type VerificationStatus = {
   gymId: string | null; date: string; timezone: string; verificationEnabled: boolean; rewardsEnabled: boolean;
   score: number | null; estimatedPoints: number | null; creditedPoints: number; rewardStatus: string;
+  manual?: { eligible: boolean; enabled: boolean; checkedIn: boolean; verified: boolean; canScan: boolean; estimatedPoints: number };
   workouts: { id: string; sport_name: string | null; start_at: string; date: string; canScan: boolean; verified: boolean; scanUntil: string; status: string }[];
 };
 export default function GymWorkoutVerification({ scanner = false }: { scanner?: boolean }) {
@@ -81,13 +82,22 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
   }
   return <section className="dark-card p-5 sm:p-7 space-y-4" aria-label="Gym workout verification">
     <h2 className="text-xl font-semibold text-white">{scanner ? 'Scan your gym’s workout QR' : 'Verify your gym workout'}</h2>
-    <p className="text-sm text-gray-400">Sync your WHOOP workout first, then scan the changing code displayed by your gym within two hours of finishing. Your day’s highest-scoring workout must be gym verified to unlock daily points.</p>
+    <p className="text-sm text-gray-400">{data?.manual?.eligible
+      ? 'Without WHOOP: log today’s workout, then scan your gym’s changing QR for 40 spendable reward points plus up to 10 habit points. Maximum 50 per day; sleep does not add points.'
+      : 'Sync your WHOOP workout first, then scan the changing code displayed by your gym within two hours of finishing. WHOOP reward conversion is not activated yet.'}</p>
     {error && <p role="alert" className="text-amber-300">{error} <button className="underline" onClick={() => void refresh()}>Refresh status</button></p>}
     {message && <p role="status" className="text-thrivv-gold-400">{message}</p>}
     {!data && !error && <p className="text-gray-400">Loading workout status…</p>}
     {data && !data.gymId && <Link className="text-thrivv-gold-400 underline" href="/member/account/join-gym">Join a gym</Link>}
     {data && !data.verificationEnabled && <p className="text-amber-300">Workout verification is not activated yet.</p>}
-    {data && data.workouts.length === 0 && <p className="text-gray-400">No imported workouts in the last seven days. After your workout, sync WHOOP from Wearable.</p>}
+    {data?.manual?.eligible && data.gymId && <div className="border-t border-gray-800 pt-4 space-y-3">
+      <p className="text-white">Today’s manual workout · {data.manual.verified ? `${data.creditedPoints} points credited` : data.manual.checkedIn ? 'Check-in saved' : 'Check-in required'}</p>
+      <Link className="text-thrivv-gold-400 underline" href="/member/checkin">{data.manual.checkedIn ? 'Update today’s habits' : 'Log today’s workout'}</Link>
+      {data.manual.canScan && (scanner ? <button disabled={busy || running} onClick={() => void start('manual')} className="block rounded-xl bg-thrivv-gold-500 text-black px-4 py-3 font-semibold disabled:opacity-50">{data.manual.verified ? 'Scan again safely' : 'Scan gym QR'}</button>
+        : <Link className="block text-thrivv-gold-400 underline" href="/member/scan-workout">Scan gym QR to claim points</Link>)}
+      {data.manual.verified && <p className="text-sm text-gray-400">Additional scans never award another 40 points. Save habit updates in Check-In.</p>}
+    </div>}
+    {data && !data.manual?.eligible && data.workouts.length === 0 && <p className="text-gray-400">No imported workouts in the last seven days. After your workout, sync WHOOP from Wearable.</p>}
     {(scanner ? data?.workouts : data?.workouts.filter(w => w.canScan || w.date === data.date).slice(0,3))?.map(w => <div key={w.id} className="border-t border-gray-800 pt-4 flex flex-wrap items-center justify-between gap-3">
       <div><p className="text-white">{w.sport_name || 'WHOOP workout'}</p><p className="text-xs text-gray-400">{w.date} · {w.status}</p></div>
       {w.canScan && (scanner ? <button disabled={busy || running} onClick={() => void start(w.id)} className="rounded-xl bg-thrivv-gold-500 text-black px-4 py-3 font-semibold disabled:opacity-50">Scan gym QR</button>

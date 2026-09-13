@@ -1,5 +1,11 @@
 # Gym portal repair audit — 2026-09-13
 
+> Status correction: these repairs were merged in PR #4 at
+> `6a36fddafacf053813bd4d7fa4fbb33147d52b3c`; the user confirmed that deployment
+> Ready on the production domains. The revocation migration was applied separately.
+> The local-only statements below are the original audit record, not current status.
+> See `manual-gym-rewards.md` for the subsequent database repair and manual rewards.
+
 ## Status and provenance
 
 Local work only on `codex/gym-portal-repairs`. No push, merge, preview deployment,

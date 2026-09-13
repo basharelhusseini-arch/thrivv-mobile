@@ -1,3 +1,4 @@
+import { reconcileDailyReward } from '@/lib/rewards/ledger';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
@@ -19,7 +20,10 @@ export async function POST(request: NextRequest) {
         habits_completed: Object.values(habits).filter(Boolean).length, habit_details: habits }, { onConflict: 'user_id,date' }).select().single();
       if (error) throw new Error('Unable to save check-in');
       const score = await saveDay(context, context.today);
-      return NextResponse.json({ success: true, checkin, score, rewardPoints: { earned: 0, total: context.balance }, rewardStatus: 'pending_formula_approval' });
+      let reward;
+      try { reward = await reconcileDailyReward(user.id, context.today); }
+      catch { reward = { status: 'retry_pending' }; }
+      return NextResponse.json({ success: true, checkin, score, rewardPoints: { earned: reward?.earned ?? 0, total: reward?.total ?? context.balance }, rewardStatus: reward?.status });
     });
   } catch (e) {
     return NextResponse.json({ error: e instanceof SyncBusyError ? 'WHOOP sync running; retry shortly' : 'Unable to save check-in' },
