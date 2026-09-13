@@ -40,6 +40,7 @@ test('operator cannot assign access; admin RPC uses session actor, not request a
   (checkAdminAccess as jest.Mock).mockResolvedValue({ok:true,user:{id:'real-admin'}});
   (supabase.rpc as jest.Mock).mockResolvedValue({error:null});
   const userId='00000000-0000-4000-8000-000000000001';
-  expect((await assign(request({userId,grant:true,actor:'forged'}),ctx)).status).toBe(200);
-  expect(supabase.rpc).toHaveBeenCalledWith('thrivv_set_gym_operator',{p_actor:'real-admin',p_user:userId,p_gym:'gym-a',p_grant:true});
+  const gymId='00000000-0000-4000-8000-000000000002', requestId='00000000-0000-4000-8000-000000000003';
+  expect((await assign(request({userId,grant:true,actor:'forged',requestId,reason:'Owner approved'}),{params:{gym_id:gymId}})).status).toBe(200);
+  expect(supabase.rpc).toHaveBeenCalledWith('thrivv_admin_change',{p_actor:'real-admin',p_request:requestId,p_action:'operator.grant',p_target:gymId,p_reason:'Owner approved',p_data:{user_id:userId}});
 });

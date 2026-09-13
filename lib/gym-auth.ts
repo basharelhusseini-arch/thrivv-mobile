@@ -75,17 +75,18 @@ export async function checkGymAccess(gymId: string): Promise<GymAccessResult> {
  */
 export async function checkAdminAccess(): Promise<
   | { ok: true; user: SessionUser }
-  | { ok: false; status: 401 | 403; reason: string }
+  | { ok: false; status: 401 | 403 | 503; reason: string }
 > {
   const user = await getCurrentUser();
   if (!user) return { ok: false, status: 401, reason: 'Not authenticated' };
 
-  const { data: userRow } = await supabase
+  const { data: userRow, error: adminError } = await supabase
     .from('users')
     .select('is_admin')
     .eq('id', user.id)
     .maybeSingle();
 
+  if (adminError) return { ok: false, status: 503, reason: 'Administrator verification unavailable' };
   if (!userRow?.is_admin) {
     return { ok: false, status: 403, reason: 'Admin access required' };
   }

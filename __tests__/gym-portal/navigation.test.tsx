@@ -30,7 +30,7 @@ function render(path: string, cachedMember = true, layout = false) {
 test.each(['/gym', '/gym/123/dashboard', '/admin/gyms'])('gym chrome ignores saved member profile on %s', path => {
   const html = render(path);
   expect(html).toContain('Gym portal navigation');
-  expect(html).toContain('Your gyms');
+  expect(html).toContain(path === '/admin/gyms' ? 'Platform Admin' : 'Your gyms');
   expect(html).not.toMatch(/href="\/member\/(dashboard|workouts|nutrition|health|wearables|account)"/);
   expect(html).toContain('href="/gym"');
 });

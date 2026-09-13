@@ -76,6 +76,12 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
+  useEffect(() => {
+    let active = true; setIsPlatformAdmin(false);
+    fetch('/api/auth/me', { cache: 'no-store' }).then(async r => r.ok ? r.json() : null).then(data => { if (active) setIsPlatformAdmin(data?.isPlatformAdmin === true); }).catch(() => {});
+    return () => { active = false; };
+  }, [pathname]);
   const [memberData, setMemberData] = useState<{
     id: string;
     name: string;
@@ -129,9 +135,12 @@ export default function Sidebar() {
       { name: 'Gym dashboard', label: 'Dashboard', href: gymDashboard, icon: LayoutDashboard },
       { name: 'Gym portal', label: 'Your gyms', href: '/gym', icon: UserCog },
     ]
-    : [{ name: 'Gym portal', label: 'Your gyms', href: pathname?.startsWith('/admin/gyms') ? '/admin/gyms' : '/gym', icon: LayoutDashboard }];
-  const navigation =
-    isInGymPortal ? gymNavigation : isInMemberPortal || memberData ? memberNavigation : adminNavigation;
+    : [{ name: 'Gym portal', label: pathname?.startsWith('/admin/gyms') ? 'Platform Admin' : 'Your gyms', href: pathname?.startsWith('/admin/gyms') ? '/admin/gyms' : '/gym', icon: LayoutDashboard }];
+  const navigation = [
+    ...(isInGymPortal ? gymNavigation : isInMemberPortal || memberData ? memberNavigation : adminNavigation),
+    ...(isPlatformAdmin && !pathname?.startsWith('/admin/gyms') ? [{ name: 'Platform Admin', label: 'Platform Admin', href: '/admin/gyms', icon: UserCog }] : []),
+    { name: 'Help & Support', label: 'Support', href: isInGymPortal ? '/gym/support' : '/member/account/support', icon: Heart },
+  ];
   const primaryHrefs =
     isInGymPortal ? gymNavigation.map(item => item.href) : isInMemberPortal || memberData ? memberPrimaryHrefs : adminPrimaryHrefs;
 

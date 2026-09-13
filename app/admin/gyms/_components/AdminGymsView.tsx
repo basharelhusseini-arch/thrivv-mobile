@@ -1,389 +1,97 @@
 'use client';
-
-import GymJoinCode from '@/components/GymJoinCode';
-
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Building2, Plus, ExternalLink, UserPlus, Calendar, Mail } from 'lucide-react';
-
-type GymRow = {
-  id: string;
-  name: string;
-  owner_email: string;
-  pilot_start_date: string | null;
-  pilot_member_count: number;
-  created_at: string;
-  member_count: number;
-};
-
+import GymJoinCode from '@/components/GymJoinCode';
+import SupportInbox, { readJson, useAction, inputClass, buttonClass, Pager } from '@/components/SupportInbox';
+const tabs = ['Overview', 'Gyms', 'Access requests', 'Members', 'Support', 'Audit history'];
+function useData(url: string) {
+  const [data, setData] = useState<any>(null); const [error, setError] = useState('');
+  async function reload() { const d = await readJson(url); setData(d); setError(''); }
+  useEffect(() => { let active = true; setData(null); setError(''); readJson(url).then(d => { if (active) setData(d); }).catch(e => { if (active) setError(e.message); }); return () => { active = false; }; }, [url]);
+  return { data, error, reload };
+}
+function LoadState({ state }: { state: ReturnType<typeof useData> }) {
+  return state.error ? <p role="alert">{state.error} <button className="underline" onClick={() => state.reload().catch(() => {})}>Retry</button></p> : !state.data ? <p>Loading…</p> : null;
+}
+function ActionStatus({ action }: { action: ReturnType<typeof useAction> }) { return action.message ? <p role="status" className="text-sm">{action.message}</p> : null; }
+function Reason({ value, onChange }: { value: string; onChange: (s: string) => void }) { return <label className="block text-sm">Reason for this change<input required minLength={3} maxLength={500} className={inputClass} value={value} onChange={e => onChange(e.target.value)} /></label>; }
+function confirmChange() { return window.confirm('Apply this change? It will be recorded in the administrator audit history.'); }
+function UserPicker({ onSelect }: { onSelect: (u: any) => void }) {
+  const [q, setQ] = useState(''); const [search, setSearch] = useState(''); const [offset, setOffset] = useState(0);
+  const state = useData(`/api/admin/members?q=${encodeURIComponent(search)}&offset=${offset}`);
+  return <div className="space-y-3">
+    <form className="flex gap-2" onSubmit={e => { e.preventDefault(); setSearch(q); setOffset(0); }}><input aria-label="Search member name or email" placeholder="Search name or email" className={inputClass} value={q} onChange={e => setQ(e.target.value)} /><button className={buttonClass}>Search</button></form>
+    <LoadState state={state} />{state.data && <><ul className="max-h-72 overflow-auto space-y-2">{state.data.members.map((u: any) => <li key={u.id}><button type="button" className="w-full text-left p-3 rounded-xl bg-white/5 break-all" onClick={() => onSelect(u)}>{[u.first_name, u.last_name].filter(Boolean).join(' ') || 'Member'}<span className="block text-sm text-gray-400">{u.email}</span></button></li>)}</ul>{!state.data.total && <p>No matching accounts.</p>}<Pager offset={offset} total={state.data.total} setOffset={setOffset} /></>}
+  </div>;
+}
+function GymPicker({ value, onChange, allowNone = false }: { value: string; onChange: (s: string) => void; allowNone?: boolean }) {
+  const [offset, setOffset] = useState(0); const state = useData(`/api/admin/gyms?offset=${offset}`);
+  return <div className="space-y-2"><LoadState state={state} />{state.data && <><label className="block text-sm">Choose gym<select required={!allowNone} className={inputClass} value={value} onChange={e => onChange(e.target.value)}><option value="">{allowNone ? 'No gym / remove assignment' : 'Select a gym'}</option>{state.data.gyms.map((g: any) => <option value={g.id} key={g.id}>{g.name}</option>)}</select></label><Pager offset={offset} total={state.data.total} setOffset={n => { setOffset(n); onChange(''); }} /></>}</div>;
+}
 export default function AdminGymsView() {
-  const [gyms, setGyms] = useState<GymRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const reload = async () => {
-    setError(null);
-    const res = await fetch('/api/admin/gyms', { cache: 'no-store' });
-    if (!res.ok) {
-      setError((await res.json().catch(() => ({})))?.error || 'Failed to load gyms');
-      setLoading(false);
-      return;
-    }
-    const json = await res.json();
-    setGyms(json.gyms || []);
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    reload();
-  }, []);
-
-  return (
-    <div className="min-h-screen bg-thrivv-bg-darker relative overflow-hidden">
-      <div className="pointer-events-none fixed inset-0" aria-hidden>
-        <div className="absolute -top-1/3 -right-1/3 w-[60vw] h-[60vw] bg-thrivv-gold-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <main className="relative max-w-6xl mx-auto px-6 lg:px-10 py-10 lg:py-14 space-y-10">
-        <header className="flex items-end justify-between gap-4 animate-fade-in-up">
-          <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-5">
-              <Building2 className="w-3 h-3" />
-              Admin · Gyms
-            </span>
-            <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold text-thrivv-text-primary tracking-tighter leading-[1.02]">
-              Manage Gym Pilots
-            </h1>
-          </div>
-        </header>
-
-        {error && (
-          <div className="error-badge p-4 text-sm">{error}</div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up delay-100">
-          <div className="lg:col-span-2 premium-card">
-            <div className="flex items-center justify-between px-6 py-5">
-              <h2 className="text-lg font-semibold text-thrivv-text-primary">
-                All gyms
-              </h2>
-              <span className="text-xs text-thrivv-text-muted uppercase tracking-widest">
-                {gyms.length}
-              </span>
-            </div>
-            <div className="divider" />
-            {loading ? (
-              <div className="p-10 text-center text-thrivv-text-secondary text-sm">
-                Loading…
-              </div>
-            ) : gyms.length === 0 ? (
-              <div className="p-10 text-center">
-                <Building2 className="w-8 h-8 text-thrivv-text-muted mx-auto mb-3" />
-                <p className="text-sm text-thrivv-text-secondary">
-                  No gyms yet. Add your first one on the right.
-                </p>
-              </div>
-            ) : (
-              <ul className="p-4 space-y-2">
-                {gyms.map((g) => (
-                  <li
-                    key={g.id}
-                    className="bg-thrivv-bg-card/40 hover:bg-thrivv-bg-card/70 border border-transparent hover:border-thrivv-gold-500/20 rounded-xl p-4 transition-all"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-medium text-thrivv-text-primary truncate">
-                          {g.name}
-                        </div>
-                        <div className="text-xs text-thrivv-text-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-                          <span className="inline-flex items-center gap-1">
-                            <Mail className="w-3 h-3" /> {g.owner_email}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {g.pilot_start_date ?? 'no pilot date'}
-                          </span>
-                          <span>· {g.member_count} members</span>
-                          <span>· pilot cohort {g.pilot_member_count}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Link
-                          href={`/gym/${g.id}/dashboard`}
-                          className="btn-ghost px-3 py-1.5 text-xs inline-flex items-center gap-1.5"
-                        >
-                          Open <ExternalLink className="w-3 h-3" />
-                        </Link>
-                      </div>
-                    </div>
-                    <AssignUser gymId={g.id} onAssigned={reload} />
-                    <div className="mt-4"><GymJoinCode gymId={g.id} /></div>
-                    <GymOperators gymId={g.id} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div>
-            <CreateGymForm onCreated={reload} />
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+  const [tab, setTab] = useState('Overview');
+  useEffect(() => { const t = new URLSearchParams(window.location.search).get('tab'); if (t && tabs.includes(t)) setTab(t); }, []);
+  return <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-7 min-w-0">
+    <header className="glass-card p-6 sm:p-10 space-y-4"><p className="text-xs uppercase tracking-[0.28em] text-thrivv-gold-500">Thrivv / Platform administration</p><h1 className="text-3xl sm:text-5xl font-semibold tracking-tighter">Your gyms. One workspace.</h1><p className="text-thrivv-text-secondary">Manage gym access, assist members and review changes.</p><Link className="text-sm text-thrivv-gold-500 underline" href="/member/dashboard">Open member dashboard</Link></header>
+    <nav aria-label="Administration sections" className="flex flex-wrap gap-2">{tabs.map(t => <button aria-current={tab === t ? 'page' : undefined} key={t} onClick={() => setTab(t)} className={tab === t ? buttonClass : 'btn-ghost px-4 py-3 text-sm'}>{t}</button>)}</nav>
+    {tab === 'Overview' && <Overview />}{tab === 'Gyms' && <Gyms />}{tab === 'Access requests' && <AccessRequests />}{tab === 'Members' && <Members />}{tab === 'Support' && <SupportInbox admin />}{tab === 'Audit history' && <Audit />}
+  </main>;
 }
-
-function CreateGymForm({ onCreated }: { onCreated: () => void }) {
-  const [form, setForm] = useState({
-    name: '',
-    owner_email: '',
-    pilot_start_date: '',
-    pilot_member_count: 0,
-  });
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(
-    null,
-  );
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setMsg(null);
-    const res = await fetch('/api/admin/gyms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: form.name,
-        owner_email: form.owner_email,
-        pilot_start_date: form.pilot_start_date || null,
-        pilot_member_count: Number(form.pilot_member_count) || 0,
-      }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setMsg({ kind: 'err', text: j.error || 'Failed to create gym' });
-      return;
-    }
-    setMsg({ kind: 'ok', text: 'Gym created' });
-    setForm({ name: '', owner_email: '', pilot_start_date: '', pilot_member_count: 0 });
-    onCreated();
-  };
-
-  return (
-    <div className="premium-card p-6">
-      <h2 className="flex items-center text-lg font-semibold text-thrivv-text-primary mb-4">
-        <Plus className="w-5 h-5 mr-2 text-thrivv-gold-500" /> Add a gym
-      </h2>
-      <form onSubmit={submit} className="space-y-3">
-        <Field label="Gym name">
-          <input
-            required
-            className="input-premium w-full px-3 py-2 text-sm"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Iron Works HQ"
-          />
-        </Field>
-        <Field label="Owner email">
-          <input
-            required
-            type="email"
-            className="input-premium w-full px-3 py-2 text-sm"
-            value={form.owner_email}
-            onChange={(e) =>
-              setForm({ ...form, owner_email: e.target.value })
-            }
-            placeholder="owner@gym.com"
-          />
-        </Field>
-        <Field label="Pilot start date">
-          <input
-            type="date"
-            className="input-premium w-full px-3 py-2 text-sm"
-            value={form.pilot_start_date}
-            onChange={(e) =>
-              setForm({ ...form, pilot_start_date: e.target.value })
-            }
-          />
-        </Field>
-        <Field label="Pilot member count">
-          <input
-            type="number"
-            min={0}
-            className="input-premium w-full px-3 py-2 text-sm"
-            value={form.pilot_member_count}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                pilot_member_count: parseInt(e.target.value || '0', 10),
-              })
-            }
-          />
-        </Field>
-        <button
-          type="submit"
-          disabled={busy}
-          className="btn-primary w-full py-2.5 text-sm disabled:opacity-60"
-        >
-          {busy ? 'Creating…' : 'Create gym'}
-        </button>
-        {msg && (
-          <div
-            className={`text-xs px-3 py-2 rounded-lg ${
-              msg.kind === 'ok' ? 'success-badge' : 'error-badge'
-            }`}
-          >
-            {msg.text}
-          </div>
-        )}
-      </form>
-    </div>
-  );
+function Overview() {
+  const state = useData('/api/admin/overview'); const d = state.data;
+  const names: Record<string,string> = { gyms: 'Gyms', members: 'Registered accounts', gym_members: 'Gym members', active_members: 'Active gym members · 7 days', connected: 'WHOOP connections', stale_syncs: 'Stale or missing syncs', failed_support_syncs: 'Failed support retries · 7 days', pending_requests: 'Pending owner requests', open_tickets: 'Open support tickets' };
+  return <section className="space-y-5"><LoadState state={state} />{d && <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{Object.entries(names).map(([key, name]) => <div key={key} className="premium-card p-6"><p className="text-sm text-gray-400">{name}</p><p className="mt-3 text-4xl text-thrivv-gold-500">{d[key]}</p></div>)}</div><p className="text-sm text-gray-400">{d.activityDefinition}</p><p className="text-sm text-gray-400">{d.syncDefinition}</p><div className="premium-card p-6"><h2 className="font-semibold">Reward accounting · Unavailable</h2><p>{d.rewards.reason} Points adjustments remain disabled.</p></div></>}</section>;
 }
-
-function AssignUser({
-  gymId,
-  onAssigned,
-}: {
-  gymId: string;
-  onAssigned: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState('');
-  const [start, setStart] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(
-    null,
-  );
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setMsg(null);
-    const res = await fetch(`/api/admin/gyms/${gymId}/assign`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email,
-        membership_start_date: start || null,
-      }),
-    });
-    setBusy(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setMsg({ kind: 'err', text: j.error || 'Failed to assign' });
-      return;
-    }
-    setMsg({ kind: 'ok', text: `Assigned ${email}` });
-    setEmail('');
-    setStart('');
-    onAssigned();
-  };
-
-  return (
-    <div className="mt-3 pt-3 border-t border-thrivv-gold-500/10">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="text-xs text-thrivv-gold-500 hover:text-thrivv-gold-400 inline-flex items-center gap-1.5"
-      >
-        <UserPlus className="w-3.5 h-3.5" />
-        {open ? 'Close' : 'Assign a user by email'}
-      </button>
-      {open && (
-        <form
-          onSubmit={submit}
-          className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 animate-fade-in"
-        >
-          <input
-            required
-            type="email"
-            className="input-premium px-3 py-2 text-xs sm:col-span-2"
-            placeholder="member@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="date"
-            className="input-premium px-3 py-2 text-xs"
-            value={start}
-            onChange={(e) => setStart(e.target.value)}
-            title="Optional membership start date"
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="btn-primary px-3 py-2 text-xs sm:col-span-3 disabled:opacity-60"
-          >
-            {busy ? 'Assigning…' : 'Assign to gym'}
-          </button>
-          {msg && (
-            <div
-              className={`sm:col-span-3 text-[11px] px-3 py-2 rounded-lg ${
-                msg.kind === 'ok' ? 'success-badge' : 'error-badge'
-              }`}
-            >
-              {msg.text}
-            </div>
-          )}
-        </form>
-      )}
-    </div>
-  );
+function GymForm({ gym, done }: { gym?: any; done: () => Promise<void> }) {
+  const [name, setName] = useState(gym?.name || ''); const [email, setEmail] = useState(gym?.owner_email || ''); const [timezone, setTimezone] = useState(gym?.timezone || 'UTC');
+  const [start, setStart] = useState(gym?.pilot_start_date || ''); const [cohort, setCohort] = useState(gym?.pilot_member_count || 0); const [reason, setReason] = useState(''); const action = useAction();
+  return <form className="premium-card p-5 space-y-3" onSubmit={e => { e.preventDefault(); if (confirmChange()) action.run(gym ? `/api/admin/gyms/${gym.id}` : '/api/admin/gyms', { name, owner_email: email, timezone, pilot_start_date: start, pilot_member_count: cohort, reason }, async () => { await done(); if (!gym) { setName(''); setEmail(''); setReason(''); } }, gym ? 'PATCH' : 'POST'); }}>
+    <h3 className="text-lg font-semibold">{gym ? 'Edit gym details' : 'Create a gym'}</h3>
+    <label className="block">Gym name<input required maxLength={120} className={inputClass} value={name} onChange={e => setName(e.target.value)} /></label>
+    <label className="block">Contact email<input required type="email" maxLength={254} className={inputClass} value={email} onChange={e => setEmail(e.target.value)} /></label><p className="text-xs text-gray-400">A contact email does not grant dashboard access.</p>
+    <label className="block">Timezone<input required className={inputClass} placeholder="Asia/Dubai" value={timezone} onChange={e => setTimezone(e.target.value)} /></label>
+    <label className="block">Pilot start date<input type="date" className={inputClass} value={start} onChange={e => setStart(e.target.value)} /></label>
+    <label className="block">Pilot member count<input type="number" min={0} step={1} className={inputClass} value={cohort} onChange={e => setCohort(Number(e.target.value))} /></label><Reason value={reason} onChange={setReason} />
+    <button disabled={action.busy} className={buttonClass}>Save gym</button><ActionStatus action={action} />
+  </form>;
 }
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="text-[11px] uppercase tracking-widest text-thrivv-text-muted mb-1.5 block">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function GymOperators({ gymId }: { gymId: string }) {
-  const [open, setOpen] = useState(false);
-  const [operators, setOperators] = useState<{ user_id: string }[]>([]);
-  const [userId, setUserId] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState('');
-  async function load() {
-    try {
-      const res = await fetch(`/api/admin/gyms/${gymId}/operators`, { cache: 'no-store' });
-      const data = await res.json(); if (!res.ok) throw new Error(data.error);
-      setOperators(data.operators); setMessage('');
-    } catch { setMessage('Unable to load operator access. Retry before changing permissions.'); }
-  }
-  async function update(id: string, grant: boolean) {
-    if (busy || !window.confirm(grant ? `Grant gym dashboard access to account ${id}? Verify this account belongs to the intended operator.` : 'Revoke this account’s gym dashboard access?')) return;
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/admin/gyms/${gymId}/operators`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id, grant }) });
-      const data = await res.json(); if (!res.ok) throw new Error(data.error);
-      setUserId(''); await load();
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'Unable to update access'); }
-    finally { setBusy(false); }
-  }
-  return <section className="mt-4 border-t border-thrivv-gold-500/10 pt-4 space-y-3">
-    <button type="button" className="text-sm text-thrivv-gold-500 underline" onClick={() => { if (!open) load(); setOpen(!open); }}>Manage dashboard access</button>
-    {open && <>
-      <p className="text-sm text-thrivv-text-secondary">Assign a registered account’s user ID from Supabase. Verify the person first. This grants access only to this gym; it does not change membership or platform-admin status.</p>
-      <form onSubmit={e => { e.preventDefault(); update(userId.trim(), true); }} className="flex flex-wrap gap-2">
-        <input aria-label="Operator account ID" required value={userId} onChange={e => setUserId(e.target.value)} placeholder="Registered account UUID" className="input-premium min-w-0 flex-1 px-3 py-2 text-sm" />
-        <button disabled={busy} className="btn-primary px-4 py-2 text-sm disabled:opacity-50">Grant access</button>
-      </form>
-      <ul className="space-y-2">{operators.map(operator => <li key={operator.user_id} className="flex flex-wrap items-center gap-3 text-sm"><span className="break-all">{operator.user_id}</span><button disabled={busy} className="text-thrivv-gold-500 underline disabled:opacity-50" onClick={() => update(operator.user_id, false)}>Revoke</button></li>)}</ul>
-      {message && <p role="alert" className="text-sm text-red-400">{message} <button onClick={load} className="underline">Retry</button></p>}
-    </>}
+function Gyms() {
+  const [offset, setOffset] = useState(0); const state = useData(`/api/admin/gyms?offset=${offset}`); const [selected, setSelected] = useState<any>(null);
+  return <section className="space-y-5"><div className="grid gap-5 xl:grid-cols-2"><div className="premium-card p-5 space-y-4"><h2 className="text-xl">All gyms</h2><LoadState state={state} />{state.data && <><ul className="space-y-3">{state.data.gyms.map((g: any) => <li key={g.id} className="rounded-xl bg-white/5 p-4 space-y-2"><p className="text-lg">{g.name}</p><p className="text-sm">{g.member_count} members · {g.timezone}</p><div className="flex flex-wrap gap-4"><Link className="text-thrivv-gold-500 underline" href={`/gym/${g.id}/dashboard`}>Open dashboard</Link><button className="underline" onClick={() => setSelected(g)}>Edit & manage access</button></div></li>)}</ul>{!state.data.total && <p>No gyms yet.</p>}<Pager offset={offset} total={state.data.total} setOffset={setOffset} /></>}</div><GymForm done={state.reload} /></div>
+    {selected && <section className="space-y-5"><h2 className="text-2xl">Manage {selected.name}</h2><GymForm key={selected.id} gym={selected} done={state.reload} /><Operators gymId={selected.id} /><GymJoinCode gymId={selected.id} /></section>}
   </section>;
+}
+function Operators({ gymId }: { gymId: string }) {
+  const state = useData(`/api/admin/gyms/${gymId}/operators`); const [selected, setSelected] = useState<any>(null); const [reason, setReason] = useState(''); const action = useAction();
+  function update(id: string, grant: boolean) { if (reason.trim().length < 3) { action.setMessage('Enter a reason first.'); return; } if (confirmChange()) action.run(`/api/admin/gyms/${gymId}/operators`, { userId: id, grant, reason }, state.reload); }
+  return <section className="premium-card p-5 space-y-4"><h3 className="text-xl">Gym management accounts</h3><p className="text-sm text-gray-400">Choose a registered account. Access is limited to this gym; platform-admin permissions are unchanged.</p><UserPicker onSelect={setSelected} />{selected && <p className="break-all">Selected: {selected.email} <button disabled={action.busy} className="underline" onClick={() => update(selected.id, true)}>Grant gym access</button></p>}<Reason value={reason} onChange={setReason} /><LoadState state={state} />{state.data && <ul className="space-y-3">{state.data.operators.map((u: any) => <li key={u.user_id} className="flex flex-wrap gap-3"><span className="break-all">{u.user_id}</span><button disabled={action.busy} className="underline" onClick={() => update(u.user_id, false)}>Revoke</button></li>)}</ul>}<ActionStatus action={action} /></section>;
+}
+function AccessRequests() {
+  const [offset, setOffset] = useState(0); const state = useData(`/api/admin/access-requests?offset=${offset}`);
+  return <section className="space-y-4"><h2 className="text-2xl">Owner access requests</h2><p className="text-sm text-gray-400">Verify the applicant before approval. Create a gym in the Gyms tab first if needed.</p><LoadState state={state} />{state.data && <>{state.data.requests.map((r: any) => <RequestCard key={r.id} request={r} reload={state.reload} />)}{!state.data.total && <p>No requests yet.</p>}<Pager offset={offset} total={state.data.total} setOffset={setOffset} /></>}</section>;
+}
+function RequestCard({ request: r, reload }: { request: any; reload: () => Promise<void> }) {
+  const [gym, setGym] = useState(''); const [reason, setReason] = useState(''); const [applicant, setApplicant] = useState<any>(null); const action = useAction();
+  function decide(decision: string) { if (reason.trim().length < 3 || (decision === 'approve' && !gym)) { action.setMessage('Enter a reason and select a gym for approval.'); return; } if (confirmChange()) action.run('/api/admin/access-requests', { id: r.id, decision, gymId: gym || null, reason }, reload); }
+  return <article className="premium-card p-5 space-y-3"><h3 className="text-xl">{r.gym_name} · {r.status}</h3><p>{r.location} · {r.applicant_role}</p><p className="text-xs break-all">Applicant: {r.applicant_id}</p><button className="underline" onClick={() => readJson(`/api/admin/members?id=${r.applicant_id}`).then(d => setApplicant(d.member)).catch(e => action.setMessage(e.message))}>Inspect applicant account</button>{applicant && <p className="break-all">{applicant.first_name} {applicant.last_name} · {applicant.email}</p>}{r.status === 'pending' ? <><GymPicker value={gym} onChange={setGym} /><Reason value={reason} onChange={setReason} /><div className="flex gap-4"><button disabled={action.busy} className={buttonClass} onClick={() => decide('approve')}>Approve for selected gym</button><button disabled={action.busy} className="underline" onClick={() => decide('reject')}>Reject</button></div></> : <p>{r.review_reason}</p>}<ActionStatus action={action} /></article>;
+}
+function Members() {
+  const [id, setId] = useState(''); return <section className="grid gap-6 xl:grid-cols-2"><div className="premium-card p-5 space-y-4"><h2 className="text-2xl">Members & accounts</h2><UserPicker onSelect={u => setId(u.id)} /></div>{id && <MemberDetails key={id} id={id} />}</section>;
+}
+function MemberDetails({ id }: { id: string }) {
+  const state = useData(`/api/admin/members?id=${id}`); const d = state.data;
+  const [gym, setGym] = useState(''); const [start, setStart] = useState(new Date().toISOString().slice(0, 10)); const [reason, setReason] = useState(''); const action = useAction();
+  return <section className="premium-card p-5 space-y-5 min-w-0"><LoadState state={state} />{d && <>
+    <h3 className="text-xl">{d.member.first_name} {d.member.last_name}</h3><p className="break-all">{d.member.email}</p><p className="text-sm break-all">Current gym: {d.member.gym_id || 'None'} · Since {d.member.membership_start_date || 'Unknown'}</p><p>Spendable balance: {d.member.reward_points ?? 'Unavailable'}</p>
+    <details><summary className="cursor-pointer text-thrivv-gold-500">Correct gym assignment</summary><form className="mt-3 space-y-3" onSubmit={e => { e.preventDefault(); if (confirmChange()) action.run(`/api/admin/gyms/${gym || 'none'}/assign`, { userId: id, membership_start_date: start, reason }, state.reload); }}><GymPicker value={gym} onChange={setGym} allowNone /><label className="block">Membership start<input type="date" required={!!gym} max={new Date().toISOString().slice(0,10)} value={start} onChange={e => setStart(e.target.value)} className={inputClass} /></label><Reason value={reason} onChange={setReason} /><p className="text-sm text-gray-400">Historical scores and reward records will not be moved or recalculated.</p><button disabled={action.busy} className={buttonClass}>Confirm assignment correction</button></form></details>
+    <h4 className="font-semibold">Health Scores · latest 30 days recorded</h4>{!d.scores.available ? <p>Score data unavailable.</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr>{['Date','Health /110','Training /80','Recovery /20','Habits /10','Status'].map(h => <th className="p-2 text-left" key={h}>{h}</th>)}</tr></thead><tbody>{(d.scores.data || []).map((s: any) => <tr key={s.date}>{[s.date,s.score,s.training_score,s.recovery_score,s.habit_score,s.complete ? 'Complete' : 'Provisional'].map((v,i) => <td className="p-2" key={i}>{v ?? 'Missing'}</td>)}</tr>)}</tbody></table>{!d.scores.data?.length && <p>No recorded scores.</p>}</div>}
+    <h4 className="font-semibold">Reward history · latest 30 records</h4>{!d.rewards.available ? <p>Reward history unavailable.</p> : <ul>{(d.rewards.data || []).map((r: any) => <li key={r.id}>{r.date}: {r.points_earned} points</li>)}</ul>}<p className="text-sm text-gray-400">{d.pointsAdjustments.reason} Full redemption history is unavailable until that integration is reconciled.</p><button disabled className={buttonClass}>Points adjustment unavailable</button>
+    <h4 className="font-semibold">WHOOP sync</h4>{!d.sync.available ? <p>Sync status unavailable.</p> : <><p>{d.sync.data?.whoop_connected_at ? `Connected · Last sync: ${d.sync.data.last_sync_at || 'No completed sync recorded'}` : 'No connection recorded'}</p><p className="text-sm text-gray-400">A stale timestamp alone does not confirm a failure. Ask the member about their issue before retrying.</p><form className="space-y-3" onSubmit={e => { e.preventDefault(); if (confirmChange()) action.run(`/api/admin/members/${id}/sync`, { reason }, async () => { await state.reload(); }); }}><Reason value={reason} onChange={setReason} /><button disabled={action.busy || !d.sync.data?.whoop_connected_at} className={buttonClass}>Retry current-day sync</button></form></>}
+    <h4 className="font-semibold">Recent support retries</h4>{!d.actions.available ? <p>Retry history unavailable.</p> : <ul className="text-sm space-y-2">{(d.actions.data || []).map((a: any) => <li key={a.id}>{a.created_at}: {a.status} · {a.result_code || 'Outcome not recorded yet'}<p>{a.reason}</p></li>)}</ul>}
+    <details><summary>Membership history (recorded from activation)</summary>{!d.membershipHistory.available ? <p>History unavailable.</p> : <ul className="text-xs space-y-2 break-all">{(d.membershipHistory.data || []).map((h: any, i: number) => <li key={i}>{h.changed_at}: {h.old_gym_id || 'None'} → {h.new_gym_id || 'None'}</li>)}</ul>}</details><ActionStatus action={action} />
+  </>}</section>;
+}
+function Audit() {
+  const [offset, setOffset] = useState(0); const state = useData(`/api/admin/audit?offset=${offset}`);
+  return <section className="space-y-4"><h2 className="text-2xl">Audit history</h2><p className="text-sm text-gray-400">Changes recorded from this feature’s activation. Previous actions are not reconstructed.</p><LoadState state={state} />{state.data && <><ul className="space-y-4">{state.data.events.map((e: any) => <li key={e.id} className="premium-card p-5 space-y-2 break-words"><strong>{e.action}</strong><p>{e.reason}</p><p className="text-xs break-all">{e.created_at} · Administrator {e.actor_id} · Record {e.target_id}</p><details><summary>Before and after</summary><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify({ before: e.before_data, after: e.after_data }, null, 2)}</pre></details></li>)}</ul>{!state.data.total && <p>No recorded actions yet.</p>}<Pager offset={offset} total={state.data.total} setOffset={setOffset} /></>}</section>;
 }
