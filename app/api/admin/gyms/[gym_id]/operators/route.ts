@@ -1,3 +1,4 @@
+import { actor, bodyOf, change, handled, HttpError, json, uuid } from '@/lib/admin/http';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAdminAccess } from '@/lib/gym-auth';
 import { supabase } from '@/lib/supabase';
@@ -11,16 +12,8 @@ export async function GET(_request: NextRequest, { params }: Context) {
   if (error) return NextResponse.json({ error: 'Operator assignments unavailable' }, { status: 503, headers });
   return NextResponse.json({ operators: data }, { headers });
 }
-export async function POST(request: NextRequest, { params }: Context) {
-  if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'Invalid request origin' }, { status: 403, headers });
-  const access = await checkAdminAccess();
-  if (!access.ok) return NextResponse.json({ error: access.reason }, { status: access.status, headers });
-  let body;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid request' }, { status: 400, headers }); }
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body?.userId || '') || typeof body?.grant !== 'boolean') {
-    return NextResponse.json({ error: 'A valid account ID and action are required' }, { status: 400, headers });
-  }
-  const { error } = await supabase.rpc('thrivv_set_gym_operator', { p_actor: access.user.id, p_gym: params.gym_id, p_user: body.userId, p_grant: body.grant });
-  if (error) return NextResponse.json({ error: 'Unable to update access. Check the account ID and gym, then retry.' }, { status: 503, headers });
-  return NextResponse.json({ ok: true }, { headers });
-}
+export function POST(request: NextRequest, { params }: Context) { return handled(async () => {
+  const user = await actor(); const b = await bodyOf(request);
+  if (!uuid(b.userId) || typeof b.grant !== 'boolean') throw new HttpError(400, 'Select a registered account');
+  return json({ result: await change(user.id, b, b.grant ? 'operator.grant' : 'operator.revoke', params.gym_id, { user_id: b.userId }) });
+}); }

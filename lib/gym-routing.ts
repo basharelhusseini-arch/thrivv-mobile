@@ -1,6 +1,6 @@
 /** Shared, pure routing rules. Never accept arbitrary login destinations. */
 export function gymReturnPath(value: unknown): string {
-  return typeof value === 'string' && (/^\/gym$/.test(value) || /^\/gym\/[0-9a-f-]{36}\/dashboard$/i.test(value) || value === '/admin/gyms') ? value : '/gym';
+  return typeof value === 'string' && (/^\/gym$/.test(value) || /^\/gym\/[0-9a-f-]{36}\/dashboard$/i.test(value) || value === '/admin/gyms' || value === '/gym/support') ? value : '/gym';
 }
 export function isGymLogin(hostname: string, portal: string | null): boolean {
   return hostname.toLowerCase() === (process.env.NEXT_PUBLIC_GYM_HOSTNAME || 'gyms.thrivv.dev').toLowerCase() || portal === 'gym';

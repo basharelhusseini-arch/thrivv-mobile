@@ -31,7 +31,9 @@ function isShared(pathname: string): boolean {
     pathname === '/api/gym/invitations/accept' ||
     pathname === '/member/login' ||
     pathname === '/member/signup' ||
-    pathname.startsWith('/api/auth/')
+    pathname.startsWith('/api/auth/') ||
+    pathname === '/api/support/tickets' ||
+    pathname.startsWith('/api/support/tickets/')
   );
 }
 
