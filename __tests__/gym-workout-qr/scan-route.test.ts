@@ -24,3 +24,14 @@ test('no session rejects forged user header',async()=>{(getCurrentUser as jest.M
 test.each([{amount:999},{score:110},{userId:operator},{gymId:operator}])('rejects client trusted fields %j',async fields=>{expect((await POST(await request(fields))).status).toBe(400);expect(supabase.rpc).not.toHaveBeenCalled();});
 test('rejects cross-site requests and wrong gym signatures',async()=>{expect((await POST(await request({},'https://evil.invalid'))).status).toBe(403);expect((await POST(await request({},'https://thrivv.dev',operator))).status).toBe(400);});
 test('database rejection never credits; accounting outage preserves accepted verification',async()=>{(supabase.rpc as jest.Mock).mockResolvedValueOnce({error:{}});expect((await POST(await request())).status).toBe(409);expect(reconcileDailyReward).not.toHaveBeenCalled();(reconcileDailyReward as jest.Mock).mockRejectedValue(new Error('outage'));const res=await POST(await request());expect(res.status).toBe(200);expect(await res.json()).toMatchObject({verified:true,reward:{status:'retry_pending'}});});
+
+test('manual scans use authenticated identity and return the atomic database award',async()=>{
+ (supabase.rpc as jest.Mock).mockResolvedValue({data:{verified:true,date:'2026-09-13',reward:{status:'credited',awarded:40}},error:null});
+ const res=await POST(await request({workoutId:'manual'}));expect(res.status).toBe(200);
+ expect(supabase.rpc).toHaveBeenCalledWith('thrivv_verify_manual_workout',expect.objectContaining({p_user:user,p_gym:gym,p_operator:operator}));
+ expect(reconcileDailyReward).not.toHaveBeenCalled();expect(await res.json()).toMatchObject({reward:{awarded:40}});
+});
+test('manual database denial never falls back to a WHOOP reward',async()=>{
+ (supabase.rpc as jest.Mock).mockResolvedValue({error:{}});expect((await POST(await request({workoutId:'manual'}))).status).toBe(409);
+ expect(reconcileDailyReward).not.toHaveBeenCalled();
+});

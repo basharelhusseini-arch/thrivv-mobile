@@ -27,10 +27,10 @@ export async function gymDashboardData(gym: GymRecord, isAdmin: boolean, isOwner
   const active = activeInWindow(filtered, 7, today);
   const memberById = new Map(members.map(member => [member.id, member]));
   const knownMemberships = members.filter(member => member.membership_start_date);
-  const { data: rewardConfig, error: configError } = await supabase.from('gym_reward_config').select('verification_enabled,rewards_enabled').eq('singleton',true).single();
+  const { data: rewardConfig, error: configError } = await supabase.from('gym_reward_config').select('verification_enabled,rewards_enabled,manual_rewards_enabled').eq('singleton',true).single();
   const { data: metrics, error: metricsError } = configError ? { data: null, error: configError } : await supabase.rpc('thrivv_gym_reward_metrics', { p_gym: gym.id });
   const unavailable = Boolean(configError || metricsError);
-  const pointsActive = rewardConfig?.rewards_enabled === true;
+  const pointsActive = rewardConfig?.rewards_enabled === true || rewardConfig?.manual_rewards_enabled === true;
   const scansActive = rewardConfig?.verification_enabled === true;
   return {
     gym, pilot_week_number: pilotWeekNumber(gym.pilot_start_date),
@@ -41,7 +41,7 @@ export async function gymDashboardData(gym: GymRecord, isAdmin: boolean, isOwner
     activity_definition: 'Distinct current members with a daily check-in in the last seven UTC calendar days, including today. This measures check-in activity, not attendance or app visits.',
     unknown_membership_dates: members.length - knownMemberships.length,
     earned_points: { status: unavailable ? 'unavailable' : pointsActive ? 'available' : 'not_activated', value: unavailable ? null : Number(metrics?.earned ?? 0), reason: 'Net gym-attributed daily earnings, including corrections. Spending does not reduce this total; opening balances are excluded.' },
-    verified_scans: { status: unavailable ? 'unavailable' : scansActive ? 'available' : 'not_activated', total: unavailable ? null : Number(metrics?.scans ?? 0), last_seven_days: unavailable ? null : Number(metrics?.recent_scans ?? 0), reason: 'Unique accepted member/workout verifications. Not conclusive proof of exercise.' },
+    verified_scans: { status: unavailable ? 'unavailable' : scansActive ? 'available' : 'not_activated', total: unavailable ? null : Number(metrics?.scans ?? 0), last_seven_days: unavailable ? null : Number(metrics?.recent_scans ?? 0), reason: 'Accepted WHOOP workout verifications plus unique manual member/day verifications. Not conclusive proof of exercise.' },
     week4_retention: week4Retention(knownMemberships, filtered),
     streak_leaderboard: streakLeaderboard(members, filtered, 10).map(row => ({ ...row, name: row.name || 'Member' })),
     daily_checkins_30d: dailyCheckinCounts(filtered, 30),

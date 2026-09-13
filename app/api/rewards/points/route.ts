@@ -51,7 +51,7 @@ export async function GET() {
     if (transactionError) throw new Error('Unable to read reward transactions');
     return NextResponse.json({
       daily, transactions,
-      offers: daily.rewardsEnabled ? offers || [] : [],
+      offers: daily.redemptionEnabled ? offers || [] : [],
       redemptions: redemptions || [],
       points,
       tier: tier.tier,
