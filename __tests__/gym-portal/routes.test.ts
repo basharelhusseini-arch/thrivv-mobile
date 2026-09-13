@@ -29,6 +29,20 @@ test('hash-only and missing records are distinguished without rotating anything'
   record(null); expect(await (await code(request(),ctx)).json()).toEqual({status:'missing',code:null});
   record(null,{message:'private DB error'}); const res=await code(request(),ctx); expect(res.status).toBe(503); expect(await res.text()).not.toContain('private DB error');
 });
+test('created and replaced codes persist through a fresh read without modifying memberships', async () => {
+  let saved: any = null;
+  const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: saved, error: null }),
+    upsert: jest.fn(async (data: any) => { saved = data; return { error: null }; }) };
+  (supabase.from as jest.Mock).mockReturnValue(chain);
+  const first = await (await replace(request(), ctx)).json();
+  expect(first.status).toBe('available');
+  expect((await (await code(request(), ctx)).json()).code).toBe(first.code);
+  const previousHash = saved.code_hash;
+  const second = await (await replace(request(), ctx)).json();
+  expect(second.code).not.toBe(first.code); expect(saved.code_hash).not.toBe(previousHash);
+  expect((await (await code(request(), ctx)).json()).code).toBe(second.code);
+  expect((supabase.from as jest.Mock).mock.calls.every(([table]) => table === 'gym_join_codes')).toBe(true);
+});
 test('bad encryption configuration and cross-origin replacement never overwrite code', async () => {
   delete process.env.GYM_CODE_ENCRYPTION_KEY;
   expect((await replace(request(),ctx)).status).toBe(503); expect(supabase.from).not.toHaveBeenCalled();

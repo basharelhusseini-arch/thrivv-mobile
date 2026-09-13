@@ -432,3 +432,15 @@
     transform: none !important;
   }
 }
+/* Conceal protected BFCache snapshots until session revalidation completes. */
+html[data-session-hidden='true'] body { visibility: hidden; }
+[data-gym-portal='true'] a, [data-gym-portal='true'] button {
+  transition-duration: 180ms;
+  transition-property: color, background-color, border-color, opacity, transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-gym-portal='true'] *, [data-gym-portal='true'] *::before, [data-gym-portal='true'] *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

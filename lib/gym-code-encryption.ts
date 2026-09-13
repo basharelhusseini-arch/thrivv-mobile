@@ -1,10 +1,11 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { gymCodeHash } from './gym-codes';
+export class GymCodeConfigurationError extends Error {}
 
 function key(): Buffer {
   const value = process.env.GYM_CODE_ENCRYPTION_KEY || '';
   const bytes = Buffer.from(value, 'base64');
-  if (bytes.length !== 32 || bytes.toString('base64') !== value) throw new Error('Gym code encryption is not configured');
+  if (bytes.length !== 32 || bytes.toString('base64') !== value) throw new GymCodeConfigurationError('Gym code encryption is not configured');
   return bytes;
 }
 /** AES-256-GCM. Bind ciphertext to its gym so rows cannot be swapped. Server use only. */

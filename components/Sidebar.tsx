@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Activity,
@@ -19,7 +19,9 @@ import {
   X,
   MoreHorizontal,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { logoutClient } from '@/lib/client-session';
+import { portalLoginUrl } from '@/lib/gym-routing';
 import Logo from './Logo';
 
 // Admin/Trainer navigation
@@ -72,35 +74,15 @@ function isItemActive(item: NavItem, pathname: string | null): boolean {
   return false;
 }
 
-export default function Sidebar() {
+export default function Sidebar({ memberData = null, isPlatformAdmin = false }: {
+  memberData?: { id: string; name: string; email: string } | null;
+  isPlatformAdmin?: boolean;
+}) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
-  useEffect(() => {
-    let active = true; setIsPlatformAdmin(false);
-    fetch('/api/auth/me', { cache: 'no-store' }).then(async r => r.ok ? r.json() : null).then(data => { if (active) setIsPlatformAdmin(data?.isPlatformAdmin === true); }).catch(() => {});
-    return () => { active = false; };
-  }, [pathname]);
-  const [memberData, setMemberData] = useState<{
-    id: string;
-    name: string;
-    email: string;
-  } | null>(null);
-
-  useEffect(() => {
-    const memberId = localStorage.getItem('memberId');
-    const memberName = localStorage.getItem('memberName');
-    const memberEmail = localStorage.getItem('memberEmail');
-
-    if (memberId && memberName) {
-      setMemberData({
-        id: memberId,
-        name: memberName,
-        email: memberEmail || '',
-      });
-    }
-  }, [pathname]);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState('');
+  const logoutPending = useRef(false);
 
   // Close the More sheet whenever the route changes.
   useEffect(() => {
@@ -119,12 +101,16 @@ export default function Sidebar() {
     }
   }, [isMoreOpen]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('memberId');
-    localStorage.removeItem('memberName');
-    localStorage.removeItem('memberEmail');
-    setMemberData(null);
-    router.push('/');
+  const handleLogout = async () => {
+    if (logoutPending.current) return;
+    logoutPending.current = true; setLoggingOut(true); setLogoutError('');
+    try {
+      await logoutClient();
+      window.location.replace(portalLoginUrl(window.location.hostname, isGymPortalPath(pathname)));
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : 'Sign out failed. Please retry.');
+      logoutPending.current = false; setLoggingOut(false);
+    }
   };
 
   const isInMemberPortal = pathname?.startsWith('/member');
@@ -155,6 +141,7 @@ export default function Sidebar() {
 
   return (
     <>
+      {logoutError && <p role="alert" className="fixed bottom-24 left-4 z-[100] max-w-sm rounded-xl bg-thrivv-bg-darker p-4 text-red-400">{logoutError}</p>}
       {/* ---- Desktop sidebar (lg and up) ---- */}
       <aside
         className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-24 flex-col
@@ -292,6 +279,7 @@ export default function Sidebar() {
             {memberData ? (
               <button
                 onClick={handleLogout}
+                disabled={loggingOut}
                 className="
                   w-full relative flex flex-col items-center justify-center py-2.5 rounded-xl group overflow-hidden border border-transparent
                   transition-[background,transform,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
@@ -302,7 +290,7 @@ export default function Sidebar() {
                 "
               >
                 <LogOut className="w-[1.35rem] h-[1.35rem] mb-1.5 transition-transform duration-500 group-hover:scale-105" />
-                <span className="text-[10.5px] font-medium">Sign Out</span>
+                <span className="text-[10.5px] font-medium">{loggingOut ? 'Signing out…' : 'Sign Out'}</span>
               </button>
             ) : (
               !isInMemberPortal && (
@@ -560,6 +548,7 @@ export default function Sidebar() {
         <div className="px-4 pt-3 pb-5 border-t border-thrivv-gold-500/10">
           {memberData ? (
             <button
+              disabled={loggingOut}
               onClick={() => {
                 setIsMoreOpen(false);
                 handleLogout();
@@ -574,7 +563,7 @@ export default function Sidebar() {
               "
             >
               <LogOut className="w-4 h-4" />
-              Sign out
+              {loggingOut ? 'Signing out…' : 'Sign out'}
             </button>
           ) : (
             !isInMemberPortal && (
