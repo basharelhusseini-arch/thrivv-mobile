@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import Sidebar from './Sidebar';
+import Sidebar, { isGymPortalPath } from './Sidebar';
 import BackgroundLayers from './BackgroundLayers';
 
 export default function MainLayout({
@@ -47,7 +47,10 @@ export default function MainLayout({
     pathname?.startsWith('/habits') ||
     pathname?.startsWith('/health');
 
-  const showSidebar = isAuthenticated && !isPublicAuthPage && isProtectedRoute;
+  // Gym pages enforce session and permissions on the server. Cached member
+  // profile data must not determine which portal chrome they receive.
+  const isGymPortal = isGymPortalPath(pathname);
+  const showSidebar = !isPublicAuthPage && (isGymPortal || (isAuthenticated && isProtectedRoute));
 
   if (isLoading) {
     return (

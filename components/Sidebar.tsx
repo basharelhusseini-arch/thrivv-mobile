@@ -58,6 +58,11 @@ const adminPrimaryHrefs = ['/', '/health', '/workouts', '/nutrition'];
 
 type NavItem = (typeof memberNavigation)[number];
 
+export function isGymPortalPath(pathname: string | null): boolean {
+  return pathname === '/gym' || !!pathname?.startsWith('/gym/') ||
+    pathname === '/admin/gyms' || !!pathname?.startsWith('/admin/gyms/');
+}
+
 function isItemActive(item: NavItem, pathname: string | null): boolean {
   if (!pathname) return false;
   if (pathname === item.href) return true;
@@ -117,10 +122,18 @@ export default function Sidebar() {
   };
 
   const isInMemberPortal = pathname?.startsWith('/member');
+  const isInGymPortal = isGymPortalPath(pathname);
+  const gymDashboard = pathname?.match(/^\/gym\/[^/]+\/dashboard$/)?.[0];
+  const gymNavigation: NavItem[] = gymDashboard
+    ? [
+      { name: 'Gym dashboard', label: 'Dashboard', href: gymDashboard, icon: LayoutDashboard },
+      { name: 'Gym portal', label: 'Your gyms', href: '/gym', icon: UserCog },
+    ]
+    : [{ name: 'Gym portal', label: 'Your gyms', href: pathname?.startsWith('/admin/gyms') ? '/admin/gyms' : '/gym', icon: LayoutDashboard }];
   const navigation =
-    isInMemberPortal || memberData ? memberNavigation : adminNavigation;
+    isInGymPortal ? gymNavigation : isInMemberPortal || memberData ? memberNavigation : adminNavigation;
   const primaryHrefs =
-    isInMemberPortal || memberData ? memberPrimaryHrefs : adminPrimaryHrefs;
+    isInGymPortal ? gymNavigation.map(item => item.href) : isInMemberPortal || memberData ? memberPrimaryHrefs : adminPrimaryHrefs;
 
   // Preserve the original navigation order when picking primary items.
   const primaryItems = navigation.filter((n) => primaryHrefs.includes(n.href));
@@ -138,7 +151,7 @@ export default function Sidebar() {
         className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-24 flex-col
           backdrop-blur-2xl bg-gradient-to-b from-thrivv-bg-darker/90 via-thrivv-bg-darker/80 to-thrivv-bg-darker/90
           text-white"
-        aria-label="Primary navigation"
+        aria-label={isInGymPortal ? 'Gym portal navigation' : 'Primary navigation'}
       >
         {/* Right-edge gold gradient line — primary blade accent */}
         <div
@@ -171,7 +184,7 @@ export default function Sidebar() {
               <Logo
                 variant="gold"
                 size="md"
-                linkTo={memberData ? '/member/dashboard' : '/'}
+                linkTo={isInGymPortal ? '/gym' : memberData ? '/member/dashboard' : '/'}
               />
             </div>
             <div
@@ -180,6 +193,7 @@ export default function Sidebar() {
             />
           </div>
 
+          {isInGymPortal && <p className="px-2 text-center text-[10px] uppercase tracking-widest text-thrivv-gold-500">Gym portal</p>}
           {/* Member Avatar (if logged in) */}
           {memberData && (
             <div className="relative px-3 py-4">
@@ -284,7 +298,7 @@ export default function Sidebar() {
             ) : (
               !isInMemberPortal && (
                 <Link
-                  href="/member/login"
+                    href={isInGymPortal ? '/member/login?portal=gym&redirect=%2Fgym' : '/member/login'}
                   className="
                     w-full relative flex flex-col items-center justify-center py-2.5 rounded-xl group overflow-hidden border border-transparent
                     transition-[background,transform,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
@@ -306,7 +320,7 @@ export default function Sidebar() {
       {/* ---- Mobile bottom nav (below lg) ---- */}
       <nav
         className="lg:hidden fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-safe pointer-events-none"
-        aria-label="Primary navigation"
+        aria-label={isInGymPortal ? 'Gym portal navigation' : 'Primary navigation'}
       >
         <div
           className="
@@ -324,7 +338,7 @@ export default function Sidebar() {
             aria-hidden
           />
 
-          <div className="relative grid grid-cols-5 items-stretch">
+          <div className={`relative grid ${isInGymPortal ? primaryItems.length === 2 ? 'grid-cols-3' : 'grid-cols-2' : 'grid-cols-5'} items-stretch`}>
             {primaryItems.map((item) => {
               const isActive = isItemActive(item, pathname ?? null);
               const Icon = item.icon;
@@ -556,7 +570,7 @@ export default function Sidebar() {
           ) : (
             !isInMemberPortal && (
               <Link
-                href="/member/login"
+                href={isInGymPortal ? '/member/login?portal=gym&redirect=%2Fgym' : '/member/login'}
                 className="
                   w-full inline-flex items-center justify-center gap-2
                   min-h-[52px] rounded-2xl px-5
