@@ -4,22 +4,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Trophy, Star, Gift, TrendingUp, Zap, Award, DollarSign, Users, Dumbbell, UtensilsCrossed, Lock, CheckCircle, AlertTriangle, Shield } from 'lucide-react';
+import GymWorkoutVerification, { type VerificationStatus } from '@/components/GymWorkoutVerification';
 import PageHeader from '@/components/MemberPageHeader';
-
-interface HealthScore {
-  total: number;
-  workoutScore: number;
-  dietScore: number;
-  habitScore: number;
-  sleepScore: number;
-}
-
-interface ConfidenceData {
-  score: number;
-  level: string;
-  multiplier: number;
-  totalRewardsScore: number;
-}
 
 interface Reward {
   id: string;
@@ -35,9 +21,10 @@ interface Reward {
 
 export default function RewardsPage() {
   const router = useRouter();
-  const [healthScore, setHealthScore] = useState<HealthScore | null>(null);
-  const [confidenceData, setConfidenceData] = useState<ConfidenceData | null>(null);
+  const [daily, setDaily] = useState<VerificationStatus | null>(null);
+  const [rewardError, setRewardError] = useState('');
   const [points, setPoints] = useState(0);
+  const [transactions, setTransactions] = useState<{id:string; kind:string; amount:number; score_date:string|null; created_at:string}[]>([]);
   const [activeOffers, setActiveOffers] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [memberId, setMemberId] = useState<string | null>(null);
@@ -48,47 +35,22 @@ export default function RewardsPage() {
 
   const fetchHealthScore = useCallback(async (id: string) => {
     try {
+      setRewardError('');
       // Fetch actual reward points from API
       const rewardsResponse = await fetch('/api/rewards/points');
       if (rewardsResponse.ok) {
         const rewardsData = await rewardsResponse.json();
         setPoints(rewardsData.points);
+        setDaily(rewardsData.daily);
+        setTransactions(rewardsData.transactions || []);
         setActiveOffers(Object.fromEntries((rewardsData.offers || []).map((o: {id: string; points: number}) => [o.id, Number(o.points)])));
         setRedeemedRewards((rewardsData.redemptions || []).map((r: { offer_id: string }) => r.offer_id));
       }
 
-      // Fetch health score for display
-      const response = await fetch('/api/health/summary');
-      let fetchedHealthScore = 0;
-      if (response.ok) {
-        const healthData = await response.json();
-        fetchedHealthScore = healthData.score || 0;
-        setHealthScore({
-          total: healthData.score,
-          workoutScore: healthData.components.training,
-          dietScore: healthData.components.diet,
-          habitScore: healthData.components.habits,
-          sleepScore: healthData.components.sleep,
-        });
-      }
-
-      // Fetch confidence score
-      const confidenceResponse = await fetch('/api/health/confidence-score');
-      if (confidenceResponse.ok) {
-        const confData = await confidenceResponse.json();
-        const healthTotal = fetchedHealthScore;
-        const multiplier = 1 + ((confData.score - 30) / 100) * 0.25;
-        const totalRewards = Math.round(healthTotal * multiplier);
-        
-        setConfidenceData({
-          score: confData.score,
-          level: confData.level,
-          multiplier: multiplier,
-          totalRewardsScore: totalRewards
-        });
-      }
+      if (!rewardsResponse.ok) { setRewardError('Rewards are unavailable. Your balance could not be loaded.'); setActiveOffers({}); }
     } catch (error) {
-      console.error('Failed to fetch health score:', error);
+      setRewardError('Rewards are unavailable. Please reload to retry.');
+      setActiveOffers({});
     } finally {
       setLoading(false);
     }
@@ -303,112 +265,30 @@ export default function RewardsPage() {
         section="rewards"
         eyebrow="Rewards"
         title="Explore your rewards."
-        subtitle="View your points balance and explore available rewards. New Health Score bonuses are not active yet."
+        subtitle={daily?.rewardsEnabled ? 'View your earned points and explore available rewards.' : 'View your points balance. Daily gym-verified rewards are not activated yet.'}
       />
 
       <main>
-        {/* Points Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Total Points */}
-          <div className="dark-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-thrivv-gold-500/20 rounded-xl">
-                <Trophy className="w-6 h-6 text-thrivv-gold-400" />
-              </div>
-              <Zap className="w-5 h-5 text-thrivv-gold-400" />
-            </div>
-            <div className="text-4xl font-bold text-white mb-1">{points}</div>
-            <div className="text-sm text-gray-400">Available Points</div>
-          </div>
-
-          {/* Total Rewards Score */}
-          <div className="dark-card p-6 border border-thrivv-gold-500/30">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-thrivv-gold-500/20 to-thrivv-gold-500/20 rounded-xl">
-                <Trophy className="w-6 h-6 text-thrivv-gold-400" />
-              </div>
-            </div>
-            <div className="text-4xl font-bold text-thrivv-gold-400 mb-1">
-              {confidenceData?.totalRewardsScore || healthScore?.total || 0}
-            </div>
-            <div className="text-sm text-gray-400">Total Rewards Score</div>
-            {confidenceData && (
-              <div className="text-xs text-thrivv-gold-500 mt-2">
-                {healthScore?.total} × {confidenceData.multiplier.toFixed(2)}x
-              </div>
-            )}
-          </div>
-
-          {/* Base Health Score */}
-          <div className="dark-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-blue-500/20 rounded-xl">
-                <TrendingUp className="w-6 h-6 text-blue-400" />
-              </div>
-            </div>
-            <div className="text-4xl font-bold text-white mb-1">{healthScore?.total || 0}</div>
-            <div className="text-sm text-gray-400">Base Health Score</div>
-          </div>
-
-          {/* Confidence Boost */}
-          <div className="dark-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-500/20 rounded-xl">
-                <Shield className="w-6 h-6 text-purple-400" />
-              </div>
-            </div>
-            <div className="text-4xl font-bold text-white mb-1">
-              {confidenceData ? `+${Math.round(((confidenceData.score - 30) / 100) * 25)}%` : '+0%'}
-            </div>
-            <div className="text-sm text-gray-400">Confidence Boost</div>
-          </div>
+        {rewardError && <p role="alert" className="text-amber-300 mb-4">{rewardError}</p>}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          <div className="dark-card p-6"><p className="text-4xl font-bold">{rewardError ? '—' : points}</p><p className="text-gray-400">Available spendable points</p></div>
+          <div className="dark-card p-6"><p className="text-4xl font-bold">{daily?.score ?? '—'}</p><p className="text-gray-400">Health Score /110</p></div>
+          <div className="dark-card p-6"><p className="text-4xl font-bold text-thrivv-gold-400">{daily?.creditedPoints ?? '—'}</p><p className="text-gray-400">Today’s credited points</p>
+            <p className="text-sm text-gray-400 mt-2">Estimated: {daily?.estimatedPoints ?? '—'} · {daily?.rewardStatus.replaceAll('_', ' ') ?? 'Unavailable'}</p></div>
+        </div>
+        <GymWorkoutVerification />
+        <div className="dark-card p-6 my-8 space-y-3">
+          <h3 className="text-lg font-semibold">How to earn points</h3>
+          <p className="text-gray-400">Once activated, sync your workout, then scan your gym’s changing QR within two hours of finishing. The highest-scoring workout supplying your daily training score must be verified.</p>
+          <p className="text-gray-400">An eligible complete Health Score earns the same number of points: 43.5/110 earns 43.5 points, up to 110 each day. Incomplete scores are estimates. Later verified score changes adjust the existing award.</p>
+          <p className="text-gray-400">Training /80 + WHOOP Recovery /20 + habits /10. No food contribution or reward multiplier. Weekly rankings continue to use Health Scores.</p>
+          {daily?.rewardStatus === 'review_required' && <p className="text-amber-300">A score correction needs support review. Redemptions are paused until it is resolved.</p>}
         </div>
 
-        {/* How It Works */}
-        <div className="dark-card p-6 mb-8">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
-            <Zap className="w-5 h-5 mr-2 text-thrivv-gold-400" />
-            How to Earn Points
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm mb-4">
-            <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700/50">
-              <div className="text-2xl font-bold text-blue-400 mb-2">Step 1</div>
-              <div className="text-gray-300 mb-2">Build Health Score</div>
-              <div className="text-xs text-gray-500">
-                Train, eat well, sleep<br/>
-                Score 0-110 points
-              </div>
-            </div>
-            <div className="bg-gray-800/30 rounded-lg p-4 border border-yellow-700/50 border-2">
-              <div className="text-2xl font-bold text-thrivv-gold-400 mb-2">Step 2</div>
-              <div className="text-gray-300 mb-2">Boost with Confidence</div>
-              <div className="text-xs text-gray-500">
-                Connect wearable<br/>
-                Get 0-25% boost
-              </div>
-            </div>
-            <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700/50">
-              <div className="text-2xl font-bold text-green-400 mb-2">Result</div>
-              <div className="text-gray-300 mb-2">Total Rewards Score</div>
-              <div className="text-xs text-gray-500">
-                Health × Confidence<br/>
-                Max 137 points
-              </div>
-            </div>
-            <div className="bg-gray-800/30 rounded-lg p-4 border border-gray-700/50">
-              <div className="text-2xl font-bold text-purple-400 mb-2">Points</div>
-              <div className="text-gray-300 mb-2">Earn Rewards</div>
-              <div className="text-xs text-gray-500">
-                Total 50 → 1 pt<br/>
-                Total 110 → 25 pts
-              </div>
-            </div>
-          </div>
-          <div className="bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 rounded-lg p-3 text-xs text-yellow-300">
-            <strong>💡 Pro Tip:</strong> Higher confidence = more reward points! Connect a wearable or maintain consistent logging to boost your multiplier up to 1.25x
-          </div>
+        <div className="dark-card p-6 mb-8 space-y-3"><h3 className="text-lg font-semibold">Recent point transactions</h3>
+          {rewardError ? <p className="text-gray-400">Transaction history unavailable.</p> : transactions.length ? <ul className="divide-y divide-gray-800">{transactions.map(t => <li key={t.id} className="py-3 flex flex-wrap justify-between gap-2 text-sm"><span>{t.kind.replaceAll('_',' ')} · {t.score_date || new Date(t.created_at).toLocaleDateString()}</span><span>{Number(t.amount)>0?'+':''}{t.amount} points</span></li>)}</ul> : <p className="text-gray-400">No recorded transactions yet.</p>}
+          <p className="text-xs text-gray-500">Latest 30 records. Opening balances preserve earlier account balances; they are not new gym earnings.</p>
         </div>
-
         {/* Category Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
           {categories.map((cat) => {
@@ -504,7 +384,7 @@ export default function RewardsPage() {
         <div className="dark-card p-6 mt-8 border-l-4 border-blue-500">
           <h3 className="text-lg font-semibold text-white mb-2">💡 Pro Tip</h3>
           <p className="text-gray-400 text-sm">
-            Maintain a health score above 80 to earn bonus points! Connect your wearable for automatic tracking and bonus points.
+            Follow a training plan appropriate to your recovery. Do not train harder simply to earn points; only activated, eligible daily awards enter your spendable balance.
           </p>
         </div>
 

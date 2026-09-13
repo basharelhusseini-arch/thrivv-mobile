@@ -1,6 +1,7 @@
 'use client';
 
 import GymInvitation from './GymInvitation';
+import GymWorkoutQr from '@/components/GymWorkoutQr';
 import GymHeader from './GymHeader';
 import Week4RetentionCard from './Week4RetentionCard';
 import ActiveThisWeekCard from './ActiveThisWeekCard';
@@ -29,8 +30,8 @@ export type GymAnalytics = {
   };
   activity_definition: string;
   unknown_membership_dates: number;
-  earned_points: { status: 'not_activated'; value: null; reason: string };
-  verified_scans: { status: 'not_activated'; total: null; last_seven_days: null; reason: string };
+  earned_points: { status: string; value: number | null; reason: string };
+  verified_scans: { status: string; total: number | null; last_seven_days: number | null; reason: string };
   week4_retention: {
     eligible: number;
     retained: number;
@@ -97,6 +98,7 @@ export default function GymDashboardView({ data }: { data: GymAnalytics }) {
         <p className="text-sm text-thrivv-text-secondary">{data.activity_definition}</p>
         {data.unknown_membership_dates > 0 && <p className="text-sm text-thrivv-text-secondary">{data.unknown_membership_dates} member(s) have no recorded gym membership start date. Their past check-ins are excluded from engagement metrics.</p>}
         <GymInvitation gymId={data.gym.id} />
+        <GymWorkoutQr key={data.gym.id} gymId={data.gym.id} />
 
         <Reveal delay={100}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

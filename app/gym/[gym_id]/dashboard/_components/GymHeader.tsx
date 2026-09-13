@@ -16,8 +16,8 @@ export default function GymHeader({ data }: { data: GymAnalytics }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <Metric title="Total members" value={data.totals.total_members.toLocaleString()} description="Registered accounts in your gym" />
       <Metric title="Active members · 7 days" value={data.totals.active_this_week.toLocaleString()} description="Members who submitted a daily check-in" />
-      <Metric title="Points accumulated" value="Not activated" description={data.earned_points.reason} />
-      <Metric title="Verified scans" value="Not activated" description={`${data.verified_scans.reason} Total and last 7 days will appear here.`} />
+      <Metric title="Points accumulated" value={data.earned_points.status === 'available' ? String(data.earned_points.value) : data.earned_points.status === 'unavailable' ? 'Unavailable' : 'Not activated'} description={data.earned_points.reason} />
+      <Metric title="Verified scans" value={data.verified_scans.status === 'available' ? String(data.verified_scans.total) : data.verified_scans.status === 'unavailable' ? 'Unavailable' : 'Not activated'} description={`${data.verified_scans.reason} Last 7 days: ${data.verified_scans.last_seven_days ?? 'Unavailable'}`} />
     </div>
   </header>;
 }

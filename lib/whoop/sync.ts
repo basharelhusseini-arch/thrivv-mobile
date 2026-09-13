@@ -18,7 +18,7 @@ export async function withWhoopLock<T>(userId: string, action: () => Promise<T>)
   finally { await supabase.rpc('thrivv_release_sync', { p_user: userId, p_owner: owner }); }
 }
 
-/** Call under the per-user lock. No rewards until the owner approves a formula. */
+/** Call under the per-user lock. saveDay reconciles gated gym-verified daily rewards. */
 export async function importWorkouts(userId: string, accessToken: string) {
   const context = await scoreContext(userId);
   const startDate = addDays(context.today, -7);

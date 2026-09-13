@@ -1,3 +1,4 @@
+import { gymRewardStatus } from '@/lib/gym-reward-status';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { requireAuth } from '@/lib/auth';
@@ -9,6 +10,7 @@ export async function GET() {
   try {
     const user = await requireAuth();
 
+    const daily = await gymRewardStatus(user.id);
     // Get user's reward points
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -45,8 +47,11 @@ export async function GET() {
     if (redemptionError) throw new Error('Unable to read redemptions');
     const { data: offers, error: offerError } = await supabase.from('reward_offers').select('id,points').eq('active', true);
     if (offerError) throw new Error('Unable to read offers');
+    const { data: transactions, error: transactionError } = await supabase.from('reward_transactions').select('id,kind,amount,score_date,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(30);
+    if (transactionError) throw new Error('Unable to read reward transactions');
     return NextResponse.json({
-      offers: offers || [],
+      daily, transactions,
+      offers: daily.rewardsEnabled ? offers || [] : [],
       redemptions: redemptions || [],
       points,
       tier: tier.tier,
@@ -54,7 +59,7 @@ export async function GET() {
       pointsToNext: tier.pointsToNext,
       tierColor: tier.color,
       history: historyData || [],
-    });
+    }, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } });
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json(

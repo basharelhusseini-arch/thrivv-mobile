@@ -1,3 +1,4 @@
+import { reconcileDailyReward } from './rewards/ledger';
 import { supabase } from '@/lib/supabase';
 import { HEALTH_VERSION, calculateHealthScoreV3 } from './health-score-v3';
 import { localDate, addDays, sevenDayAverage } from './score-calendar';
@@ -42,6 +43,8 @@ export async function saveDay(context: ScoreContext, date: string, inputs?: {
     workouts_complete: workoutsComplete, recovery_complete: recoveryComplete, updated_at: new Date().toISOString() };
   const { data, error: writeError } = await supabase.from('health_score_days').upsert(payload, { onConflict: 'user_id,date,version' }).select().single();
   if (writeError) throw new Error('Unable to save score');
+  try { await reconcileDailyReward(context.userId, date); }
+  catch { console.error('Daily reward reconciliation deferred; next successful sync will retry'); }
   return data;
 }
 export async function scoreSnapshot(userId: string) {
