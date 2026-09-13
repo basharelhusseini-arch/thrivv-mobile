@@ -61,7 +61,7 @@ The new migration adds timezone fields, workout input/breakdown columns, server-
 
 `health_scoring_config.effective_date` is deliberately NULL. Activation requires separate approval of an explicit YYYY-MM-DD date and gym IANA timezones. Set the effective_date for `health-v3` only after this approval. Dates before that cutover cannot be scored by v3. Do not move the date backwards to create historical scores without explicit instruction. Old/new versions do not mix in ranking or averages.
 
-Use existing configuration names only: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET`, `WHOOP_REDIRECT_URI`, `WHOOP_BACKGROUND_SYNC_ENABLED` and `CRON_SECRET`. No values are included here. Background processing remains disabled unless separately activated.
+Use existing configuration names only: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET`, `WHOOP_REDIRECT_URI` and `CRON_SECRET`. No values are included here. Vercel invokes the protected background route on the schedule in `vercel.json`.
 
 ## Validation and limitations
 

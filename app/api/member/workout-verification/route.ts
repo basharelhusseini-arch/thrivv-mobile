@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 export async function GET() { return handled(async () => { const user = await actor(false); return json(await gymRewardStatus(user.id)); }); }
 export async function POST(req: NextRequest) { return handled(async () => {
   const user = await actor(false); const b = await bodyOf(req);
-  if (process.env.GYM_WORKOUT_VERIFICATION_ENABLED !== 'true') throw new HttpError(503, 'Workout verification is not activated');
   if (!uuid(b.workoutId) || typeof b.qr !== 'string' || b.qr.length > 2048 || !b.qr.startsWith('thrivv-workout:') || Object.keys(b).some(k => !['workoutId','qr','requestId'].includes(k))) throw new HttpError(400, 'Scan a Thrivv workout QR');
   const context = await scoreContext(user.id);
   if (!context.gymId) throw new HttpError(403, 'Join your gym before verifying a workout');

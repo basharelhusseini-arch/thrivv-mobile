@@ -30,8 +30,8 @@ export async function gymDashboardData(gym: GymRecord, isAdmin: boolean, isOwner
   const { data: rewardConfig, error: configError } = await supabase.from('gym_reward_config').select('verification_enabled,rewards_enabled').eq('singleton',true).single();
   const { data: metrics, error: metricsError } = configError ? { data: null, error: configError } : await supabase.rpc('thrivv_gym_reward_metrics', { p_gym: gym.id });
   const unavailable = Boolean(configError || metricsError);
-  const pointsActive = process.env.GYM_DAILY_REWARDS_ENABLED === 'true' && rewardConfig?.rewards_enabled;
-  const scansActive = process.env.GYM_WORKOUT_VERIFICATION_ENABLED === 'true' && rewardConfig?.verification_enabled;
+  const pointsActive = rewardConfig?.rewards_enabled === true;
+  const scansActive = rewardConfig?.verification_enabled === true;
   return {
     gym, pilot_week_number: pilotWeekNumber(gym.pilot_start_date),
     date_range: { from: daysAgoYmd(29), to: today },

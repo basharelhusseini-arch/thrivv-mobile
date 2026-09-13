@@ -42,7 +42,7 @@ test('check-in rejects forged habit keys and does not credit held rewards', asyn
 });
 test('leaderboard only passes the authenticated identity to its tenant-restricted RPC', async () => {
   expect((await leaderboard()).status).toBe(200);
-  expect(supabase.rpc).toHaveBeenCalledWith('thrivv_health_leaderboard',{p_user:'member'});
+  expect(supabase.rpc).toHaveBeenCalledWith('thrivv_weekly_health_leaderboard',{p_user:'member'});
 });
 test('unauthenticated callers cannot read ranks or write check-ins/nutrition', async () => {
   (requireAuth as jest.Mock).mockRejectedValue(new Error('Unauthorized'));

@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ensureWhoopAutoSync } from '@/lib/whoop/auto-sync';
 export type VerificationStatus = {
   gymId: string | null; date: string; timezone: string; verificationEnabled: boolean; rewardsEnabled: boolean;
   score: number | null; estimatedPoints: number | null; creditedPoints: number; rewardStatus: string;
@@ -29,7 +30,7 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
     if (mounted.current) setRunning(false);
   }, []);
   useEffect(() => {
-    mounted.current = true; void refresh();
+    mounted.current = true; void refresh(); void ensureWhoopAutoSync();
     const tick = () => { if (!document.hidden) void refresh(); else stop(); };
     const interval = setInterval(tick, 30000);
     window.addEventListener('thrivv:workouts-synced', tick); document.addEventListener('visibilitychange', tick);

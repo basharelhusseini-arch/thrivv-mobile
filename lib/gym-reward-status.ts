@@ -6,8 +6,10 @@ export async function gymRewardStatus(userId: string) {
   const score = await readScore(context);
   const { data: config, error: configError } = await supabase.from('gym_reward_config').select('*').eq('singleton', true).single();
   if (configError) throw new Error('Workout verification setup unavailable');
-  const verificationEnabled = process.env.GYM_WORKOUT_VERIFICATION_ENABLED === 'true' && config.verification_enabled;
-  const rewardsEnabled = process.env.GYM_DAILY_REWARDS_ENABLED === 'true' && config.rewards_enabled;
+  const verificationEnabled = config.verification_enabled === true;
+  const rewardsEnabled = config.rewards_enabled === true;
+  const pointsPerHealthPoint = Number(config.points_per_health_point);
+  const maxDailyPoints = Number(config.max_daily_points);
   const [workouts, scans, rewards] = await Promise.all([
     supabase.from('whoop_workouts').select('id,start_at,end_at,sport_name,workout_score,score_input_valid,score_state').eq('user_id', userId).is('deleted_at', null)
       .gte('start_at', dayStart(addDays(context.today, -7), context.timezone)).order('start_at', { ascending: false }).limit(200),
@@ -30,7 +32,9 @@ export async function gymRewardStatus(userId: string) {
   });
   const entitlement = rewards.data?.find(r => r.score_date === context.today);
   return { gymId: context.gymId, date: context.today, timezone: context.timezone, serverNow: now, verificationEnabled, rewardsEnabled,
-    effectiveDate: config.effective_date, score: score?.score ?? null, estimatedPoints: score?.subtotal ?? null,
+    effectiveDate: config.effective_date, score: score?.score ?? null,
+    estimatedPoints: rewardsEnabled && Number.isFinite(pointsPerHealthPoint) && Number.isFinite(maxDailyPoints) && typeof score?.score === 'number'
+      ? Math.round(Math.min(maxDailyPoints, score.score * pointsPerHealthPoint) * 10) / 10 : null,
     scoreComplete: Boolean(score?.complete), creditedPoints: entitlement ? Number(entitlement.awarded) : 0,
     rewardStatus: !rewardsEnabled ? 'not_activated' : entitlement?.status ?? (config.effective_date > context.today ? 'before_activation' : 'pending'), workouts: entries };
 }
