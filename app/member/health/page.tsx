@@ -1,10 +1,9 @@
 'use client';
-import GymWorkoutVerification from '@/components/GymWorkoutVerification';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Activity, TrendingUp, Zap, Moon, UtensilsCrossed, Target, Award, Sparkles, Watch, ArrowRight, Calendar, CheckCircle } from 'lucide-react';
+import { Activity, TrendingUp, Zap, Moon, UtensilsCrossed, Target, Award, Sparkles, ArrowRight, Calendar, CheckCircle } from 'lucide-react';
 import PageHeader from '@/components/MemberPageHeader';
 
 interface HealthSummary {
@@ -94,9 +93,9 @@ export default function MemberHealthPage() {
   }
 
   // Show partial UI even if data fetch failed
-  const score = healthData?.score ?? healthData?.subtotal ?? 0;
+  const score = healthData?.score ?? healthData?.subtotal ?? null;
   const components = healthData?.components || { training: null, diet: 0, sleep: null, habits: 0 };
-  const insights = healthData?.insights || ['Complete your first check-in to start tracking your health score.'];
+  const insights = healthData?.insights || [];
   const last7Days = healthData?.last7Days || [];
   const streak = healthData?.streak || 0;
 
@@ -121,14 +120,15 @@ export default function MemberHealthPage() {
           ) : undefined
         }
       />
-      <GymWorkoutVerification />
+
 
       {/* Error Warning (if any) */}
       {error && (
         <div className="bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 rounded-lg p-4">
           <p className="text-sm text-thrivv-gold-400">
-            ⚠️ We couldn&apos;t load your complete health history. Your latest score is shown below.
+            We couldn&apos;t load your health history. Please retry to see your latest scores.
           </p>
+          <button onClick={() => void fetchHealthData()} className="mt-2 text-sm text-thrivv-gold-400 underline">Retry</button>
         </div>
       )}
 
@@ -139,8 +139,8 @@ export default function MemberHealthPage() {
             <div>
               <h2 className="text-lg font-semibold text-thrivv-text-secondary mb-2">Your Health Score</h2>
               <div className="flex items-baseline space-x-3">
-                <span className={`text-6xl font-bold ${getScoreColor(score)}`}>
-                  {healthData ? score : "—"}
+                <span className={`text-6xl font-bold ${getScoreColor(score ?? 0)}`}>
+                  {score ?? "—"}
                 </span>
                 <span className="text-2xl text-thrivv-text-muted">/ 110</span>
               </div>
@@ -150,7 +150,7 @@ export default function MemberHealthPage() {
                 </p>
               )}
             </div>
-            <div className={`p-6 rounded-full ${getScoreBgColor(score)} border-2`}>
+            <div className={`p-6 rounded-full ${getScoreBgColor(score ?? 0)} border-2`}>
               <Award className="w-12 h-12 text-thrivv-gold-500" />
             </div>
           </div>
@@ -188,8 +188,7 @@ export default function MemberHealthPage() {
       </div>
 
       <p className="text-sm text-thrivv-text-muted">{healthData?.complete ? 'Complete Health Score.' : 'Provisional — awaiting verified WHOOP inputs.'} Sleep component — based on WHOOP Recovery, the selected proxy rather than a direct measurement of sleep quality.</p>
-      <Link href="/member/checkin" className="inline-block text-thrivv-gold-500">Track today’s habits →</Link>
-      <Link href="/member/habits" className="inline-block ml-4 text-thrivv-gold-500">View habits →</Link>
+      <Link href="/member/checkin" className="inline-block text-sm text-thrivv-gold-500">Update today’s habits →</Link>
       {Boolean(healthData?.workouts?.length) && <div className="premium-card p-6">
         <h2 className="text-lg font-semibold text-thrivv-text-primary">Recent WHOOP workouts</h2>
         <p className="text-sm text-thrivv-text-muted mt-2">Your highest eligible workout each day supplies Training points. Additional workouts do not stack. Up to 100 recent workouts shown.</p>
@@ -273,104 +272,14 @@ export default function MemberHealthPage() {
           </div>
         </div>
 
-        {/* Connect Wearable CTA */}
-        <div className="premium-card bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/30">
-          <div className="px-6 py-4 border-b border-blue-500/20">
-            <h2 className="text-lg font-semibold text-thrivv-text-primary flex items-center">
-              <Watch className="w-5 h-5 mr-2 text-blue-400" />
-              Connect Your Wearable
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <p className="text-thrivv-text-secondary text-sm leading-relaxed">
-                Connect Apple Health, Google Fit, Whoop, Oura, Garmin, or Fitbit for automatic sleep, activity, and recovery tracking — and more detailed insights.
-              </p>
-              
-              {/* Device Icons */}
-              <div className="grid grid-cols-3 gap-3 py-4">
-                <div className="text-center p-3 bg-thrivv-bg-card/50 rounded-lg">
-                  <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <Watch className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-xs text-thrivv-text-muted">Apple Health</p>
-                </div>
-                <div className="text-center p-3 bg-thrivv-bg-card/50 rounded-lg">
-                  <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-red-500 to-thrivv-gold-500 rounded-lg flex items-center justify-center">
-                    <Activity className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-xs text-thrivv-text-muted">Whoop</p>
-                </div>
-                <div className="text-center p-3 bg-thrivv-bg-card/50 rounded-lg">
-                  <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                    <Target className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-xs text-thrivv-text-muted">Oura</p>
-                </div>
-              </div>
-
-              <Link
-                href="/member/wearables"
-                className="btn-primary w-full flex items-center justify-center space-x-2 py-3"
-              >
-                <span>Connect Wearable</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              <p className="text-xs text-thrivv-text-muted text-center">
-                Takes ~1 minute to set up
-              </p>
-            </div>
-          </div>
+        <div className="premium-card p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-white">Understand your score</h2>
+          <p className="text-sm leading-relaxed text-thrivv-text-secondary">Training contributes up to 80, WHOOP Recovery up to 20, and habits up to 10. Complete daily Health Scores add to your gym’s weekly ranking.</p>
+          <p className="text-sm leading-relaxed text-thrivv-text-secondary">Your Health Score is separate from your spendable reward balance. Members without WHOOP can earn manual workout rewards without a complete Health Score.</p>
+          <Link href="/member/whoop" className="inline-flex items-center gap-2 text-sm text-thrivv-gold-400">Manage WHOOP <ArrowRight size={14} /></Link>
         </div>
       </div>
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Link
-          href="/member/checkin"
-          className="premium-card p-6 card-hover cursor-pointer group"
-        >
-          <div className="p-3 rounded-lg bg-thrivv-gold-500/20 w-fit mb-3 group-hover:bg-thrivv-gold-500/30 transition-colors">
-            <CheckCircle className="w-8 h-8 text-thrivv-gold-500" />
-          </div>
-          <h3 className="font-semibold text-thrivv-text-primary mb-1">Daily Check-in</h3>
-          <p className="text-sm text-thrivv-text-secondary">Track your progress</p>
-        </Link>
-
-        <Link
-          href="/member/workouts"
-          className="premium-card p-6 card-hover cursor-pointer group"
-        >
-          <div className="p-3 rounded-lg bg-thrivv-gold-500/20 w-fit mb-3 group-hover:bg-thrivv-gold-500/30 transition-colors">
-            <Zap className="w-8 h-8 text-thrivv-gold-500" />
-          </div>
-          <h3 className="font-semibold text-thrivv-text-primary mb-1">Workouts</h3>
-          <p className="text-sm text-thrivv-text-secondary">Track your exercise</p>
-        </Link>
-
-        <Link
-          href="/member/nutrition"
-          className="premium-card p-6 card-hover cursor-pointer group"
-        >
-          <div className="p-3 rounded-lg bg-green-500/20 w-fit mb-3 group-hover:bg-green-500/30 transition-colors">
-            <UtensilsCrossed className="w-8 h-8 text-thrivv-neon-green" />
-          </div>
-          <h3 className="font-semibold text-thrivv-text-primary mb-1">Diet Tracker</h3>
-          <p className="text-sm text-thrivv-text-secondary">Monitor nutrition</p>
-        </Link>
-
-        <Link
-          href="/member/habits"
-          className="premium-card p-6 card-hover cursor-pointer group"
-        >
-          <div className="p-3 rounded-lg bg-thrivv-gold-500/20 w-fit mb-3 group-hover:bg-thrivv-gold-500/30 transition-colors">
-            <Target className="w-8 h-8 text-thrivv-gold-400" />
-          </div>
-          <h3 className="font-semibold text-thrivv-text-primary mb-1">Habits</h3>
-          <p className="text-sm text-thrivv-text-secondary">Build consistency</p>
-        </Link>
-      </div>
     </div>
   );
 }

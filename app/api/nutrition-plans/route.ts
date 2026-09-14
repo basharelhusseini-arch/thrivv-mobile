@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
+  let user;
+  try { user = await requireAuth(); } catch { return NextResponse.json({ error: 'Please sign in' }, { status: 401 }); }
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const memberId = searchParams.get('memberId');
-
-    let query = supabase.from('nutrition_plans').select('*');
-
-    if (memberId) {
-      query = query.eq('member_id', memberId);
-    }
+    const requestedMember = request.nextUrl.searchParams.get('memberId');
+    if (requestedMember && requestedMember !== user.id) return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    const query = supabase.from('nutrition_plans').select('*').eq('member_id', user.id);
 
     const { data: plans, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('Supabase query error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch nutrition plans', details: error.message },
+        { error: 'Failed to fetch nutrition plans' },
         { status: 500 }
       );
     }
@@ -46,20 +44,25 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Failed to fetch nutrition plans:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch nutrition plans', details: error.message },
+      { error: 'Failed to fetch nutrition plans' },
       { status: 500 }
     );
   }
 }
 
 export async function POST(request: NextRequest) {
+  let user;
+  try { user = await requireAuth(); } catch { return NextResponse.json({ error: 'Please sign in' }, { status: 401 }); }
   try {
+    if (request.headers.get('sec-fetch-site') === 'cross-site' || (request.headers.get('origin') && request.headers.get('origin') !== request.nextUrl.origin)) return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
     const body = await request.json();
+    if (body.memberId !== undefined && body.memberId !== user.id) return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     
     const { data: plan, error } = await supabase
       .from('nutrition_plans')
       .insert({
-        member_id: body.memberId,
+        id: crypto.randomUUID(),
+        member_id: user.id,
         name: body.name,
         description: body.description,
         goal: body.goal,
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Supabase insert error:', error);
       return NextResponse.json(
-        { error: 'Failed to create nutrition plan', details: error.message },
+        { error: 'Failed to create nutrition plan' },
         { status: 500 }
       );
     }
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Failed to create nutrition plan:', error);
     return NextResponse.json(
-      { error: 'Failed to create nutrition plan', details: error.message },
+      { error: 'Failed to create nutrition plan' },
       { status: 400 }
     );
   }

@@ -1,17 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { store } from '@/lib/store';
-
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const memberId = searchParams.get('memberId');
-
-  if (!memberId) {
-    return NextResponse.json(
-      { error: 'Member ID is required' },
-      { status: 400 }
-    );
-  }
-
-  const entries = store.getMemberHabitEntries(memberId);
-  return NextResponse.json(entries);
-}
+import { memberActor, memberBody, memberResult, owned, MemberResourceError } from '@/lib/member-resource';
+export const dynamic = 'force-dynamic';
+export async function GET(req: NextRequest) { return memberResult(async () => store.getMemberHabitEntries((await memberActor(req)).id)); }

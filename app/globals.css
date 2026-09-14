@@ -444,3 +444,20 @@ html[data-session-hidden='true'] body { visibility: hidden; }
     transition: none !important;
   }
 }
+
+/* Calm, precise interaction chrome shared by both workspaces. */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #ffd339;
+  outline-offset: 4px;
+}
+:where(input, select, textarea) { accent-color: #ffd339; }
+:where(button, a) { -webkit-tap-highlight-color: transparent; }
+:where(button:disabled) { cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

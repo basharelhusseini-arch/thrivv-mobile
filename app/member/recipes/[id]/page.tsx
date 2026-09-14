@@ -1,38 +1,43 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Clock, Users, CheckCircle, X } from 'lucide-react';
 import { getRecipeById, type Recipe } from '@/lib/recipes';
 import { getRecipeImage, FALLBACK_IMAGE_URL } from '@/lib/recipe-images';
+import { useClientSession } from '@/lib/client-session';
 import { addMealToToday, getTodayLog, computeTotals, type DailyLog } from '@/lib/nutrition-log';
 
 export default function RecipeDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const session = useClientSession();
+  const memberId = session.user?.id;
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const pending = useRef(false);
+  const submissionId = useRef<string>();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [addedToToday, setAddedToToday] = useState(false);
   const [servings, setServings] = useState(1);
   const [todayLog, setTodayLog] = useState<DailyLog | null>(null);
   const [showToast, setShowToast] = useState(false);
-  const [memberId, setMemberId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadTodayLog = useCallback(async (userId: string) => {
-    const log = await getTodayLog(userId);
-    setTodayLog(log);
-    setAddedToToday(log.meals.some(m => m.recipeId === params.id));
+    try {
+      const log = await getTodayLog(userId);
+      setTodayLog(log);
+      setAddedToToday(log.meals.some(m => m.recipeId === params.id || m.foodPortion?.sourceId === params.id));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load your food log.'); }
   }, [params.id]);
 
   useEffect(() => {
     const loadRecipe = async () => {
-      const id = localStorage.getItem('memberId');
-      if (!id) {
-        router.push('/member/login');
-        return;
-      }
-      setMemberId(id);
+      if (session.status === 'unauthenticated') { router.replace('/member/login?redirect=/member/recipes'); return; }
+      const id = memberId;
+      if (!id) return;
 
       // First, try to find in default recipes
       let foundRecipe = getRecipeById(params.id);
@@ -82,7 +87,7 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
       }
 
       if (!foundRecipe) {
-        alert('Recipe not found');
+        setError('This recipe could not be found.');
         router.push('/member/recipes');
         return;
       }
@@ -96,74 +101,28 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
     };
 
     loadRecipe();
-  }, [params.id, router, loadTodayLog]);
+  }, [params.id, router, loadTodayLog, memberId, session.status]);
 
   const handleAddToToday = async () => {
-    if (!recipe || !memberId) {
-      alert('Please log in to add recipes to your daily log');
-      return;
-    }
-
+    if (!recipe || !memberId || pending.current || addedToToday) return;
+    pending.current = true;
+    setSaving(true);
+    setError('');
     try {
-      console.log('Adding meal:', { memberId, recipeId: recipe.id, servings });
-      
-      // Pass recipe nutrition data so custom recipes work
-      await addMealToToday(memberId, recipe.id, servings, {
-        name: recipe.name,
-        calories: recipe.calories,
-        protein_g: recipe.protein_g,
-        carbs_g: recipe.carbs_g,
-        fat_g: recipe.fat_g,
-      });
-      
+      submissionId.current ??= crypto.randomUUID();
+      const divisor = getRecipeById(recipe.id) ? recipe.servings : 1;
+      const log = await addMealToToday(memberId, recipe.id, servings, {
+        name: recipe.name, calories: recipe.calories / divisor, protein_g: recipe.protein_g / divisor,
+        carbs_g: recipe.carbs_g / divisor, fat_g: recipe.fat_g / divisor,
+      }, submissionId.current);
+      setTodayLog(log);
       setAddedToToday(true);
       setShowToast(true);
-      
-      // Reload today's log
-      await loadTodayLog(memberId);
-
-      // Update health score with new nutrition data
-      await updateHealthScore(memberId);
-
-      // Hide toast after 3 seconds
-      setTimeout(() => setShowToast(false), 3000);
-    } catch (error: any) {
-      console.error('Failed to add meal:', error);
-      alert(`Failed to add recipe to today: ${error.message || 'Please try again.'}`);
-    }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save this recipe. Please retry.'); }
+    finally { pending.current = false; setSaving(false); }
   };
 
-  const updateHealthScore = async (userId: string) => {
-    try {
-      // Get today's nutrition log
-      const log = await getTodayLog(userId);
-      const totals = computeTotals(log);
-      
-      const today = new Date().toISOString().split('T')[0];
-      const response = await fetch('/api/health/update-from-nutrition', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          memberId: userId,
-          date: today,
-          totalCalories: totals.calories,
-          totalProtein: totals.protein_g,
-          totalCarbs: totals.carbs_g,
-          totalFat: totals.fat_g,
-          mealCount: totals.mealCount,
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.warn('Failed to update health score:', errorText);
-      } else {
-        console.log('✅ Health score updated successfully');
-      }
-    } catch (error) {
-      console.error('Failed to update health score:', error);
-    }
-  };
+  if (session.status === 'error') return <div role="alert" className="premium-card p-6">Your session could not be checked. <button className="underline" onClick={() => session.refresh()}>Retry</button></div>;
 
   if (loading || !recipe) {
     return (
@@ -184,6 +143,7 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
 
   return (
     <div className="space-y-6">
+      {error && <p role="alert" className="rounded-xl border border-red-500/30 p-4 text-sm text-red-300">{error}</p>}
       <div className="animate-fade-in-up">
         <Link
           href="/member/recipes"
@@ -373,7 +333,7 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
             {/* Add to Today Button */}
             <button
               onClick={handleAddToToday}
-              disabled={addedToToday}
+              disabled={addedToToday || saving}
               className={`w-full py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
                 addedToToday
                   ? 'bg-thrivv-neon-green/20 text-thrivv-neon-green border border-thrivv-neon-green/30 cursor-not-allowed'
@@ -386,7 +346,7 @@ export default function RecipeDetailPage({ params }: { params: { id: string } })
                   Added to Today
                 </>
               ) : (
-                `Add ${servings} ${servings === 1 ? 'Serving' : 'Servings'} to Today`
+                saving ? 'Saving…' : `Add ${servings} ${servings === 1 ? 'Serving' : 'Servings'} to today`
               )}
             </button>
             {addedToToday && (

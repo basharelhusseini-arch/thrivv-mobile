@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { DollarSign, CheckCircle, XCircle, Clock, LogOut, CreditCard } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, CreditCard } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import { useClientSession } from '@/lib/client-session';
 
 interface Payment {
   id: string;
@@ -17,56 +17,39 @@ interface Payment {
   createdAt: string;
 }
 
-interface Membership {
-  id: string;
-  name: string;
-}
-
 export default function MemberPaymentsPage() {
   const router = useRouter();
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [memberships, setMemberships] = useState<Record<string, Membership>>({});
   const [loading, setLoading] = useState(true);
 
+  const session = useClientSession();
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+
   useEffect(() => {
-    const memberId = localStorage.getItem('memberId');
-    if (!memberId) {
-      router.push('/member/login');
-      return;
-    }
+    if (session.status === 'unauthenticated') router.replace('/member/login');
+  }, [session.status, router]);
 
-    fetchPayments(memberId);
-  }, [router]);
-
-  const fetchPayments = async (memberId: string) => {
-    try {
-      const [paymentsRes, membershipsRes] = await Promise.all([
-        fetch(`/api/member/payments?memberId=${memberId}`),
-        fetch('/api/memberships'),
-      ]);
-
-      const paymentsData = await paymentsRes.json();
-      const membershipsData = await membershipsRes.json();
-
-      const membershipsMap: Record<string, Membership> = {};
-      membershipsData.forEach((m: Membership) => {
-        membershipsMap[m.id] = m;
-      });
-
-      setMemberships(membershipsMap);
-      setPayments(paymentsData);
-    } catch (error) {
-      console.error('Failed to fetch payments:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('memberId');
-    localStorage.removeItem('memberName');
-    router.push('/member/login');
-  };
+  useEffect(() => {
+    setPayments([]);
+    if (!session.user?.id) return;
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    void (async () => {
+      try {
+        const response = await fetch('/api/member/payments', { cache: 'no-store', signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data)) throw new Error(data.error || 'Your payments could not be loaded.');
+        setPayments(data);
+      } catch (cause) {
+        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Your payments could not be loaded.');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    })();
+    return () => controller.abort();
+  }, [session.user?.id, retry]);
 
   const getStatusIcon = (status: Payment['status']) => {
     switch (status) {
@@ -94,7 +77,11 @@ export default function MemberPaymentsPage() {
     }
   };
 
-  if (loading) {
+  if (session.status === 'error') {
+    return <div role="alert" className="premium-card p-6 space-y-3"><p>We couldn&apos;t check your session.</p><button onClick={() => session.refresh()} className="btn-ghost px-4 py-2">Try again</button></div>;
+  }
+  if (session.status === 'unauthenticated') return null;
+  if (loading || session.status === 'loading') {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -115,21 +102,15 @@ export default function MemberPaymentsPage() {
         eyebrow="Billing"
         title="Payment History"
         subtitle="Membership transactions and receipts."
-        action={
-          <button
-            onClick={handleLogout}
-            className="btn-ghost px-4 py-2 inline-flex items-center gap-2 text-sm hover:text-red-400 hover:border-red-500/30"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
-        }
+
       />
 
       <main>
         <div className="premium-card overflow-hidden">
           <div className="p-6">
-            {payments.length === 0 ? (
+            {error ? (
+              <div role="alert" className="space-y-3 py-6 text-sm text-thrivv-text-secondary"><p>{error}</p><button onClick={() => setRetry(value => value + 1)} className="btn-ghost px-4 py-2">Try again</button></div>
+            ) : payments.length === 0 ? (
               <div className="text-center py-14">
                 <div className="w-14 h-14 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/20 mx-auto mb-4 flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-thrivv-gold-500" />
@@ -166,7 +147,7 @@ export default function MemberPaymentsPage() {
                           {new Date(payment.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-thrivv-text-primary">
-                          {memberships[payment.membershipId]?.name || 'Unknown'}
+                          {payment.membershipId || 'Membership'}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-thrivv-gold-500 tabular-nums">
                           ${payment.amount.toFixed(2)}

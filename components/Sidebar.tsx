@@ -2,76 +2,34 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Activity,
-  Calendar,
-  UserCog,
-  LogIn,
-  LogOut,
-  Dumbbell,
-  UtensilsCrossed,
-  Target,
-  Heart,
-  Trophy,
-  User,
-  ChefHat,
-  X,
-  MoreHorizontal,
-} from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { Activity, ArrowLeftRight, Calendar, Dumbbell, Heart, LayoutDashboard, LogOut, MoreHorizontal, QrCode, Trophy, User, Users, UserPlus, UtensilsCrossed, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { logoutClient } from '@/lib/client-session';
 import { portalLoginUrl } from '@/lib/gym-routing';
 import Logo from './Logo';
+import WorkspaceLink from './WorkspaceLink';
 
-// Admin/Trainer navigation
-const adminNavigation = [
-  { name: 'Dashboard', label: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Health Statistics', label: 'Health', href: '/health', icon: Activity },
-  { name: 'Classes', label: 'Classes', href: '/classes', icon: Calendar },
-  { name: 'Trainers', label: 'Trainers', href: '/trainers', icon: UserCog },
-  { name: 'Workouts', label: 'Workouts', href: '/workouts', icon: Dumbbell },
-  { name: 'Recipes', label: 'Recipes', href: '/recipes', icon: UtensilsCrossed },
-  { name: 'Diet Tracker', label: 'Nutrition', href: '/nutrition', icon: Heart },
-  { name: 'Habit Tracker', label: 'Habits', href: '/habits', icon: Target },
+type NavItem = { label: string; href: string; icon: typeof Activity };
+const memberNavigation: NavItem[] = [
+  { label: 'Home', href: '/member/dashboard', icon: LayoutDashboard },
+  { label: 'Workouts', href: '/member/workouts', icon: Dumbbell },
+  { label: 'Scan', href: '/member/scan-workout', icon: QrCode },
+  { label: 'Rewards', href: '/member/rewards', icon: Trophy },
+  { label: 'Health', href: '/member/health', icon: Activity },
+  { label: 'Nutrition', href: '/member/nutrition', icon: UtensilsCrossed },
+  { label: 'Bookings', href: '/member/bookings', icon: Calendar },
+  { label: 'Account', href: '/member/account', icon: User },
 ];
-
-// Member navigation
-const memberNavigation = [
-  { name: 'Dashboard', label: 'Dashboard', href: '/member/dashboard', icon: LayoutDashboard },
-  { name: 'My Workouts', label: 'Workouts', href: '/member/workouts', icon: Dumbbell },
-  { name: 'My Nutrition', label: 'Nutrition', href: '/member/nutrition', icon: UtensilsCrossed },
-  { name: 'Bookings', label: 'Bookings', href: '/member/bookings', icon: Calendar },
-  { name: 'Health Score', label: 'Health', href: '/member/health', icon: Activity },
-  { name: 'Rewards', label: 'Rewards', href: '/member/rewards', icon: Trophy },
-  { name: 'Wearable', label: 'Wearable', href: '/member/wearables', icon: Heart },
-  { name: 'Account', label: 'Account', href: '/member/account', icon: UserCog },
-];
-
-// Hrefs surfaced as the 4 primary tabs on the mobile bottom nav.
-// Anything not in this list shows up inside the "More" sheet instead.
-const memberPrimaryHrefs = [
-  '/member/dashboard',
-  '/member/workouts',
-  '/member/nutrition',
-  '/member/health',
-];
-const adminPrimaryHrefs = ['/', '/health', '/workouts', '/nutrition'];
-
-type NavItem = (typeof memberNavigation)[number];
 
 export function isGymPortalPath(pathname: string | null): boolean {
-  return pathname === '/gym' || !!pathname?.startsWith('/gym/') ||
-    pathname === '/admin/gyms' || !!pathname?.startsWith('/admin/gyms/');
+  return pathname === '/gym' || !!pathname?.startsWith('/gym/') || pathname === '/admin/gyms' || !!pathname?.startsWith('/admin/gyms/');
 }
 
-function isItemActive(item: NavItem, pathname: string | null): boolean {
+export function isItemActive(item: NavItem, pathname: string | null): boolean {
   if (!pathname) return false;
   if (pathname === item.href) return true;
-  if (item.href === '/member/account' && pathname.startsWith('/member/account/')) return true;
-  // Bookings tab also activates on the legacy /member/classes redirect target.
-  if (item.href === '/member/bookings' && pathname === '/member/classes') return true;
-  return false;
+  if (item.href === '/member/account') return pathname.startsWith('/member/account/') || ['/member/profile', '/member/settings', '/member/wearables'].includes(pathname);
+  return item.href === '/member/bookings' && pathname === '/member/classes';
 }
 
 export default function Sidebar({ memberData = null, isPlatformAdmin = false }: {
@@ -83,22 +41,42 @@ export default function Sidebar({ memberData = null, isPlatformAdmin = false }: 
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const logoutPending = useRef(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLButtonElement>(null);
+  const workspaceRef = useRef<HTMLDetailsElement>(null);
+  useEffect(() => { setIsMoreOpen(false); if (workspaceRef.current) workspaceRef.current.open = false; }, [pathname]);
 
-  // Close the More sheet whenever the route changes.
   useEffect(() => {
-    setIsMoreOpen(false);
-  }, [pathname]);
-
-  // Lock body scroll while the More sheet is open.
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    if (isMoreOpen) {
-      const previous = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => {
-        document.body.style.overflow = previous;
-      };
-    }
+    if (!isMoreOpen) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : moreRef.current;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const focusable = () => Array.from(sheetRef.current?.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),[tabindex="0"]') || []);
+    focusable()[0]?.focus();
+    const keyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setIsMoreOpen(false); }
+      if (event.key === 'Tab') {
+        const targets = focusable();
+        const first = targets[0]; const last = targets[targets.length - 1];
+        if (event.shiftKey && (document.activeElement === first || !sheetRef.current?.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
+        if (!event.shiftKey && (document.activeElement === last || !sheetRef.current?.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
+      }
+    };
+    // Keep background content out of keyboard and assistive-technology navigation.
+    const background = Array.from(document.querySelectorAll<HTMLElement>('[data-app-navigation],#main-content'));
+    const oldInert = background.map(element => element.inert);
+    background.forEach(element => { element.inert = true; });
+    const media = window.matchMedia('(min-width: 1024px)');
+    const resized = () => { if (media.matches) setIsMoreOpen(false); };
+    media.addEventListener('change', resized);
+    document.addEventListener('keydown', keyboard);
+    return () => {
+      document.body.style.overflow = overflow;
+      background.forEach((element, index) => { element.inert = oldInert[index]; });
+      document.removeEventListener('keydown', keyboard);
+      media.removeEventListener('change', resized);
+      if (previous?.isConnected) previous.focus();
+    };
   }, [isMoreOpen]);
 
   const handleLogout = async () => {
@@ -113,478 +91,65 @@ export default function Sidebar({ memberData = null, isPlatformAdmin = false }: 
     }
   };
 
-  const isInMemberPortal = pathname?.startsWith('/member');
   const isInGymPortal = isGymPortalPath(pathname);
-  const gymDashboard = pathname?.match(/^\/gym\/[^/]+\/dashboard$/)?.[0];
-  const gymNavigation: NavItem[] = gymDashboard
-    ? [
-      { name: 'Gym dashboard', label: 'Dashboard', href: gymDashboard, icon: LayoutDashboard },
-      { name: 'Gym portal', label: 'Your gyms', href: '/gym', icon: UserCog },
-    ]
-    : [{ name: 'Gym portal', label: pathname?.startsWith('/admin/gyms') ? 'Platform Admin' : 'Your gyms', href: pathname?.startsWith('/admin/gyms') ? '/admin/gyms' : '/gym', icon: LayoutDashboard }];
-  const navigation = [
-    ...(isInGymPortal ? gymNavigation : isInMemberPortal || memberData ? memberNavigation : adminNavigation),
-    ...(isPlatformAdmin && !pathname?.startsWith('/admin/gyms') ? [{ name: 'Platform Admin', label: 'Platform Admin', href: '/admin/gyms', icon: UserCog }] : []),
-    { name: 'Help & Support', label: 'Support', href: isInGymPortal ? '/gym/support' : '/member/account/support', icon: Heart },
+  const gymBase = pathname?.match(/^\/gym\/([^/]+)\/(dashboard|members|activity|invite|qr|support)$/)?.[1];
+  const gymNavigation: NavItem[] = gymBase ? [
+    { label: 'Overview', href: `/gym/${gymBase}/dashboard`, icon: LayoutDashboard },
+    { label: 'Members', href: `/gym/${gymBase}/members`, icon: Users },
+    { label: 'Activity', href: `/gym/${gymBase}/activity`, icon: Activity },
+    { label: 'Invite members', href: `/gym/${gymBase}/invite`, icon: UserPlus },
+    { label: 'Display workout QR', href: `/gym/${gymBase}/qr`, icon: QrCode },
+  ] : [{ label: pathname?.startsWith('/admin/gyms') ? 'Platform Admin' : 'Your gyms', href: pathname?.startsWith('/admin/gyms') ? '/admin/gyms' : '/gym', icon: LayoutDashboard }];
+  const support: NavItem = { label: 'Support', href: isInGymPortal ? gymBase ? `/gym/${gymBase}/support` : '/gym/support' : '/member/account/support', icon: Heart };
+  const navigation = isInGymPortal ? gymNavigation : memberNavigation;
+  const primaryItems = isInGymPortal ? (gymBase ? [gymNavigation[0], gymNavigation[1], gymNavigation[4]] : gymNavigation) : memberNavigation.slice(0, 4);
+  const overflowItems = navigation.filter(item => !primaryItems.includes(item));
+  const moreActive = isMoreOpen || [...overflowItems, support].some(item => isItemActive(item, pathname));
+  const workspaceItems: NavItem[] = [
+    ...(isInGymPortal ? [{ label: 'Member app', href: '/member/dashboard', icon: User }] : []),
+    { label: 'Gym portal', href: '/gym', icon: Dumbbell },
+    ...(isPlatformAdmin && !pathname?.startsWith('/admin/gyms') ? [{ label: 'Platform Admin', href: '/admin/gyms', icon: Users }] : []),
   ];
-  const primaryHrefs =
-    isInGymPortal ? gymNavigation.map(item => item.href) : isInMemberPortal || memberData ? memberPrimaryHrefs : adminPrimaryHrefs;
+  const showWorkspaces = isPlatformAdmin || isInGymPortal;
+  const renderLink = (item: NavItem, compact = false) => {
+    const active = isItemActive(item, pathname);
+    const Icon = item.icon;
+    return <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={`${compact ? 'flex-col justify-center text-xs min-h-[86px] p-3' : 'text-sm min-h-[44px] px-3 py-2.5'} flex items-center gap-3 rounded-xl border transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-thrivv-gold-500 ${active ? 'border-thrivv-gold-500/25 bg-thrivv-gold-500/10 text-thrivv-gold-400' : 'border-transparent text-thrivv-text-secondary hover:bg-white/[0.04] hover:text-white'}`}><Icon aria-hidden className="h-[18px] w-[18px] shrink-0" /><span>{item.label}</span></Link>;
+  };
+  const renderWorkspaceLink = (item: NavItem) => {
+    const Icon = item.icon;
+    return <WorkspaceLink key={item.href} href={item.href} className="flex min-h-[44px] items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-thrivv-text-secondary hover:bg-white/[0.04] hover:text-white"><Icon aria-hidden className="h-[18px] w-[18px]" />{item.label}</WorkspaceLink>;
+  };
+  const signOut = <button type="button" disabled={loggingOut} onClick={() => { setIsMoreOpen(false); void handleLogout(); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-thrivv-text-muted hover:bg-red-500/5 hover:text-red-400 disabled:opacity-50"><LogOut aria-hidden className="h-[18px] w-[18px]" />{loggingOut ? 'Signing out…' : 'Sign out'}</button>;
 
-  // Preserve the original navigation order when picking primary items.
-  const primaryItems = navigation.filter((n) => primaryHrefs.includes(n.href));
-  const overflowItems = navigation.filter((n) => !primaryHrefs.includes(n.href));
+  return <>
+    {logoutError && <p role="alert" className="fixed bottom-24 left-4 z-[100] max-w-sm rounded-xl border border-red-500/20 bg-thrivv-bg-darker p-4 text-red-400">{logoutError}</p>}
+    <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-lg focus:bg-thrivv-gold-500 focus:px-4 focus:py-3 focus:text-black">Skip to content</a>
+    <aside data-app-navigation className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-60 flex-col border-r border-thrivv-gold-500/10 bg-thrivv-bg-darker/90 backdrop-blur-2xl" aria-label={isInGymPortal ? 'Gym portal navigation' : 'Primary navigation'}>
+      <div className="px-6 py-7"><Logo variant="gold" size="md" linkTo={isInGymPortal ? '/gym' : '/member/dashboard'} /><p className="mt-3 text-[10px] uppercase tracking-[0.24em] text-thrivv-text-muted">{isInGymPortal ? 'Gym workspace' : 'Your daily progress'}</p></div>
+      {showWorkspaces && <details ref={workspaceRef} className="mx-3 mb-4 rounded-xl border border-thrivv-gold-500/15 bg-white/[0.02]"><summary className="flex cursor-pointer list-none items-center gap-2 p-3 text-xs text-thrivv-text-secondary"><ArrowLeftRight aria-hidden className="h-4 w-4 text-thrivv-gold-500" />Switch workspace</summary><div className="border-t border-white/5 p-1">{workspaceItems.map(renderWorkspaceLink)}</div></details>}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3">{navigation.map((item, index) => <div key={item.href}>{!isInGymPortal && index === 4 && <p className="px-3 pt-6 pb-2 text-[10px] uppercase tracking-[0.18em] text-thrivv-text-muted">Your routine</p>}{renderLink(item)}</div>)}</nav>
+      <div className="m-3 border-t border-white/5 pt-2">{renderLink(support)}{memberData && <><Link href={isInGymPortal ? '/gym' : '/member/account'} className="mt-2 flex items-center gap-3 rounded-xl p-3 text-sm"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-thrivv-gold-500/20 bg-thrivv-gold-500/10 text-thrivv-gold-500"><User className="h-4 w-4" /></span><span className="min-w-0"><span className="block truncate text-thrivv-text-primary">{memberData.name || 'Your account'}</span><span className="block truncate text-[11px] text-thrivv-text-muted">{memberData.email}</span></span></Link>{signOut}</>}</div>
+    </aside>
 
-  // The More tab is "active" when on any overflow route or when the sheet is open.
-  const isMoreTabActive =
-    isMoreOpen ||
-    overflowItems.some((item) => isItemActive(item, pathname ?? null));
-
-  return (
-    <>
-      {logoutError && <p role="alert" className="fixed bottom-24 left-4 z-[100] max-w-sm rounded-xl bg-thrivv-bg-darker p-4 text-red-400">{logoutError}</p>}
-      {/* ---- Desktop sidebar (lg and up) ---- */}
-      <aside
-        className="hidden lg:flex fixed inset-y-0 left-0 z-40 w-24 flex-col
-          backdrop-blur-2xl bg-gradient-to-b from-thrivv-bg-darker/90 via-thrivv-bg-darker/80 to-thrivv-bg-darker/90
-          text-white"
-        aria-label={isInGymPortal ? 'Gym portal navigation' : 'Primary navigation'}
-      >
-        {/* Right-edge gold gradient line — primary blade accent */}
-        <div
-          className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-thrivv-gold-500/40 to-transparent pointer-events-none"
-          aria-hidden
-        />
-        {/* Inner-left soft gold rim — adds depth to the chrome */}
-        <div
-          className="absolute top-1/4 bottom-1/4 left-0 w-px bg-gradient-to-b from-transparent via-thrivv-gold-500/15 to-transparent pointer-events-none"
-          aria-hidden
-        />
-        {/* Top + bottom feathered fades */}
-        <div
-          className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-thrivv-bg-darker/60 to-transparent pointer-events-none"
-          aria-hidden
-        />
-        <div
-          className="absolute bottom-0 inset-x-0 h-20 bg-gradient-to-t from-thrivv-bg-darker/60 to-transparent pointer-events-none"
-          aria-hidden
-        />
-
-        <div className="flex flex-col h-full relative">
-          {/* Logo */}
-          <div className="relative flex items-center justify-center h-24 px-3">
-            <div
-              className="absolute inset-x-4 inset-y-3 bg-thrivv-gold-500/10 blur-2xl rounded-full pointer-events-none"
-              aria-hidden
-            />
-            <div className="relative">
-              <Logo
-                variant="gold"
-                size="md"
-                linkTo={isInGymPortal ? '/gym' : memberData ? '/member/dashboard' : '/'}
-              />
-            </div>
-            <div
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent"
-              aria-hidden
-            />
-          </div>
-
-          {isInGymPortal && <p className="px-2 text-center text-[10px] uppercase tracking-widest text-thrivv-gold-500">Gym portal</p>}
-          {/* Member Avatar (if logged in) */}
-          {memberData && (
-            <div className="relative px-3 py-4">
-              <div className="relative w-10 h-10 mx-auto group/avatar">
-                <div
-                  className="absolute -inset-1 bg-thrivv-gold-500/20 blur-md rounded-2xl pointer-events-none"
-                  aria-hidden
-                />
-                <div
-                  className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-thrivv-gold-500 to-thrivv-gold-400 flex items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/avatar:scale-105 shadow-[0_4px_18px_rgba(255,208,0,0.28)]"
-                  title={memberData.name}
-                >
-                  <User className="w-4 h-4 text-black" />
-                </div>
-              </div>
-              <div
-                className="mt-4 mx-auto w-10 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/25 to-transparent"
-                aria-hidden
-              />
-            </div>
-          )}
-
-          {/* Navigation */}
-          <nav className="flex-1 px-2 py-5 space-y-0.5 overflow-y-auto">
-            {navigation.map((item) => {
-              const isActive = isItemActive(item, pathname ?? null);
-              const Icon = item.icon;
-              const displayLabel = item.label;
-
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`
-                    relative flex flex-col items-center justify-center py-2.5 px-2 rounded-xl group overflow-hidden
-                    transition-[background,transform,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
-                    border
-                    ${
-                      isActive
-                        ? 'bg-gradient-to-b from-thrivv-gold-500 to-thrivv-gold-400 border-thrivv-gold-400/30 shadow-[0_4px_20px_rgba(255,208,0,0.35)]'
-                        : 'border-transparent hover:border-thrivv-gold-500/15 hover:bg-gradient-to-b hover:from-thrivv-gold-500/[0.08] hover:to-thrivv-gold-500/[0.02] hover:scale-[1.01]'
-                    }
-                  `}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {!isActive && (
-                    <span
-                      className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-0 bg-thrivv-gold-500/60 rounded-r-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:h-5"
-                      aria-hidden
-                    />
-                  )}
-
-                  <Icon
-                    className={`w-[1.35rem] h-[1.35rem] mb-1.5 transition-[color,transform] duration-500 ${
-                      isActive
-                        ? 'text-black'
-                        : 'text-thrivv-text-muted group-hover:text-thrivv-gold-500 group-hover:scale-105'
-                    }`}
-                  />
-                  <span
-                    className={`text-[10.5px] font-medium text-center leading-tight truncate w-full transition-colors duration-500 ${
-                      isActive
-                        ? 'text-black'
-                        : 'text-thrivv-text-muted group-hover:text-thrivv-gold-500'
-                    }`}
-                  >
-                    {displayLabel}
-                  </span>
-
-                  {isActive && (
-                    <span
-                      className="absolute -left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-7 bg-thrivv-gold-300 rounded-r-full shadow-[0_0_10px_rgba(255,208,0,0.5)]"
-                      aria-hidden
-                    />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Footer Actions */}
-          <div className="relative px-2 py-4">
-            <div
-              className="absolute top-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/20 to-transparent"
-              aria-hidden
-            />
-            {memberData ? (
-              <button
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="
-                  w-full relative flex flex-col items-center justify-center py-2.5 rounded-xl group overflow-hidden border border-transparent
-                  transition-[background,transform,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
-                  text-thrivv-text-muted hover:text-red-400
-                  hover:border-red-500/30
-                  hover:bg-gradient-to-b hover:from-red-500/[0.12] hover:to-red-500/[0.04]
-                  hover:scale-[1.01]
-                "
-              >
-                <LogOut className="w-[1.35rem] h-[1.35rem] mb-1.5 transition-transform duration-500 group-hover:scale-105" />
-                <span className="text-[10.5px] font-medium">{loggingOut ? 'Signing out…' : 'Sign Out'}</span>
-              </button>
-            ) : (
-              !isInMemberPortal && (
-                <Link
-                    href={isInGymPortal ? '/member/login?portal=gym&redirect=%2Fgym' : '/member/login'}
-                  className="
-                    w-full relative flex flex-col items-center justify-center py-2.5 rounded-xl group overflow-hidden border border-transparent
-                    transition-[background,transform,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
-                    text-thrivv-text-muted hover:text-thrivv-gold-500
-                    hover:border-thrivv-gold-500/20
-                    hover:bg-gradient-to-b hover:from-thrivv-gold-500/[0.08] hover:to-thrivv-gold-500/[0.02]
-                    hover:scale-[1.01]
-                  "
-                >
-                  <LogIn className="w-[1.35rem] h-[1.35rem] mb-1.5 transition-transform duration-500 group-hover:scale-105" />
-                  <span className="text-[10.5px] font-medium">Sign In</span>
-                </Link>
-              )
-            )}
-          </div>
-        </div>
-      </aside>
-
-      {/* ---- Mobile bottom nav (below lg) ---- */}
-      <nav
-        className="lg:hidden fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-safe pointer-events-none"
-        aria-label={isInGymPortal ? 'Gym portal navigation' : 'Primary navigation'}
-      >
-        <div
-          className="
-            pointer-events-auto mx-auto max-w-md
-            backdrop-blur-2xl bg-thrivv-bg-darker/85
-            border border-thrivv-gold-500/20
-            rounded-2xl
-            shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,208,0,0.04)]
-            relative overflow-hidden
-          "
-        >
-          {/* Top gold-gradient hairline */}
-          <div
-            className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent"
-            aria-hidden
-          />
-
-          <div className={`relative grid ${isInGymPortal ? primaryItems.length === 2 ? 'grid-cols-3' : 'grid-cols-2' : 'grid-cols-5'} items-stretch`}>
-            {primaryItems.map((item) => {
-              const isActive = isItemActive(item, pathname ?? null);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="
-                    relative flex flex-col items-center justify-center
-                    min-h-[58px] py-2 px-1 group
-                    transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
-                    active:scale-95
-                  "
-                  aria-current={isActive ? 'page' : undefined}
-                  aria-label={item.label}
-                >
-                  {/* Active gold halo behind the icon */}
-                  {isActive && (
-                    <span
-                      className="absolute top-1 left-1/2 -translate-x-1/2 w-12 h-12 bg-thrivv-gold-500/25 rounded-full blur-xl pointer-events-none"
-                      aria-hidden
-                    />
-                  )}
-                  <Icon
-                    className={`relative w-6 h-6 mb-0.5 transition-[color,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                      isActive
-                        ? 'text-thrivv-gold-500 scale-105'
-                        : 'text-thrivv-text-muted group-active:text-thrivv-gold-500'
-                    }`}
-                  />
-                  <span
-                    className={`relative text-[10px] font-medium leading-tight truncate w-full text-center transition-colors duration-500 ${
-                      isActive
-                        ? 'text-thrivv-gold-500'
-                        : 'text-thrivv-text-muted'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                  {/* Active dot */}
-                  {isActive && (
-                    <span
-                      className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-thrivv-gold-500 rounded-full shadow-[0_0_8px_rgba(255,208,0,0.7)]"
-                      aria-hidden
-                    />
-                  )}
-                </Link>
-              );
-            })}
-
-            {/* More tab */}
-            <button
-              type="button"
-              onClick={() => setIsMoreOpen(true)}
-              aria-expanded={isMoreOpen}
-              aria-haspopup="dialog"
-              aria-label="More navigation options"
-              className="
-                relative flex flex-col items-center justify-center
-                min-h-[58px] py-2 px-1 group
-                transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
-                active:scale-95
-              "
-            >
-              {isMoreTabActive && (
-                <span
-                  className="absolute top-1 left-1/2 -translate-x-1/2 w-12 h-12 bg-thrivv-gold-500/25 rounded-full blur-xl pointer-events-none"
-                  aria-hidden
-                />
-              )}
-              <MoreHorizontal
-                className={`relative w-6 h-6 mb-0.5 transition-[color,transform] duration-500 ${
-                  isMoreTabActive
-                    ? 'text-thrivv-gold-500 scale-105'
-                    : 'text-thrivv-text-muted group-active:text-thrivv-gold-500'
-                }`}
-              />
-              <span
-                className={`relative text-[10px] font-medium leading-tight transition-colors duration-500 ${
-                  isMoreTabActive
-                    ? 'text-thrivv-gold-500'
-                    : 'text-thrivv-text-muted'
-                }`}
-              >
-                More
-              </span>
-              {isMoreTabActive && (
-                <span
-                  className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-thrivv-gold-500 rounded-full shadow-[0_0_8px_rgba(255,208,0,0.7)]"
-                  aria-hidden
-                />
-              )}
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* ---- Mobile More sheet ---- */}
-      {/* Backdrop */}
-      <div
-        onClick={() => setIsMoreOpen(false)}
-        aria-hidden
-        className={`
-          lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm
-          transition-opacity duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]
-          ${
-            isMoreOpen
-              ? 'opacity-100 pointer-events-auto'
-              : 'opacity-0 pointer-events-none'
-          }
-        `}
-      />
-
-      {/* Sheet */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="More navigation"
-        className={`
-          lg:hidden fixed inset-x-0 bottom-0 z-50
-          backdrop-blur-2xl bg-thrivv-bg-darker/95
-          border-t border-thrivv-gold-500/20
-          rounded-t-3xl
-          shadow-[0_-20px_60px_-15px_rgba(0,0,0,0.6)]
-          pb-safe
-          transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
-          ${isMoreOpen ? 'translate-y-0' : 'translate-y-full'}
-        `}
-      >
-        {/* Top hairline */}
-        <div
-          className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/40 to-transparent"
-          aria-hidden
-        />
-
-        {/* iOS-style handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <span
-            className="w-10 h-1 rounded-full bg-thrivv-gold-500/30"
-            aria-hidden
-          />
-        </div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-2 pb-4">
-          <div>
-            <span className="block text-[10px] uppercase tracking-[0.28em] text-thrivv-gold-500 mb-1">
-              Navigation
-            </span>
-            <h2 className="text-2xl font-semibold tracking-tight text-thrivv-text-primary">
-              More
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsMoreOpen(false)}
-            aria-label="Close more navigation"
-            className="w-10 h-10 rounded-full border border-thrivv-gold-500/15 bg-thrivv-bg-card/60 flex items-center justify-center text-thrivv-text-muted hover:text-thrivv-gold-500 hover:border-thrivv-gold-500/40 transition-colors duration-300"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Overflow grid */}
-        <div className="px-4 pb-3">
-          <div className="grid grid-cols-3 gap-2">
-            {overflowItems.map((item) => {
-              const isActive = isItemActive(item, pathname ?? null);
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`
-                    relative flex flex-col items-center justify-center
-                    min-h-[88px] py-4 px-2 rounded-2xl
-                    transition-[background,transform,border-color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]
-                    border active:scale-95
-                    ${
-                      isActive
-                        ? 'border-thrivv-gold-500/30 bg-gradient-to-b from-thrivv-gold-500/[0.12] to-thrivv-gold-500/[0.02]'
-                        : 'border-thrivv-gold-500/10 bg-thrivv-bg-card/50'
-                    }
-                  `}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  <Icon
-                    className={`w-6 h-6 mb-2 ${
-                      isActive
-                        ? 'text-thrivv-gold-500'
-                        : 'text-thrivv-text-secondary'
-                    }`}
-                  />
-                  <span
-                    className={`text-xs font-medium text-center leading-tight ${
-                      isActive
-                        ? 'text-thrivv-gold-500'
-                        : 'text-thrivv-text-primary'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Sign Out / Sign In footer */}
-        <div className="px-4 pt-3 pb-5 border-t border-thrivv-gold-500/10">
-          {memberData ? (
-            <button
-              disabled={loggingOut}
-              onClick={() => {
-                setIsMoreOpen(false);
-                handleLogout();
-              }}
-              className="
-                w-full inline-flex items-center justify-center gap-2
-                min-h-[52px] rounded-2xl px-5
-                border border-red-500/20 bg-red-500/5 text-red-400
-                hover:border-red-500/40 hover:bg-red-500/10
-                transition-colors duration-300 text-sm font-medium
-                active:scale-[0.99]
-              "
-            >
-              <LogOut className="w-4 h-4" />
-              {loggingOut ? 'Signing out…' : 'Sign out'}
-            </button>
-          ) : (
-            !isInMemberPortal && (
-              <Link
-                href={isInGymPortal ? '/member/login?portal=gym&redirect=%2Fgym' : '/member/login'}
-                className="
-                  w-full inline-flex items-center justify-center gap-2
-                  min-h-[52px] rounded-2xl px-5
-                  border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500
-                  hover:border-thrivv-gold-500/40 hover:bg-thrivv-gold-500/10
-                  transition-colors duration-300 text-sm font-medium
-                  active:scale-[0.99]
-                "
-              >
-                <LogIn className="w-4 h-4" />
-                Sign in
-              </Link>
-            )
-          )}
-        </div>
+    <nav data-app-navigation className="lg:hidden fixed inset-x-0 bottom-0 z-40 px-3 pt-2 pb-safe" aria-label={isInGymPortal ? 'Gym portal navigation' : 'Primary navigation'}>
+      <div className={`mx-auto grid max-w-lg ${primaryItems.length === 4 ? 'grid-cols-5' : primaryItems.length === 3 ? 'grid-cols-4' : 'grid-cols-2'} rounded-2xl border border-thrivv-gold-500/20 bg-thrivv-bg-darker/95 p-1 shadow-[0_-8px_40px_rgba(0,0,0,0.25)] backdrop-blur-2xl`}>
+        {primaryItems.map(item => {
+          const active = isItemActive(item, pathname); const Icon = item.icon;
+          return <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined} className={`relative flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium transition-colors ${active ? 'bg-thrivv-gold-500/10 text-thrivv-gold-400' : 'text-thrivv-text-muted hover:text-white'}`}><Icon aria-hidden className="h-5 w-5" /><span>{item.label === 'Display workout QR' ? 'Gym QR' : item.label}</span></Link>;
+        })}
+        <button ref={moreRef} type="button" onClick={() => setIsMoreOpen(true)} aria-expanded={isMoreOpen} aria-haspopup="dialog" aria-controls="more-navigation" aria-label="More navigation options" className={`flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-medium ${moreActive ? 'bg-thrivv-gold-500/10 text-thrivv-gold-400' : 'text-thrivv-text-muted'}`}><MoreHorizontal aria-hidden className="h-5 w-5" />More</button>
       </div>
-    </>
-  );
+    </nav>
+
+    {isMoreOpen && <>
+      <div onClick={() => setIsMoreOpen(false)} aria-hidden className="lg:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />
+      <div ref={sheetRef} id="more-navigation" role="dialog" aria-modal="true" aria-labelledby="more-title" className="lg:hidden fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto rounded-t-3xl border-t border-thrivv-gold-500/20 bg-thrivv-bg-darker pb-safe shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-5"><h2 id="more-title" className="text-xl font-semibold">More</h2><button type="button" onClick={() => setIsMoreOpen(false)} aria-label="Close more navigation" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-thrivv-text-muted"><X className="h-5 w-5" /></button></div>
+        <div className="grid grid-cols-3 gap-1 px-4 pb-4">{[...overflowItems, support].map(item => renderLink(item, true))}</div>
+        {showWorkspaces && <div className="mx-4 mb-3 rounded-xl border border-thrivv-gold-500/15 p-2"><p className="flex items-center gap-2 px-3 py-2 text-[10px] uppercase tracking-widest text-thrivv-text-muted"><ArrowLeftRight className="h-3.5 w-3.5" />Switch workspace</p>{workspaceItems.map(renderWorkspaceLink)}</div>}
+        {memberData && <div className="mx-4 border-t border-white/5 py-3">{signOut}</div>}
+      </div>
+    </>}
+  </>;
 }

@@ -1,21 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { store } from '@/lib/store';
+import { legacyAdminAccess, legacyJson } from '@/lib/legacy-api-access';
 
 export async function GET() {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const trainers = store.getAllTrainers();
-    return NextResponse.json(trainers);
+    return legacyJson(trainers);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch trainers' }, { status: 500 });
+    return legacyJson({ error: 'Failed to fetch trainers' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const body = await request.json();
     const trainer = store.addTrainer(body);
-    return NextResponse.json(trainer, { status: 201 });
+    return legacyJson(trainer, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create trainer' }, { status: 500 });
+    return legacyJson({ error: 'Failed to create trainer' }, { status: 500 });
   }
 }

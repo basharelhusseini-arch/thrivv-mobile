@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
+import { getClientSession } from '@/lib/client-session';
 import { addFoodPortionToToday } from '@/lib/nutrition-log';
 import { completeNutrition, formatNutrient, scaleFood, type BrowserFood, type FoodNutrition, type LoggedFoodPortion } from '@/lib/food-portions';
 
@@ -21,7 +22,7 @@ export default function FoodQuantityPicker({ food }: { food: BrowserFood }) {
     setStatus('saving');
     setError('');
     try {
-      const memberId = localStorage.getItem('memberId');
+      const memberId = (await getClientSession()).user?.id;
       if (!memberId) throw new Error('Please sign in to add food to your log.');
       submissionId.current ??= crypto.randomUUID();
       await addFoodPortionToToday(memberId, food, Number(quantity), unit, submissionId.current);
@@ -38,12 +39,12 @@ export default function FoodQuantityPicker({ food }: { food: BrowserFood }) {
         <label className="text-sm text-thrivv-text-secondary">
           Quantity
           <input aria-label={`Quantity for ${food.name}`} type="number" min="0.01" max="10000" step="any"
-            value={quantity} onChange={event => setQuantity(event.target.value)} disabled={status !== 'idle'}
+            value={quantity} onChange={event => setQuantity(event.target.value)} disabled={status !== 'idle' || Boolean(submissionId.current)}
             className="input-premium block w-28 mt-1 px-3 py-2" />
         </label>
         <label className="text-sm text-thrivv-text-secondary">
           Unit
-          <select aria-label={`Unit for ${food.name}`} value={unit} disabled={status !== 'idle'}
+          <select aria-label={`Unit for ${food.name}`} value={unit} disabled={status !== 'idle' || Boolean(submissionId.current)}
             onChange={event => { setUnit(event.target.value as typeof unit); setQuantity(event.target.value === 'g' ? '100' : '1'); }}
             className="input-premium block max-w-full mt-1 px-3 py-2">
             {food.basis === 'serving' ? <option value="serving">Servings</option> : <option value="g">Grams</option>}

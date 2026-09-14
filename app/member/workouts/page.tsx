@@ -1,182 +1,44 @@
 'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, Target, TrendingUp, LogOut, Dumbbell, Plus, Sparkles } from 'lucide-react';
+import { ArrowUpRight, CheckCircle2, Clock3, Dumbbell, Plus } from 'lucide-react';
 import { WorkoutPlan } from '@/types';
 import PageHeader from '@/components/MemberPageHeader';
-
+import MemberNextAction from '@/components/MemberNextAction';
+import { useClientSession } from '@/lib/client-session';
+import type { VerificationStatus } from '@/lib/member-journey';
 export default function MemberWorkoutsPage() {
-  const router = useRouter();
-  const [workoutPlans, setWorkoutPlans] = useState<WorkoutPlan[]>([]);
-  const [memberId, setMemberId] = useState<string | null>(null);
+  const { user } = useClientSession();
+  const [plans, setPlans] = useState<WorkoutPlan[]>([]);
+  const [data, setData] = useState<VerificationStatus | null>(null);
+  const [tab, setTab] = useState<'activity' | 'plans'>('activity');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const id = localStorage.getItem('memberId');
-    if (!id) {
-      router.push('/member/login');
-      return;
-    }
-    setMemberId(id);
-    fetchWorkoutPlans(id);
-  }, [router]);
-
-  const fetchWorkoutPlans = async (memberId: string) => {
-    try {
-      const response = await fetch(`/api/workout-plans?memberId=${memberId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setWorkoutPlans(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch workout plans:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('memberId');
-    localStorage.removeItem('memberName');
-    router.push('/member/login');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
-            <Dumbbell className="w-5 h-5 text-thrivv-gold-500" />
-          </div>
-          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
-            Loading workouts
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  const activePlans = workoutPlans.filter(p => p.status === 'active');
-  const completedPlans = workoutPlans.filter(p => p.status === 'completed');
-
-  return (
-    <div className="member-future space-y-10" data-section="workouts">
-      <PageHeader
-        section="workouts"
-        eyebrow="Training"
-        title="Built for your next best."
-        subtitle="Personalised plans built around your goals, equipment, and recovery."
-        action={
-          <Link
-            href="/workouts/new"
-            className="flex items-center btn-primary px-6 py-3"
-          >
-            <Sparkles className="w-5 h-5 mr-2" />
-            Generate New Plan
-          </Link>
-        }
-      />
-
-      <main className="space-y-8">
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="premium-card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-thrivv-text-secondary text-sm">Total Plans</p>
-                <p className="mt-2 text-3xl font-semibold text-thrivv-text-primary">{workoutPlans.length}</p>
-              </div>
-              <div className="icon-badge">
-                <Dumbbell className="w-6 h-6 text-thrivv-gold-500" />
-              </div>
-            </div>
-          </div>
-          <div className="premium-card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-thrivv-text-secondary text-sm">Active Plans</p>
-                <p className="mt-2 text-3xl font-semibold text-thrivv-text-primary">{activePlans.length}</p>
-              </div>
-              <div className="icon-badge">
-                <TrendingUp className="w-6 h-6 text-thrivv-neon-green" />
-              </div>
-            </div>
-          </div>
-          <div className="premium-card p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-thrivv-text-secondary text-sm">Completed</p>
-                <p className="mt-2 text-3xl font-semibold text-thrivv-text-primary">{completedPlans.length}</p>
-              </div>
-              <div className="icon-badge">
-                <Target className="w-6 h-6 text-thrivv-gold-500" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Workout Plans List */}
-        {workoutPlans.length === 0 ? (
-          <div className="premium-card p-12 text-center">
-            <div className="icon-badge w-20 h-20 mx-auto mb-6">
-              <Dumbbell className="w-10 h-10 text-thrivv-gold-500" />
-            </div>
-            <h3 className="text-2xl font-semibold text-thrivv-text-primary mb-2">No workout plans yet</h3>
-            <p className="text-thrivv-text-secondary mb-8">Generate your first AI-powered workout plan</p>
-            <Link
-              href="/workouts/new"
-              className="inline-flex items-center btn-primary px-6 py-3"
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Generate Workout Plan
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workoutPlans.map((plan) => (
-              <Link
-                key={plan.id}
-                href={`/workouts/${plan.id}`}
-                className="premium-card p-6 group cursor-pointer"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-thrivv-text-primary mb-1">{plan.name}</h3>
-                    <p className="text-sm text-thrivv-text-secondary line-clamp-2">{plan.description}</p>
-                  </div>
-                  <span className={`px-3 py-1 text-xs font-medium rounded-lg ${
-                    plan.status === 'active' ? 'success-badge' :
-                    plan.status === 'completed' ? 'bg-thrivv-gold-500/10 text-thrivv-gold-500 border border-thrivv-gold-500/20' :
-                    'bg-thrivv-bg-card text-thrivv-text-muted border border-thrivv-gold-500/10'
-                  }`}>
-                    {plan.status}
-                  </span>
-                </div>
-                <div className="space-y-3 mb-4 text-sm text-thrivv-text-secondary">
-                  <div className="flex items-center">
-                    <Target className="w-4 h-4 mr-2 text-thrivv-gold-500" />
-                    <span className="capitalize">{plan.goal.replace('_', ' ')}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <TrendingUp className="w-4 h-4 mr-2 text-thrivv-gold-500" />
-                    Difficulty: <span className="capitalize ml-1">{plan.difficulty}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-2 text-thrivv-gold-500" />
-                    {plan.duration} weeks • {plan.frequency}x/week
-                  </div>
-                </div>
-                <div className="flex items-center text-thrivv-gold-500 text-sm font-medium group-hover:translate-x-1 transition-transform">
-                  View Details →
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  );
+  const refresh = useCallback(async () => {
+    if (!user?.id) return;
+    setError('');
+    const results = await Promise.allSettled([
+      fetch('/api/member/workout-verification', { cache: 'no-store', signal: AbortSignal.timeout(12000) }),
+      fetch(`/api/workout-plans?memberId=${encodeURIComponent(user.id)}`, { cache: 'no-store', signal: AbortSignal.timeout(12000) }),
+    ].map(async response => { const r = await response; if (!r.ok) throw new Error('Unavailable'); return r.json(); }));
+    if (results[0].status === 'fulfilled') setData(results[0].value); else setData(null);
+    if (results[1].status === 'fulfilled') setPlans(results[1].value); else setPlans([]);
+    if (results.some(r => r.status === 'rejected')) setError('Some workout information could not be loaded. Please retry.');
+    setLoading(false);
+  }, [user?.id]);
+  useEffect(() => { void refresh(); const sync = () => void refresh(); window.addEventListener('thrivv:workouts-synced', sync); return () => window.removeEventListener('thrivv:workouts-synced', sync); }, [refresh]);
+  if (!user || loading) return <div role="status" className="flex min-h-[45vh] items-center justify-center gap-3 text-thrivv-text-secondary"><Dumbbell size={20} className="text-thrivv-gold-500" />Loading workouts…</div>;
+  return <div className="member-future space-y-6" data-section="workouts">
+    <PageHeader section="workouts" title="Every session counts." subtitle="Your activity, verification and training plans in one place." />
+    {error && <p role="alert" className="rounded-xl border border-amber-500/20 p-4 text-sm text-amber-200">{error} <button className="underline" onClick={() => void refresh()}>Retry</button></p>}
+    <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.025] p-1" aria-label="Workout views">{(['activity', 'plans'] as const).map(value => <button key={value} type="button" aria-pressed={tab === value} onClick={() => setTab(value)} className={`rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === value ? 'bg-thrivv-gold-500 text-black' : 'text-thrivv-text-secondary hover:text-white'}`}>{value === 'activity' ? 'Your activity' : 'Training plans'}</button>)}</div>
+    {tab === 'activity' ? <div className="space-y-6">
+      {data && <MemberNextAction data={data} />}
+      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"><h2 className="font-semibold text-white">Recent activity</h2><p className="mt-1 text-xs text-thrivv-text-muted">WHOOP workouts from the past seven days and today’s manual check-in</p>
+        {data?.manual?.eligible && data.manual.checkedIn && <div className="mt-4 flex items-center gap-4 border-b border-white/10 py-4"><Dumbbell size={20} className="text-thrivv-gold-400" /><div className="min-w-0 flex-1"><h3 className="text-sm font-medium text-white">Manual workout</h3><p className="mt-1 text-xs text-thrivv-text-muted">{data.date}</p></div><span className={`text-xs ${data.manual.verified ? 'text-emerald-400' : 'text-thrivv-gold-400'}`}>{data.manual.verified ? 'Gym verified' : 'Ready to verify'}</span></div>}
+        {data?.workouts.map(workout => <div key={workout.id} className="flex flex-wrap items-center gap-4 border-b border-white/10 py-5 last:border-b-0"><div className="rounded-xl border border-white/10 p-3"><Dumbbell size={18} className="text-thrivv-gold-400" /></div><div className="min-w-0 flex-1"><h3 className="text-sm font-medium text-white">{workout.sport_name || 'WHOOP workout'}</h3><p className="mt-1 text-xs text-thrivv-text-muted">{new Date(workout.start_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: data.timezone })}</p><p className="mt-2 flex items-center gap-1.5 text-xs text-thrivv-text-secondary">{workout.verified ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Clock3 size={13} />}{workout.status}</p></div>{typeof workout.workout_score === 'number' && <div className="text-right"><p className="text-lg font-semibold text-white">{workout.workout_score}</p><p className="text-[10px] text-thrivv-text-muted">Workout score</p></div>}</div>)}
+        {data && !data.workouts.length && !data.manual?.checkedIn && <div className="py-10 text-center"><Dumbbell size={28} className="mx-auto mb-3 text-thrivv-text-muted" /><p className="text-sm text-thrivv-text-secondary">Your next workout starts your activity feed.</p></div>}
+      </section>
+    </div> : <section className="space-y-5" aria-label="Training plans"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-thrivv-text-secondary">{plans.length ? `${plans.length} saved ${plans.length === 1 ? 'plan' : 'plans'}` : 'Build a plan around your goals.'}</p><Link href="/workouts/new" className="btn-primary inline-flex items-center gap-2 px-4 py-3 text-sm"><Plus size={16} />Create a plan</Link></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{plans.map(plan => <Link key={plan.id} href={`/workouts/${plan.id}`} className="group rounded-2xl border border-white/10 bg-white/[0.025] p-6 transition-colors hover:border-thrivv-gold-500/40"><div className="mb-5 flex items-center justify-between"><Dumbbell size={20} className="text-thrivv-gold-400" /><span className="rounded-full bg-white/5 px-2.5 py-1 text-xs capitalize text-thrivv-text-secondary">{plan.status}</span></div><h2 className="text-lg font-semibold text-white">{plan.name}</h2><p className="mt-2 line-clamp-2 text-sm text-thrivv-text-secondary">{plan.description}</p><p className="mt-5 text-xs text-thrivv-text-muted">{plan.duration} weeks · {plan.frequency} sessions/week</p><span className="mt-5 inline-flex items-center gap-2 text-sm text-thrivv-gold-400">View plan<ArrowUpRight size={15} /></span></Link>)}</div></section>}
+  </div>;
 }

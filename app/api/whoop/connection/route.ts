@@ -1,56 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
+import { legacyMemberAccess, unavailableLegacyAction } from '@/lib/legacy-api-access';
+import { supabase } from '@/lib/supabase';
 
+const headers = { 'Cache-Control': 'private, no-store', Vary: 'Cookie' };
+
+// Compatibility read for old clients. Identity comes from the server session;
+// return real OAuth status, never tokens or a manually created connection.
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const memberId = searchParams.get('memberId');
-
-  if (!memberId) {
-    return NextResponse.json(
-      { error: 'Member ID is required' },
-      { status: 400 }
-    );
-  }
-
-  const connection = store.getWhoopConnection(memberId);
-  return NextResponse.json(connection || { connected: false });
+  const access = await legacyMemberAccess(request.nextUrl.searchParams.get('memberId'));
+  if (!access.ok) return access.response;
+  const { data, error } = await supabase.from('whoop_connections')
+    .select('whoop_connected_at, whoop_access_token').eq('id', access.user.id).maybeSingle();
+  if (error) return NextResponse.json({ error: 'WHOOP connection is temporarily unavailable.' }, { status: 503, headers });
+  const connected = Boolean(data?.whoop_access_token && data?.whoop_connected_at);
+  return NextResponse.json({
+    memberId: access.user.id,
+    connected,
+    connectedAt: connected ? data?.whoop_connected_at : null,
+  }, { headers });
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    // In production, encrypt tokens before storing
-    const connection = store.addWhoopConnection({
-      ...body,
-      connected: true,
-      connectedAt: new Date().toISOString(),
-    });
-    return NextResponse.json(connection, { status: 201 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to connect Whoop' },
-      { status: 400 }
-    );
-  }
+  return unavailableLegacyAction(request, 'WHOOP_OAUTH_REQUIRED', 'Connect WHOOP from the Wearable page to securely authorize your account.');
 }
 
 export async function DELETE(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const memberId = searchParams.get('memberId');
-
-  if (!memberId) {
-    return NextResponse.json(
-      { error: 'Member ID is required' },
-      { status: 400 }
-    );
-  }
-
-  const deleted = store.deleteWhoopConnection(memberId);
-  if (!deleted) {
-    return NextResponse.json(
-      { error: 'Connection not found' },
-      { status: 404 }
-    );
-  }
-  return NextResponse.json({ success: true });
+  const access = await legacyMemberAccess(request.nextUrl.searchParams.get('memberId'));
+  if (!access.ok) return access.response;
+  return NextResponse.json({ error: 'Manage your WHOOP connection from the Wearable page.', code: 'WHOOP_OAUTH_REQUIRED' }, { status: 503, headers });
 }

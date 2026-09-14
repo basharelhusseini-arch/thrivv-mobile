@@ -1,18 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { store } from '@/lib/store';
+import { legacyAdminAccess, legacyJson } from '@/lib/legacy-api-access';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const membership = store.getMembership(params.id);
     if (!membership) {
-      return NextResponse.json({ error: 'Membership not found' }, { status: 404 });
+      return legacyJson({ error: 'Membership not found' }, { status: 404 });
     }
-    return NextResponse.json(membership);
+    return legacyJson(membership);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch membership' }, { status: 500 });
+    return legacyJson({ error: 'Failed to fetch membership' }, { status: 500 });
   }
 }
 
@@ -21,14 +24,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const body = await request.json();
     const membership = store.updateMembership(params.id, body);
     if (!membership) {
-      return NextResponse.json({ error: 'Membership not found' }, { status: 404 });
+      return legacyJson({ error: 'Membership not found' }, { status: 404 });
     }
-    return NextResponse.json(membership);
+    return legacyJson(membership);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update membership' }, { status: 500 });
+    return legacyJson({ error: 'Failed to update membership' }, { status: 500 });
   }
 }
 
@@ -37,12 +42,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const success = store.deleteMembership(params.id);
     if (!success) {
-      return NextResponse.json({ error: 'Membership not found' }, { status: 404 });
+      return legacyJson({ error: 'Membership not found' }, { status: 404 });
     }
-    return NextResponse.json({ message: 'Membership deleted successfully' });
+    return legacyJson({ message: 'Membership deleted successfully' });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete membership' }, { status: 500 });
+    return legacyJson({ error: 'Failed to delete membership' }, { status: 500 });
   }
 }

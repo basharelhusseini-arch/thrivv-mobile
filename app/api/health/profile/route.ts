@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+import { getCurrentUser } from '@/lib/auth';
 /**
  * API: User Health Profile
  * 
@@ -15,8 +17,8 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
-    // Get user ID from header (in production, extract from session)
-    const userId = request.headers.get('x-user-id');
+    // Identity always comes from the signed server session.
+    const userId = (await getCurrentUser())?.id;
     
     if (!userId) {
       return NextResponse.json(
@@ -66,7 +68,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
+    const userId = (await getCurrentUser())?.id;
     
     if (!userId) {
       return NextResponse.json(
@@ -100,8 +102,8 @@ export async function POST(request: NextRequest) {
         goal,
         has_wearable: has_wearable || false,
         wearable_type: wearable_type || null,
-        wants_wearable_provided: wants_wearable_provided || null,
-        country: country || null,
+        ...(wants_wearable_provided !== undefined ? { wants_wearable_provided: wants_wearable_provided || null } : {}),
+        ...(country !== undefined ? { country: country || null } : {}),
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id',

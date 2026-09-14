@@ -1,13 +1,29 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type DisplayCode = { image: string; expires: number; refresh: number };
-export default function GymWorkoutQr({ gymId }: { gymId: string }) {
-  const [open, setOpen] = useState(false);
+export default function GymWorkoutQr({ gymId, displayMode = false }: { gymId: string; displayMode?: boolean }) {
+  const [open, setOpen] = useState(displayMode);
+  const displayRef = useRef<HTMLElement>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [displayMessage, setDisplayMessage] = useState('');
   const [code, setCode] = useState<DisplayCode | null>(null);
   const [error, setError] = useState('');
   const [seconds, setSeconds] = useState(0);
   const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    const change = () => setFullscreen(document.fullscreenElement === displayRef.current);
+    document.addEventListener('fullscreenchange', change);
+    return () => document.removeEventListener('fullscreenchange', change);
+  }, []);
+  async function toggleFullscreen() {
+    setDisplayMessage('');
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else if (displayRef.current?.requestFullscreen) await displayRef.current.requestFullscreen();
+      else setDisplayMessage('Fullscreen is unavailable on this device. The QR is ready to use below.');
+    } catch { setDisplayMessage('Unable to enter fullscreen. The QR is ready to use below.'); }
+  }
   useEffect(() => {
     setCode(null); setError('');
     if (!open) return;
@@ -52,21 +68,22 @@ export default function GymWorkoutQr({ gymId }: { gymId: string }) {
     document.addEventListener('visibilitychange', visibility);
     return () => { active = false; clearInterval(timer); controller?.abort(); document.removeEventListener('visibilitychange', visibility); };
   }, [open, gymId, retry]);
-  return <section className="glass-card p-6 sm:p-8 space-y-4" aria-labelledby="workout-qr-heading">
+  return <section ref={displayRef} className={`glass-card p-6 sm:p-8 space-y-4 ${fullscreen ? 'bg-[#080a0c] overflow-y-auto flex flex-col justify-center' : ''}`} aria-labelledby="workout-qr-heading">
     <div className="flex flex-wrap items-center justify-between gap-4">
-      <div><h2 id="workout-qr-heading" className="text-2xl font-semibold text-thrivv-text-primary">Workout QR</h2><p className="text-sm text-thrivv-text-secondary mt-2">Display this changing code on a screen at your gym.</p></div>
-      <button className="btn-primary px-5 py-3" onClick={() => setOpen(!open)}>{open ? 'Close QR display' : 'Open QR display'}</button>
+      <div><h2 id="workout-qr-heading" className="text-2xl font-semibold text-thrivv-text-primary">{displayMode ? 'Work out. Scan. Keep going.' : 'Workout QR'}</h2><p className="text-sm text-thrivv-text-secondary mt-2">{displayMode ? 'Open Scan in Thrivv after logging a workout or syncing WHOOP.' : 'Display this changing code on a screen at your gym.'}</p></div>
+      {displayMode ? <button className="btn-ghost px-5 py-3 text-sm" onClick={toggleFullscreen}>{fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}</button> : <button className="btn-primary px-5 py-3" onClick={() => setOpen(!open)}>{open ? 'Close QR display' : 'Open QR display'}</button>}
     </div>
-    <p className="text-sm text-thrivv-gold-500">Members scan from Health after their WHOOP workout syncs. Verification and rewards require platform activation; displaying a code does not activate them.</p>
+    {!displayMode && <p className="text-sm text-thrivv-text-secondary">Members log a manual workout or sync WHOOP, then open Scan in Thrivv to verify it.</p>}
+    {displayMessage && <p role="status" className="text-sm text-thrivv-text-secondary">{displayMessage}</p>}
     {open && <div className="flex flex-col items-center gap-4 py-4">
       {code ? <>
         {/* A native image keeps the signed payload out of image-optimizer URLs and logs. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={code.image} width={512} height={512} className="w-full max-w-lg h-auto bg-white rounded-xl" alt="Rotating gym workout verification QR" />
+        <img src={code.image} width={512} height={512} className={`w-full max-w-lg h-auto bg-white rounded-2xl border-[12px] border-white ${fullscreen ? 'max-h-[65vh] object-contain' : ''}`} alt="Rotating gym workout verification QR" />
         <p className="text-sm text-thrivv-text-secondary">{seconds > 0 ? `Next code in ${seconds}s` : 'Refreshing code…'} · Expires after 60 seconds</p>
       </> : <p role="status" className="p-8 text-center">{error || 'Preparing your gym QR…'}</p>}
       {error && <><p role="alert" className="text-amber-300">{error}</p><button className="text-thrivv-gold-500 underline" onClick={() => setRetry(n => n + 1)}>Retry</button></>}
-      <p className="text-xs text-thrivv-text-secondary text-center">This is separate from your member joining code. Keep this screen online; do not print it.</p>
+      <p className="text-xs text-thrivv-text-secondary text-center">Workout verification only · This is separate from your member joining code. Keep this screen online; do not print it.</p>
     </div>}
   </section>;
 }

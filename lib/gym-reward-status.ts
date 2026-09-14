@@ -31,8 +31,8 @@ export async function gymRewardStatus(userId: string) {
     const membershipEligible = Boolean(context.gymId && context.membershipStart && date >= context.membershipStart);
     return { ...w, date, verified: Boolean(verification), scanUntil: new Date(Date.parse(w.end_at) + 2 * 3600000).toISOString(),
       canScan: Boolean(verificationEnabled && membershipEligible && withinWindow && !recorded),
-      status: verification ? (reward?.status === 'credited' ? 'Points credited for this day' : reward?.status === 'review_required' ? 'Points under review' : 'Gym verified — score or reward eligibility pending')
-        : recorded ? 'Workout or membership changed — verification needs review' : !membershipEligible ? 'Join a gym before your workout' : !verificationEnabled ? 'Verification not activated' : !withinWindow ? 'Scan window closed' : 'Scan gym QR to unlock points' };
+      status: verification ? (reward?.status === 'credited' ? 'Points credited for this day' : reward?.status === 'review_required' ? 'Points under review' : !rewardsEnabled ? 'Gym verified — WHOOP rewards not activated' : 'Gym verified — score or reward eligibility pending')
+        : recorded ? 'Workout or membership changed — verification needs review' : !membershipEligible ? 'Join a gym before your workout' : !verificationEnabled ? 'Verification not activated' : !withinWindow ? 'Scan window closed' : 'Ready for gym verification' };
   });
   const entitlement = rewards.data?.find(r => r.score_date === context.today);
   const manualEligible = !connection.data?.whoop_connected_at && !(workouts.data || []).some(w => localDate(new Date(w.start_at), context.timezone) === context.today);

@@ -1,6 +1,6 @@
 /** Shared, pure routing rules. Never accept arbitrary login destinations. */
 export function gymReturnPath(value: unknown): string {
-  return typeof value === 'string' && (/^\/gym$/.test(value) || /^\/gym\/[0-9a-f-]{36}\/dashboard$/i.test(value) || value === '/admin/gyms' || value === '/gym/support') ? value : '/gym';
+  return typeof value === 'string' && (/^\/gym$/.test(value) || /^\/gym\/[0-9a-f-]{36}\/(dashboard|members|activity|invite|qr|support)$/i.test(value) || value === '/admin/gyms' || value === '/gym/support') ? value : '/gym';
 }
 export function isGymLogin(hostname: string, portal: string | null): boolean {
   if (portal === 'member') return false;
@@ -16,6 +16,15 @@ export function portalLoginUrl(hostname: string, gym: boolean): string {
 }
 export function gymLoginPath(returnTo = '/gym'): string {
   return `/member/login?portal=gym&redirect=${encodeURIComponent(gymReturnPath(returnTo))}`;
+}
+
+/** Workspace changes use a full navigation after the current session migrates. */
+export function portalWorkspaceUrl(hostname: string, destination: string): string {
+  const path = destination === '/member/dashboard' ? destination : gymReturnPath(destination);
+  const appHost = process.env.NEXT_PUBLIC_APP_HOSTNAME || 'thrivv.dev';
+  const gymHost = process.env.NEXT_PUBLIC_GYM_HOSTNAME || 'gyms.thrivv.dev';
+  return [appHost, `www.${appHost}`, gymHost].includes(hostname.toLowerCase())
+    ? `https://${path === '/member/dashboard' ? appHost : gymHost}${path}` : path;
 }
 export function gymDestination(isAdmin: boolean, gyms: { id: string }[]): string | null {
   if (isAdmin) return '/admin/gyms';

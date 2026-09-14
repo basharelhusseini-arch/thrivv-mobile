@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -8,15 +10,20 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { searchParams } = new URL(request.url);
-    const memberId = searchParams.get('memberId');
+    const requestedMember = searchParams.get('memberId');
+    if (requestedMember && requestedMember !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const memberId = user.id;
     const workoutPlanId = searchParams.get('workoutPlanId');
     
     let query = supabase.from('workouts').select('*');
     
     if (memberId) {
       query = query.eq('member_id', memberId);
-    } else if (workoutPlanId) {
+    }
+    if (workoutPlanId) {
       query = query.eq('workout_plan_id', workoutPlanId);
     }
     
@@ -56,13 +63,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await request.json();
+    if (body.memberId && body.memberId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const { data: plan, error: planError } = await supabase.from('workout_plans').select('id').eq('id', body.workoutPlanId).eq('member_id', user.id).maybeSingle();
+    if (planError || !plan) return NextResponse.json({ error: 'Workout plan unavailable' }, { status: 404 });
     
     // Convert camelCase to snake_case for database
     const workoutData = {
       id: body.id || `workout-${Date.now()}`,
       workout_plan_id: body.workoutPlanId,
-      member_id: body.memberId,
+      member_id: user.id,
       name: body.name,
       date: body.date,
       exercises: body.exercises || [],

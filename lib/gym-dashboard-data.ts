@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { GymRecord } from './gym-auth';
+import { uniqueGymVisitors } from './gym-operations-data';
 import { type CheckinRow, type MemberRow, membershipCheckins, activeInWindow, dailyCheckinCounts, daysAgoYmd, displayName, pilotWeekNumber, streakLeaderboard, todayYmd, week4Retention } from './gym-analytics';
 
 /** Call only after checkGymAccess. Pagination avoids silently truncating gym counts. */
@@ -30,6 +31,7 @@ export async function gymDashboardData(gym: GymRecord, isAdmin: boolean, isOwner
   const { data: rewardConfig, error: configError } = await supabase.from('gym_reward_config').select('verification_enabled,rewards_enabled,manual_rewards_enabled').eq('singleton',true).single();
   const { data: metrics, error: metricsError } = configError ? { data: null, error: configError } : await supabase.rpc('thrivv_gym_reward_metrics', { p_gym: gym.id });
   const unavailable = Boolean(configError || metricsError);
+  const recentVisitors = await uniqueGymVisitors(gym.id, new Date(Date.now() - 7 * 86400000).toISOString());
   const pointsActive = rewardConfig?.rewards_enabled === true || rewardConfig?.manual_rewards_enabled === true;
   const scansActive = rewardConfig?.verification_enabled === true;
   return {
@@ -42,7 +44,10 @@ export async function gymDashboardData(gym: GymRecord, isAdmin: boolean, isOwner
     unknown_membership_dates: members.length - knownMemberships.length,
     earned_points: { status: unavailable ? 'unavailable' : pointsActive ? 'available' : 'not_activated', value: unavailable ? null : Number(metrics?.earned ?? 0), reason: 'Net gym-attributed daily earnings, including corrections. Spending does not reduce this total; opening balances are excluded.' },
     verified_scans: { status: unavailable ? 'unavailable' : scansActive ? 'available' : 'not_activated', total: unavailable ? null : Number(metrics?.scans ?? 0), last_seven_days: unavailable ? null : Number(metrics?.recent_scans ?? 0), reason: 'Accepted WHOOP workout verifications plus unique manual member/day verifications. Not conclusive proof of exercise.' },
-    week4_retention: week4Retention(knownMemberships, filtered),
+    verified_visitors: { value: recentVisitors, status: recentVisitors === null ? 'unavailable' : 'available' },
+    // Only completed week-four windows fully represented by the loaded history.
+    // Older cohorts must not become false negatives when their check-ins age out.
+    week4_retention: week4Retention(knownMemberships.filter(member => member.membership_start_date! >= daysAgoYmd(90) && member.membership_start_date! <= daysAgoYmd(27)), filtered),
     streak_leaderboard: streakLeaderboard(members, filtered, 10).map(row => ({ ...row, name: row.name || 'Member' })),
     daily_checkins_30d: dailyCheckinCounts(filtered, 30),
     recent_activity: [...filtered].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 20).map(row => ({

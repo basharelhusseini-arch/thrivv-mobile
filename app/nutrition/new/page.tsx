@@ -1,4 +1,5 @@
 'use client';
+import { useClientSession } from '@/lib/client-session';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,6 +8,7 @@ import { ArrowLeft, Sparkles, Target, User, Scale, Activity, Loader2 } from 'luc
 import { NutritionPlan } from '@/types';
 
 export default function GenerateNutritionPlanPage() {
+  const { user } = useClientSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [memberId, setMemberId] = useState<string | null>(null);
@@ -25,12 +27,12 @@ export default function GenerateNutritionPlanPage() {
 
   // Auto-populate memberId from localStorage
   useEffect(() => {
-    const id = localStorage.getItem('memberId');
+    const id = user?.id;
     if (id) {
       setMemberId(id);
       setFormData(prev => ({ ...prev, memberId: id }));
     }
-  }, []);
+  }, [user?.id]);
 
   const goals: { value: NutritionPlan['goal']; label: string; desc: string }[] = [
     { value: 'weight_loss', label: 'Weight Loss', desc: 'Calorie deficit for fat loss' },

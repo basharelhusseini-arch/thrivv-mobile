@@ -1,9 +1,12 @@
+import { checkAdminAccess } from '@/lib/gym-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generateAthleteWorkoutPlan } from '@/lib/athlete-workout-generator';
 import { exercisesDatabase } from '@/lib/exercises';
 
 export async function GET(request: NextRequest) {
+  const access=await checkAdminAccess();
+  if(!access.ok) return NextResponse.json({error:access.reason},{status:access.status});
   const logs: string[] = [];
   const errors: string[] = [];
   

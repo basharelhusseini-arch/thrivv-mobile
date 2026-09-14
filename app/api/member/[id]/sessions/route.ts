@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { legacyJson, legacyMemberAccess } from '@/lib/legacy-api-access';
 import { store } from '@/lib/store';
 
 export async function GET(
@@ -6,15 +7,19 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const memberId = params.id;
+    const access = await legacyMemberAccess(params.id);
+    if (!access.ok) return access.response;
+    const memberId = access.user.id;
     const sessions = store.getMemberSessions(memberId);
     
-    return NextResponse.json({
+    return legacyJson({
       memberId,
       completedSessions: sessions,
+      source: 'legacy',
+      verified: false,
     });
   } catch (error) {
-    return NextResponse.json(
+    return legacyJson(
       { error: 'Internal server error' },
       { status: 500 }
     );

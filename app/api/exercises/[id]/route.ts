@@ -1,18 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { store } from '@/lib/store';
+import { legacyAdminAccess, legacyJson, legacyMemberAccess } from '@/lib/legacy-api-access';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyMemberAccess();
+    if (!access.ok) return access.response;
     const exercise = store.getExercise(params.id);
     if (!exercise) {
-      return NextResponse.json({ error: 'Exercise not found' }, { status: 404 });
+      return legacyJson({ error: 'Exercise not found' }, { status: 404 });
     }
-    return NextResponse.json(exercise);
+    return legacyJson(exercise);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch exercise' }, { status: 500 });
+    return legacyJson({ error: 'Failed to fetch exercise' }, { status: 500 });
   }
 }
 
@@ -21,14 +24,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const body = await request.json();
     const exercise = store.updateExercise(params.id, body);
     if (!exercise) {
-      return NextResponse.json({ error: 'Exercise not found' }, { status: 404 });
+      return legacyJson({ error: 'Exercise not found' }, { status: 404 });
     }
-    return NextResponse.json(exercise);
+    return legacyJson(exercise);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update exercise' }, { status: 500 });
+    return legacyJson({ error: 'Failed to update exercise' }, { status: 500 });
   }
 }
 
@@ -37,12 +42,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const success = store.deleteExercise(params.id);
     if (!success) {
-      return NextResponse.json({ error: 'Exercise not found' }, { status: 404 });
+      return legacyJson({ error: 'Exercise not found' }, { status: 404 });
     }
-    return NextResponse.json({ message: 'Exercise deleted successfully' });
+    return legacyJson({ message: 'Exercise deleted successfully' });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete exercise' }, { status: 500 });
+    return legacyJson({ error: 'Failed to delete exercise' }, { status: 500 });
   }
 }

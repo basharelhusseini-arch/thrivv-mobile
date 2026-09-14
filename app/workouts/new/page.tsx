@@ -1,4 +1,5 @@
 'use client';
+import { useClientSession } from '@/lib/client-session';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,6 +10,7 @@ import { WorkoutPlan } from '@/types';
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function GenerateWorkoutPlanPage() {
+  const { user } = useClientSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,32 +31,32 @@ export default function GenerateWorkoutPlanPage() {
 
   // Auto-populate memberId from localStorage
   useEffect(() => {
-    const id = localStorage.getItem('memberId');
+    const id = user?.id;
     if (id) {
       setMemberId(id);
       setFormData(prev => ({ ...prev, memberId: id }));
     }
     
     // Try to restore form from localStorage (in case user navigated back)
-    const savedForm = localStorage.getItem('workout-form-draft');
+    const savedForm = id ? localStorage.getItem(`workout-form-draft:${id}`) : null;
     if (savedForm && !formInitialized.current) {
       try {
         const parsed = JSON.parse(savedForm);
-        setFormData(prev => ({ ...prev, ...parsed }));
+        setFormData(prev => ({ ...prev, ...parsed, memberId: id || '' }));
         setIsDirty(true);
         formInitialized.current = true;
       } catch (e) {
         console.error('Failed to restore form:', e);
       }
     }
-  }, []);
+  }, [user?.id]);
 
   // Save form to localStorage when it changes (autosave draft)
   useEffect(() => {
     if (isDirty && formInitialized.current) {
-      localStorage.setItem('workout-form-draft', JSON.stringify(formData));
+      if (user) localStorage.setItem(`workout-form-draft:${user.id}`, JSON.stringify(formData));
     }
-  }, [formData, isDirty]);
+  }, [formData, isDirty, user]);
 
   // Track form changes
   const updateFormData = (updates: Partial<typeof formData>) => {
@@ -109,7 +111,7 @@ export default function GenerateWorkoutPlanPage() {
         console.log('Plan generated successfully:', plan);
         
         // Clear the draft from localStorage
-        localStorage.removeItem('workout-form-draft');
+        if (user) localStorage.removeItem(`workout-form-draft:${user.id}`);
         setIsDirty(false);
         setSaveStatus('saved');
         
@@ -175,7 +177,7 @@ export default function GenerateWorkoutPlanPage() {
       }
     } else {
       // User chose to discard - clear draft and navigate
-      localStorage.removeItem('workout-form-draft');
+      if (user) localStorage.removeItem(`workout-form-draft:${user.id}`);
       setIsDirty(false);
       router.push('/workouts');
     }

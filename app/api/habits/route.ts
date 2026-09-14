@@ -1,28 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { store } from '@/lib/store';
+import { memberActor, memberBody, memberResult } from '@/lib/member-resource';
+import { habitFields } from '@/lib/habit-input';
+export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const memberId = searchParams.get('memberId');
-
-  if (memberId) {
-    const habits = store.getMemberHabits(memberId);
-    return NextResponse.json(habits);
-  }
-
-  const habits = store.getAllHabits();
-  return NextResponse.json(habits);
+export async function GET(req: NextRequest) {
+  return memberResult(async () => store.getMemberHabits((await memberActor(req)).id));
 }
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const habit = store.addHabit(body);
-    return NextResponse.json(habit, { status: 201 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to create habit' },
-      { status: 400 }
-    );
-  }
+export async function POST(req: NextRequest) {
+  return memberResult(async () => {
+    const user = await memberActor(req);
+    const fields = habitFields(await memberBody(req, user.id), true);
+    return store.addHabit({ ...fields, memberId: user.id, name: fields.name!, category: fields.category!, frequency: fields.frequency!, status: 'active' });
+  }, 201);
 }

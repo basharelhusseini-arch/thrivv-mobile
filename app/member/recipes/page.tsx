@@ -10,6 +10,7 @@ import { recipeFood, formatNutrient, type BrowserFood } from '@/lib/food-portion
 import PageHeader from '@/components/PageHeader';
 
 export default function MemberRecipesPage() {
+  const [feedback, setFeedback] = useState('');
   const [tab, setTab] = useState<'recipes' | 'ingredients'>('recipes');
   const [customError, setCustomError] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,13 +57,13 @@ export default function MemberRecipesPage() {
       
       if (response.ok) {
         setCustomRecipes(customRecipes.filter(r => r.id !== id));
-        alert('Recipe deleted successfully!');
+        setFeedback('Recipe deleted.');
       } else {
-        alert('Failed to delete recipe');
+        setFeedback('Unable to delete this recipe. Please retry.');
       }
     } catch (error) {
       console.error('Error deleting recipe:', error);
-      alert('Error deleting recipe');
+      setFeedback('Unable to delete this recipe. Please retry.');
     }
   };
 
@@ -156,6 +157,7 @@ export default function MemberRecipesPage() {
 
   return (
     <div className="space-y-8">
+      {feedback && <p role="status" className="rounded-xl border border-thrivv-gold-500/20 p-3 text-sm">{feedback}</p>}
       <PageHeader
         eyebrow="Recipes"
         title="Browse Recipes"
