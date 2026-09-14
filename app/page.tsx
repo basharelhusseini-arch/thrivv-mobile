@@ -138,16 +138,17 @@ function Navbar() {
         <div className="flex items-center gap-1.5 sm:gap-3">
           <Link
             href="/member/login"
-            className="px-3.5 sm:px-4 py-2 text-sm text-thrivv-text-secondary hover:text-thrivv-text-primary transition-colors duration-300"
+            className="px-2 sm:px-4 py-2 text-sm whitespace-nowrap text-thrivv-text-secondary hover:text-thrivv-text-primary transition-colors duration-300"
           >
             Sign In
           </Link>
           <Link
             href="/member/signup"
-            className="btn-primary px-4 sm:px-5 py-2 text-sm inline-flex items-center gap-1.5"
+            className="btn-primary px-3 sm:px-5 py-2 text-sm whitespace-nowrap inline-flex items-center gap-1.5"
           >
-            Sign Up Free
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span className="sm:hidden">Join free</span>
+            <span className="hidden sm:inline">Sign Up Free</span>
+            <ArrowRight className="hidden sm:block w-3.5 h-3.5" />
           </Link>
         </div>
       </div>
