@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Activity,
   Dumbbell,
@@ -367,6 +368,21 @@ export default function CheckinPage() {
         </div>
       )}
 
+      <section className="rounded-2xl border border-thrivv-gold-500/30 bg-thrivv-gold-500/[0.06] p-5 space-y-3" aria-label="Spendable workout rewards">
+        <h2 className="text-lg font-semibold text-white">Spendable workout rewards</h2>
+        <p className="text-sm text-gray-300">
+          {whoopConnected
+            ? 'Your account has WHOOP connected. The 40-point manual reward is available only to members without WHOOP. WHOOP reward conversion is not activated yet; saving a manual check-in does not bypass this rule.'
+            : 'Save today’s completed workout, then scan your gym’s rotating workout QR to earn 40 spendable points plus up to 10 habit points. You must belong to that gym. Sleep adds no reward points, and repeat scans never award another 40.'}
+        </p>
+        {!whoopConnected && <p className="text-sm text-thrivv-gold-400">
+          {formData.didWorkout ? `${(40 + preview.habit_score).toFixed(1)} potential reward points after saving and successful gym verification.` : 'Mark your workout as completed and save before scanning.'}
+        </p>}
+        <Link href="/member/scan-workout" className="inline-block rounded-xl bg-thrivv-gold-500 px-4 py-3 font-semibold text-black">
+          {whoopConnected ? 'View workout verification status' : 'Continue to gym QR verification'}
+        </Link>
+      </section>
+
       {/* Mode messaging */}
       <div
         className={`rounded-2xl border px-4 py-3 text-sm leading-relaxed backdrop-blur-md ${
@@ -410,10 +426,10 @@ export default function CheckinPage() {
               <div className="relative flex items-start justify-between gap-3 mb-6">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.25em] text-gray-500 mb-1">
-                    Live preview
+                    Health Score preview
                   </p>
                   <p className="text-xs text-gray-500">
-                    Same formula as the server — updates as you edit.
+                    Health Score is separate from spendable reward points.
                   </p>
                 </div>
                 <Sparkles className="w-5 h-5 text-thrivv-gold-500/80 shrink-0" />
@@ -536,7 +552,7 @@ export default function CheckinPage() {
                     <h2 className="text-sm font-semibold text-white tracking-wide">
                       Activity
                     </h2>
-                    <p className="text-[11px] text-gray-500">Manual tracking · no verified points</p>
+                    <p className="text-[11px] text-gray-500">Workout log · rewards require gym QR verification</p>
                   </div>
                 </div>
                 {whoopTodaySynced && (
@@ -570,7 +586,7 @@ export default function CheckinPage() {
                 </span>
               </label>
               <p className="text-xs text-gray-500 mt-3 ml-9 leading-relaxed">
-                Manual activity is saved for tracking. Verified training points use your best scored WHOOP workout, up to 80 points.
+                Manual activity does not add WHOOP Health Score training points. Members without WHOOP can earn 40 spendable reward points after saving a completed workout and passing gym QR verification.
               </p>
             </section>
 
