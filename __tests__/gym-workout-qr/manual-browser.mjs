@@ -14,6 +14,14 @@ const server=createServer(async(req,res)=>{
   if(fail)return json({},503);
   return json({gymId:'gym',date:'2026-09-13',timezone:'UTC',verificationEnabled:true,rewardsEnabled:true,workouts:[],creditedPoints:verified?40:0,manual:{eligible:true,enabled:true,checkedIn:checked,verified,canScan:checked,estimatedPoints:40}});
  }
+ if(req.url==='/api/checkin/today'){
+  if(req.method==='POST'){
+   let raw='';for await(const c of req)raw+=c;const body=JSON.parse(raw);
+   assert.equal(body.didWorkout,true);assert.equal(body.calories,600);assert.equal(body.sleepHours,7.5);assert.deepEqual(body.habits,{sauna:true});
+   checked=true;return json({success:true});
+  }
+  return json({checkin:{did_workout:false,calories:600,sleep_hours:7.5,habit_details:{sauna:true}}});
+ }
  if(req.url.startsWith('/api/'))return json({});
  res.end('<html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="/fixture.css"></head><body class="bg-black p-4"><div id="root"></div><script src="/fixture.js"></script></body></html>');
 });
@@ -30,9 +38,12 @@ try{
     const stream=canvas.captureStream(10);window.testStream=stream;return stream;
    };
   },png);
-  await page.goto(origin);await page.getByRole('link',{name:'Log today’s workout'}).waitFor();
+  await page.goto(origin);await page.getByRole('button',{name:'Log workout & open camera'}).click();
+  await page.getByRole('status').filter({hasText:'Points credited'}).waitFor();assert.equal(posts,1);
+  await page.getByText('Today’s manual workout · 40 points credited').waitFor();
+  assert.equal(await page.evaluate(()=>window.testStream.getTracks().every(t=>t.readyState==='ended')),true);
   assert.equal(await page.getByRole('button',{name:'Scan gym QR',exact:true}).count(),0);
-  checked=true;await page.reload();await page.getByRole('button',{name:'Scan gym QR',exact:true}).click();
+  verified=false;posts=0;await page.reload();await page.getByRole('button',{name:'Scan gym QR',exact:true}).click();
   await page.getByRole('status').filter({hasText:'Points credited'}).waitFor();assert.equal(posts,1);
   await page.getByText('Today’s manual workout · 40 points credited').waitFor();
   assert.equal(await page.evaluate(()=>window.testStream.getTracks().every(t=>t.readyState==='ended')),true);
