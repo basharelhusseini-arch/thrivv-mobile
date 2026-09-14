@@ -18,15 +18,15 @@ const config: Config = {
             darker: '#060708',
             card: '#13151A',
           },
-          // THRIVV Brand Gold - Exact match from logo
+          // UI accent gold; the wordmark uses its own champagne-gold finish.
           gold: {
-            DEFAULT: '#FFD000', // Exact logo gold - use everywhere
+            DEFAULT: '#FFD000',
             50: '#FFFBEB',
             100: '#FFF4CC',
             200: '#FFE999',
             300: '#FFDD66',
             400: '#FFD633',
-            500: '#FFD000', // Exact logo gold (same as DEFAULT)
+            500: '#FFD000',
             600: '#E6BB00',
             700: '#CCA600',
             800: '#B39100',
