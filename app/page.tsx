@@ -7,11 +7,12 @@ import {
   Check,
   ChevronRight,
   Dumbbell,
-  Flame,
   Gift,
   Heart,
+  QrCode,
   Sparkles,
   Trophy,
+  Users,
   UtensilsCrossed,
   Watch,
   Zap,
@@ -31,7 +32,9 @@ export default function LandingPage() {
         <HowItWorks />
         <HealthScoreSection />
         <RewardsSection />
+        <RoutineSection />
         <LeaderboardSection />
+        <GymSection />
         <FinalCTA />
       </main>
 
@@ -169,9 +172,9 @@ function Hero() {
 
         <Reveal delay={80}>
           <h1 className="mt-8 text-balance font-semibold tracking-tighter leading-[0.92] text-[3rem] sm:text-[5.5rem] lg:text-[7.5rem] xl:text-[8.25rem] max-w-[18ch]">
-            Train. Track.{' '}
+            Show up.{' '}
             <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-              Climb the leaderboard
+              Make it count
             </span>
             .
           </h1>
@@ -179,10 +182,10 @@ function Hero() {
 
         <Reveal delay={160}>
           <p className="mt-8 lg:mt-10 max-w-xl text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
-            Thrivv is the gamified fitness platform your gym gives you. Daily
-            check-ins, AI workouts, wearable sync, recipes, and rewards —
-            distilled into one Health Score that ranks you on your gym&apos;s
-            weekly leaderboard.
+            Your workouts, daily habits and gym rewards, together. Log your
+            training, verify it with your gym&apos;s QR, and track your progress.
+            Connect WHOOP for your Health Score and weekly gym ranking, or use
+            manual workout check-ins to earn spendable reward points.
           </p>
         </Reveal>
 
@@ -207,8 +210,7 @@ function Hero() {
 
         <Reveal delay={320}>
           <p className="mt-10 text-[11px] uppercase tracking-[0.25em] text-thrivv-text-muted">
-            Free for gym members · 30-second daily check-in · Wearable sync
-            rolling out
+            Free member account · WHOOP supported · Manual check-ins available
           </p>
         </Reveal>
       </div>
@@ -217,34 +219,34 @@ function Hero() {
 }
 
 /* ---------------------------------------------------------------- */
-/* How Thrivv Works — 4-step premium feature sequence               */
+/* How Thrivv Works — membership, activity, verification, progress  */
 /* ---------------------------------------------------------------- */
 
 function HowItWorks() {
   const steps = [
     {
       n: '01',
-      icon: Heart,
-      title: 'Daily check-in',
-      body: 'Log your workout, nutrition, and sleep in under 30 seconds a day. Quick, frictionless, repeatable.',
+      icon: Users,
+      title: 'Join your gym',
+      body: 'Create your account and join with your gym’s invitation link or joining code. Your gym connects you to its member community.',
     },
     {
       n: '02',
       icon: Watch,
-      title: 'Wearable sync',
-      body: 'Connect Whoop, Apple Health, or Garmin. Training, sleep, and recovery data flow in automatically.',
+      title: 'Train your way',
+      body: 'Connect WHOOP and sync your workouts, or log a completed workout manually if you don’t use WHOOP. Record your daily habits along the way.',
     },
     {
       n: '03',
-      icon: Activity,
-      title: 'Health Score',
-      body: 'Everything you do is distilled into one 0\u2013100 score. Updated daily. The number that runs your week.',
+      icon: QrCode,
+      title: 'Scan at your gym',
+      body: 'Scan the rotating workout QR to verify an eligible workout. WHOOP members sync a finished workout and scan within two hours of finishing.',
     },
     {
       n: '04',
-      icon: Trophy,
-      title: 'Climb the leaderboard',
-      body: 'Compete with the members at your gym every week. Top your gym, hold your streak, earn rewards.',
+      icon: Activity,
+      title: 'See your progress',
+      body: 'Follow your activity, Health Score and spendable reward balance in one place. Your reward history shows what was credited and redeemed.',
     },
   ];
 
@@ -260,14 +262,14 @@ function HowItWorks() {
               How it works
             </span>
             <h2 className="text-balance text-4xl sm:text-5xl lg:text-[4.5rem] xl:text-[5rem] font-semibold tracking-tighter leading-[0.96]">
-              Four habits. One score.{' '}
+              Your routine.{' '}
               <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-                Compounds daily.
+                Connected.
               </span>
             </h2>
             <p className="mt-6 text-base sm:text-lg lg:text-xl text-thrivv-text-secondary max-w-2xl leading-relaxed">
-              No spreadsheets. No second-guessing. Just a feedback loop that
-              gets sharper every day you show up.
+              From joining your gym to recording your next session, each step
+              has a clear place in Thrivv.
             </p>
           </div>
         </Reveal>
@@ -312,23 +314,22 @@ function HealthScoreSection() {
               The Health Score
             </span>
             <h2 className="text-balance text-4xl sm:text-5xl lg:text-[4.5rem] xl:text-[5rem] font-semibold tracking-tighter leading-[0.96]">
-              One number.{' '}
+              Training. Recovery.{' '}
               <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-                Total clarity.
+                Habits.
               </span>
             </h2>
             <p className="mt-6 text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
-              Training, nutrition, sleep, and habits — distilled into one
-              0&ndash;100 score that updates every day. The number that ranks
-              you on your gym&apos;s leaderboard, drives your streak, and tells
-              you where to lean in tomorrow.
+              Your daily Health Score combines your best WHOOP workout,
+              WHOOP Recovery and completed habits. Up to 80 for training,
+              20 for recovery and 10 for habits: a maximum of 110.
             </p>
             <ul className="mt-8 space-y-3 text-sm lg:text-base text-thrivv-text-secondary">
               {[
-                'A single 0\u2013100 metric instead of a dozen siloed apps',
-                'Updated daily from your check-ins and wearable data',
-                'Drives your weekly rank, streak, and rewards points',
-                'Built around the only thing that actually works: showing up',
+                'Your best WHOOP workout counts each day; extra workouts do not stack',
+                'A complete score needs WHOOP training and recovery data',
+                'Complete daily scores contribute to your weekly gym ranking',
+                'Health Score and spendable reward points are separate',
               ].map((line) => (
                 <li key={line} className="flex items-start gap-3">
                   <Check className="w-4 h-4 text-thrivv-neon-green mt-1 shrink-0" />
@@ -336,6 +337,12 @@ function HealthScoreSection() {
                 </li>
               ))}
             </ul>
+            <p className="mt-6 text-sm leading-relaxed text-thrivv-text-secondary">
+              Nutrition and manually logged sleep do not add to Health Score.
+              Members without WHOOP can track habits and earn the manual
+              workout rewards below; a manual check-in does not create WHOOP
+              training or recovery points.
+            </p>
           </Reveal>
         </div>
 
@@ -363,19 +370,19 @@ function HealthScoreVisual() {
           aria-hidden
         />
 
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
           <span className="text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted">
-            Health Score · Today
+            Health Score · WHOOP example
           </span>
           <span className="inline-flex items-center gap-1 text-[10px] text-thrivv-neon-green bg-thrivv-neon-green/10 border border-thrivv-neon-green/20 px-2 py-0.5 rounded-md">
             <Zap className="w-3 h-3" />
-            +4 vs avg
+            Daily score
           </span>
         </div>
 
         {/* Big circular visualisation — static SVG, no animation */}
         <div className="relative flex flex-col items-center py-4">
-          <svg width="220" height="220" viewBox="0 0 220 220" className="block">
+          <svg width="220" height="220" viewBox="0 0 220 220" className="block" aria-hidden="true">
             <defs>
               <linearGradient id="ring-gold" x1="0" x2="1" y1="0" y2="1">
                 <stop offset="0%" stopColor="#FFD000" />
@@ -399,40 +406,40 @@ function HealthScoreVisual() {
               fill="none"
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 92}`}
-              strokeDashoffset={`${2 * Math.PI * 92 * (1 - 0.86)}`}
+              strokeDashoffset={`${2 * Math.PI * 92 * (1 - 96 / 110)}`}
               transform="rotate(-90 110 110)"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-[5.5rem] font-semibold tracking-tighter leading-none text-thrivv-gold-500">
-              86
+              96
             </span>
             <span className="mt-1 text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted">
-              of 100
+              of 110
             </span>
           </div>
         </div>
 
         {/* Breakdown */}
-        <div className="mt-8 grid grid-cols-3 gap-3">
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <BreakdownCell
             icon={Dumbbell}
             label="Training"
-            value="27"
-            outOf="30"
+            value="68"
+            outOf="80"
           />
           <BreakdownCell
-            icon={UtensilsCrossed}
-            label="Nutrition"
-            value="35"
-            outOf="40"
+            icon={Heart}
+            label="Recovery"
+            value="18"
+            outOf="20"
             variant="green"
           />
           <BreakdownCell
             icon={Activity}
-            label="Sleep"
-            value="24"
-            outOf="30"
+            label="Habits"
+            value="10"
+            outOf="10"
           />
         </div>
       </div>
@@ -456,10 +463,10 @@ function BreakdownCell({
   const colour =
     variant === 'green' ? 'text-thrivv-neon-green' : 'text-thrivv-gold-500';
   return (
-    <div className="rounded-xl bg-thrivv-bg-card/60 border border-thrivv-gold-500/10 px-3 py-3">
-      <div className="flex items-center gap-1.5 mb-2">
+    <div className="flex items-center justify-between gap-3 sm:block rounded-xl bg-thrivv-bg-card/60 border border-thrivv-gold-500/10 px-3 py-3">
+      <div className="flex items-center gap-1.5 sm:mb-2">
         <Icon className={`w-3.5 h-3.5 ${colour}`} />
-        <span className="text-[10px] uppercase tracking-[0.2em] text-thrivv-text-muted">
+        <span className="text-[10px] uppercase tracking-[0.08em] text-thrivv-text-muted">
           {label}
         </span>
       </div>
@@ -496,17 +503,17 @@ function RewardsSection() {
               </span>
             </h2>
             <p className="mt-6 text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
-              Every check-in earns points. Every streak compounds them. Redeem
-              them for gear, supplements, gym credit, and partner perks. The
-              members who put the work in are the ones who get paid back for
-              it.
+              No WHOOP? Save today&apos;s completed workout, then scan your
+              gym&apos;s current workout QR. An eligible verified manual
+              workout earns 40 spendable reward points, plus up to 10 for
+              qualifying daily habits. Maximum: 50 points per day.
             </p>
             <ul className="mt-8 space-y-3 text-sm lg:text-base text-thrivv-text-secondary">
               {[
-                'Points for every check-in, multiplied by streak length',
-                'Real rewards: gear, supplements, gym credit, partner perks',
-                'No gimmicks \u2014 your gym sees who earned what',
-                'Consistency that pays you back, weekly',
+                'The 40-point workout award is available once per day',
+                'Repeated scans and check-ins never award another 40',
+                'Use your balance on available partner offers in Rewards',
+                'See point costs, redemption references and fulfillment status',
               ].map((line) => (
                 <li key={line} className="flex items-start gap-3">
                   <Check className="w-4 h-4 text-thrivv-neon-green mt-1 shrink-0" />
@@ -514,6 +521,12 @@ function RewardsSection() {
                 </li>
               ))}
             </ul>
+            <div className="mt-6 rounded-xl border border-thrivv-gold-500/15 bg-thrivv-gold-500/5 p-4 text-sm leading-relaxed text-thrivv-text-secondary">
+              WHOOP-connected members use WHOOP-verified workouts and cannot
+              claim manual workout rewards. Spendable points for WHOOP
+              workouts are not available yet. Nutrition, sleep and recovery
+              add no manual reward points.
+            </div>
           </Reveal>
         </div>
 
@@ -529,9 +542,9 @@ function RewardsSection() {
 
 function RewardsVisual() {
   const items = [
-    { icon: Trophy, title: 'Weekly winner perk', detail: 'Top your gym 7 days in a row' },
-    { icon: Gift, title: 'Gear voucher', detail: 'Redeemable at partner stores' },
-    { icon: Flame, title: 'Streak multiplier', detail: '×1.25 points after 14d' },
+    { icon: QrCode, title: '40 workout points', detail: 'Completed manual workout + valid gym scan' },
+    { icon: Heart, title: 'Up to 10 habit points', detail: 'Based on your qualifying habits that day' },
+    { icon: Gift, title: 'Spend on available offers', detail: 'Availability and partner terms apply' },
   ];
   return (
     <div className="relative">
@@ -545,34 +558,34 @@ function RewardsVisual() {
           aria-hidden
         />
 
-        <div className="flex items-center justify-between mb-7">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-7">
           <span className="text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted">
-            Your rewards · This month
+            Manual rewards · Daily limit
           </span>
           <span className="inline-flex items-center gap-1 text-[10px] text-thrivv-gold-500 bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 px-2 py-0.5 rounded-md">
             <Sparkles className="w-3 h-3" />
-            1,420 pts
+            Without WHOOP
           </span>
         </div>
 
         <div className="rounded-2xl bg-thrivv-bg-card/60 border border-thrivv-gold-500/15 p-5 mb-5">
           <div className="text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted mb-2">
-            Points balance
+            Maximum daily reward
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-5xl lg:text-6xl font-semibold tracking-tighter leading-none text-thrivv-gold-500 tabular-nums">
-              1,420
+              50
             </span>
             <span className="text-thrivv-text-muted text-sm">pts</span>
           </div>
           <div className="mt-4 h-1.5 rounded-full bg-thrivv-bg-card overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-thrivv-gold-500 to-thrivv-gold-300"
-              style={{ width: '71%' }}
+              style={{ width: '100%' }}
             />
           </div>
           <div className="mt-2 text-[11px] text-thrivv-text-muted">
-            580 pts to next reward
+            40 for your verified workout + up to 10 for habits
           </div>
         </div>
 
@@ -586,19 +599,47 @@ function RewardsVisual() {
                 <it.icon className="w-4 h-4 text-thrivv-gold-500" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-sm text-thrivv-text-primary font-medium truncate">
+                <div className="text-sm text-thrivv-text-primary font-medium">
                   {it.title}
                 </div>
-                <div className="text-[11px] text-thrivv-text-muted truncate">
+                <div className="mt-1 text-[11px] leading-relaxed text-thrivv-text-muted">
                   {it.detail}
                 </div>
               </div>
-              <ChevronRight className="w-4 h-4 text-thrivv-text-muted shrink-0" />
             </div>
           ))}
         </div>
       </div>
     </div>
+  );
+}
+
+function RoutineSection() {
+  const features = [
+    { icon: Dumbbell, title: 'Training plans', body: 'Build and save workout plans around your goals, schedule, available equipment and experience. Keep your plans alongside your workout activity.' },
+    { icon: UtensilsCrossed, title: 'Nutrition & recipes', body: 'Log meals and portions, track calories and macros, and explore recipes. Nutrition is for tracking: it contributes no Health Score or reward points.' },
+    { icon: Heart, title: 'Daily habits', body: 'Record the supported habits you complete in Daily Check-in. Follow your habit progress and see how qualifying habits contribute to your score or eligible manual reward.' },
+  ];
+  return (
+    <section aria-labelledby="routine-heading" className="relative px-6 lg:px-10 py-20 lg:py-28 border-t border-thrivv-gold-500/[0.07]">
+      <div className="max-w-7xl mx-auto">
+        <Reveal>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-thrivv-gold-500 mb-5">Beyond the gym floor</p>
+          <h2 id="routine-heading" className="text-balance text-4xl sm:text-5xl font-semibold tracking-tighter">A place for your whole routine.</h2>
+        </Reveal>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {features.map((feature, index) => (
+            <Reveal key={feature.title} delay={index * 80}>
+              <div className="glass-card h-full p-6 lg:p-8">
+                <feature.icon className="w-6 h-6 text-thrivv-gold-500 mb-6" />
+                <h3 className="text-xl font-semibold tracking-tight">{feature.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-thrivv-text-secondary">{feature.body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -625,17 +666,16 @@ function LeaderboardSection() {
               </span>
             </h2>
             <p className="mt-6 text-base sm:text-lg lg:text-xl text-thrivv-text-secondary leading-relaxed">
-              Compete with the members at your gym every week. The hardest part
-              of fitness isn&apos;t knowing what to do &mdash; it&apos;s
-              showing up tomorrow. Thrivv hooks consistency to a witness, a
-              score, and a reward on the other side.
+              Follow your place among members with complete Health Scores at
+              your gym. Your weekly total adds up completed daily scores from
+              Monday to Sunday, using your gym&apos;s timezone.
             </p>
             <ul className="mt-8 space-y-3 text-sm lg:text-base text-thrivv-text-secondary">
               {[
-                'Live weekly leaderboards across every member at your gym',
-                'Streaks that stack week after week',
-                'Climb the table with consistency, not crash diets',
-                'Healthy social pressure \u2014 the real motivation engine',
+                'Up to 110 per completed day and 770 across a full week',
+                'See your rank alongside your gym’s weekly totals',
+                'Incomplete scores stay pending until the required data is available',
+                'Your rank tracks progress; it does not issue reward points',
               ].map((line) => (
                 <li key={line} className="flex items-start gap-3">
                   <Check className="w-4 h-4 text-thrivv-neon-green mt-1 shrink-0" />
@@ -658,11 +698,11 @@ function LeaderboardSection() {
 
 function LeaderboardVisual() {
   const board = [
-    { rank: 1, name: 'You', score: 86, gold: true, streak: '11d' },
-    { rank: 2, name: 'Alex M.', score: 83, streak: '8d' },
-    { rank: 3, name: 'Priya R.', score: 81, streak: '14d' },
-    { rank: 4, name: 'Sami K.', score: 78, streak: '5d' },
-    { rank: 5, name: 'Jess T.', score: 76, streak: '9d' },
+    { rank: 1, name: 'You', score: 480, gold: true },
+    { rank: 2, name: 'Alex M.', score: 452 },
+    { rank: 3, name: 'Priya R.', score: 430 },
+    { rank: 4, name: 'Sami K.', score: 418 },
+    { rank: 5, name: 'Jess T.', score: 396 },
   ];
   return (
     <div className="relative">
@@ -676,14 +716,13 @@ function LeaderboardVisual() {
           aria-hidden
         />
 
-        <div className="flex items-center justify-between mb-7">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-7">
           <span className="text-[10px] uppercase tracking-[0.28em] text-thrivv-text-muted inline-flex items-center gap-1.5">
             <Trophy className="w-3 h-3 text-thrivv-gold-500" />
-            Iron Works · this week
+            Example gym · Weekly totals
           </span>
           <span className="text-[10px] text-thrivv-gold-500/80 inline-flex items-center gap-1">
-            <Flame className="w-3 h-3" />
-            11d streak
+            Illustration
           </span>
         </div>
 
@@ -716,10 +755,6 @@ function LeaderboardVisual() {
                 </span>
               </div>
               <div className="flex items-center gap-4 shrink-0">
-                <span className="text-[10px] text-thrivv-text-muted hidden sm:inline-flex items-center gap-1">
-                  <Flame className="w-3 h-3" />
-                  {r.streak}
-                </span>
                 <span className="inline-flex items-baseline gap-1 tabular-nums">
                   <span
                     className={`text-lg font-semibold ${
@@ -731,7 +766,7 @@ function LeaderboardVisual() {
                     {r.score}
                   </span>
                   <span className="text-[10px] text-thrivv-text-muted">
-                    /100
+                    /770
                   </span>
                 </span>
               </div>
@@ -743,6 +778,36 @@ function LeaderboardVisual() {
   );
 }
 
+function GymSection() {
+  const features = [
+    { icon: Users, title: 'Welcome your members', body: 'Share a joining code or invitation link. Search your member list and see recent verified workout activity.' },
+    { icon: QrCode, title: 'Display your workout QR', body: 'Open a dedicated, automatically rotating QR display for members to scan. Joining codes and workout verification codes have separate roles.' },
+    { icon: Activity, title: 'Understand gym activity', body: 'Review accepted workout verifications, unique verified visitors and credited points. Keep member activity and support in the same gym workspace.' },
+  ];
+  return (
+    <section id="gyms" aria-labelledby="gym-heading" className="relative px-6 lg:px-10 py-20 lg:py-28 scroll-mt-20 border-t border-thrivv-gold-500/[0.07]">
+      <div className="max-w-7xl mx-auto">
+        <Reveal>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-thrivv-gold-500 mb-5">For gym teams</p>
+          <h2 id="gym-heading" className="text-balance text-4xl sm:text-5xl font-semibold tracking-tighter">Your community. A clearer view.</h2>
+          <p className="mt-6 max-w-2xl text-base leading-relaxed text-thrivv-text-secondary">A dedicated portal for your authorized gym team to manage member invitations, display workout QR codes and follow participation.</p>
+        </Reveal>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {features.map((feature, index) => (
+            <Reveal key={feature.title} delay={index * 80}>
+              <div className="glass-card h-full p-6 lg:p-8">
+                <feature.icon className="w-6 h-6 text-thrivv-gold-500 mb-6" />
+                <h3 className="text-xl font-semibold tracking-tight">{feature.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-thrivv-text-secondary">{feature.body}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------------------------------------------------------- */
 /* Final CTA — bold and simple                                      */
 /* ---------------------------------------------------------------- */
@@ -750,23 +815,23 @@ function LeaderboardVisual() {
 function FinalCTA() {
   return (
     <section
-      id="gyms"
       className="relative px-6 lg:px-10 py-28 lg:py-44 scroll-mt-20 border-t border-thrivv-gold-500/[0.07]"
     >
       <div className="max-w-5xl mx-auto text-center">
         <Reveal>
           <h2 className="text-balance text-4xl sm:text-6xl lg:text-[5.5rem] xl:text-[6.5rem] font-semibold tracking-tighter leading-[0.94]">
-            Ready to{' '}
+            Your next session.{' '}
             <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-              top your gym
+              Your next step
             </span>
-            ?
+            .
           </h2>
         </Reveal>
         <Reveal delay={100}>
           <p className="mt-6 text-base lg:text-xl text-thrivv-text-secondary max-w-xl mx-auto leading-relaxed">
-            Sign up free, log your first check-in, and watch your Health Score
-            climb the leaderboard.
+            Create your free account, join your gym and choose the workout
+            path that fits you. Your activity, nutrition and rewards are
+            ready when you are.
           </p>
         </Reveal>
         <Reveal delay={180}>
@@ -782,7 +847,7 @@ function FinalCTA() {
               href="/gym"
               className="btn-ghost px-8 py-4 text-base inline-flex items-center justify-center gap-2"
             >
-              Bring Thrivv to my gym
+              Open gym portal
               <ChevronRight className="w-4 h-4" />
             </a>
           </div>
@@ -839,11 +904,10 @@ function Footer() {
             href="/gym"
             className="text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
           >
-            For gym owners &rarr;
+            Gym portal &rarr;
           </a>
         </div>
       </div>
     </footer>
   );
 }
-

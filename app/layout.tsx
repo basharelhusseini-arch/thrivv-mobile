@@ -11,12 +11,12 @@ export const dynamic = 'force-dynamic';
 const SITE_URL = "https://thrivv.dev";
 const SITE_NAME = "Thrivv Technologies";
 const SITE_DESCRIPTION =
-  "The fitness app your gym deploys. Daily check-ins, AI workouts, wearables, and rewards \u2014 one Health Score that ranks you on your gym\u2019s weekly leaderboard.";
+  "Gym workouts, daily habits, nutrition tracking and member rewards. Connect WHOOP for Health Scores, or verify manual workouts to earn spendable points.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} \u2014 Train. Track. Climb the leaderboard.`,
+    default: `${SITE_NAME} \u2014 Show up. Make it count.`,
     template: `%s \u00B7 ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -31,13 +31,13 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: `${SITE_NAME} \u2014 Train. Track. Climb the leaderboard.`,
+    title: `${SITE_NAME} \u2014 Show up. Make it count.`,
     description: SITE_DESCRIPTION,
     locale: "en_GB",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} \u2014 Train. Track. Climb the leaderboard.`,
+    title: `${SITE_NAME} \u2014 Show up. Make it count.`,
     description: SITE_DESCRIPTION,
   },
   robots: {
@@ -76,7 +76,7 @@ const structuredData = {
       alternateName: "Thrivv",
       url: SITE_URL,
       description:
-        "B2B fitness retention platform. Boutique gyms deploy Thrivv to drive member engagement, retention, and rewards.",
+        "Gym engagement platform for member activity, verified workouts, nutrition tracking and rewards.",
     },
   ],
 };
