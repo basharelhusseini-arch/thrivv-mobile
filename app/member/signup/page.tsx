@@ -73,12 +73,7 @@ export default function MemberSignupPage() {
           );
         } else {
           if (data.user) {
-            localStorage.setItem('memberId', data.user.id);
-            localStorage.setItem(
-              'memberName',
-              `${data.user.firstName} ${data.user.lastName}`
-            );
-            localStorage.setItem('memberEmail', data.user.email);
+
           }
           setSuccess('Account created successfully! Redirecting...');
           setTimeout(() => router.push('/member/dashboard'), 1500);

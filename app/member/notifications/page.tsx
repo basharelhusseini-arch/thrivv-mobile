@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Bell, Mail, Calendar, DollarSign, User, LogOut, CheckCircle } from 'lucide-react';
+import { Bell, Mail, Calendar, DollarSign, User, CheckCircle } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
+import { useClientSession } from '@/lib/client-session';
 
 interface Notification {
   id: string;
@@ -22,33 +22,34 @@ export default function MemberNotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const session = useClientSession();
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+
   useEffect(() => {
-    const memberId = localStorage.getItem('memberId');
-    if (!memberId) {
-      router.push('/member/login');
-      return;
-    }
+    if (session.status === 'unauthenticated') router.replace('/member/login');
+  }, [session.status, router]);
 
-    fetchNotifications(memberId);
-  }, [router]);
-
-  const fetchNotifications = async (memberId: string) => {
-    try {
-      const response = await fetch(`/api/member/notifications?memberId=${memberId}`);
-      const data = await response.json();
-      setNotifications(data);
-    } catch (error) {
-      console.error('Failed to fetch notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('memberId');
-    localStorage.removeItem('memberName');
-    router.push('/member/login');
-  };
+  useEffect(() => {
+    setNotifications([]);
+    if (!session.user?.id) return;
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    void (async () => {
+      try {
+        const response = await fetch('/api/member/notifications', { cache: 'no-store', signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data)) throw new Error(data.error || 'Your notifications could not be loaded.');
+        setNotifications(data);
+      } catch (cause) {
+        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Your notifications could not be loaded.');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    })();
+    return () => controller.abort();
+  }, [session.user?.id, retry]);
 
   const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
@@ -64,7 +65,11 @@ export default function MemberNotificationsPage() {
     }
   };
 
-  if (loading) {
+  if (session.status === 'error') {
+    return <div role="alert" className="premium-card p-6 space-y-3"><p>We couldn&apos;t check your session.</p><button onClick={() => session.refresh()} className="btn-ghost px-4 py-2">Try again</button></div>;
+  }
+  if (session.status === 'unauthenticated') return null;
+  if (loading || session.status === 'loading') {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -85,21 +90,15 @@ export default function MemberNotificationsPage() {
         eyebrow="Inbox"
         title="Notifications"
         subtitle="Class reminders, payment receipts, and updates from your gym."
-        action={
-          <button
-            onClick={handleLogout}
-            className="btn-ghost px-4 py-2 inline-flex items-center gap-2 text-sm hover:text-red-400 hover:border-red-500/30"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
-        }
+
       />
 
       <main className="max-w-4xl">
         <div className="premium-card overflow-hidden">
           <div className="p-6">
-            {notifications.length === 0 ? (
+            {error ? (
+              <div role="alert" className="space-y-3 py-6 text-sm text-thrivv-text-secondary"><p>{error}</p><button onClick={() => setRetry(value => value + 1)} className="btn-ghost px-4 py-2">Try again</button></div>
+            ) : notifications.length === 0 ? (
               <div className="text-center py-14">
                 <div className="w-14 h-14 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/20 mx-auto mb-4 flex items-center justify-center">
                   <Bell className="w-6 h-6 text-thrivv-gold-500" />

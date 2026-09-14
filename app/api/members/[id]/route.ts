@@ -1,18 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { store } from '@/lib/store';
+import type { Member } from '@/types';
+import { legacyAdminAccess, legacyJson } from '@/lib/legacy-api-access';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const member = store.getMember(params.id);
     if (!member) {
-      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
+      return legacyJson({ error: 'Member not found' }, { status: 404 });
     }
-    return NextResponse.json(member);
+    return legacyJson(safeMember(member));
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch member' }, { status: 500 });
+    return legacyJson({ error: 'Failed to fetch member' }, { status: 500 });
   }
 }
 
@@ -21,14 +25,16 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const body = await request.json();
     const member = store.updateMember(params.id, body);
     if (!member) {
-      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
+      return legacyJson({ error: 'Member not found' }, { status: 404 });
     }
-    return NextResponse.json(member);
+    return legacyJson(safeMember(member));
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update member' }, { status: 500 });
+    return legacyJson({ error: 'Failed to update member' }, { status: 500 });
   }
 }
 
@@ -37,12 +43,20 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyAdminAccess();
+    if (!access.ok) return access.response;
     const success = store.deleteMember(params.id);
     if (!success) {
-      return NextResponse.json({ error: 'Member not found' }, { status: 404 });
+      return legacyJson({ error: 'Member not found' }, { status: 404 });
     }
-    return NextResponse.json({ message: 'Member deleted successfully' });
+    return legacyJson({ message: 'Member deleted successfully' });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete member' }, { status: 500 });
+    return legacyJson({ error: 'Failed to delete member' }, { status: 500 });
   }
+}
+
+// Password material is never part of an API response, including admin views.
+function safeMember(member: Member) {
+  const { password: _password, ...profile } = member;
+  return profile;
 }

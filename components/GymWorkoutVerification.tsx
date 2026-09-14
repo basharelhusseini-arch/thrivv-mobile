@@ -2,12 +2,10 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ensureWhoopAutoSync } from '@/lib/whoop/auto-sync';
-export type VerificationStatus = {
-  gymId: string | null; date: string; timezone: string; verificationEnabled: boolean; rewardsEnabled: boolean;
-  score: number | null; estimatedPoints: number | null; creditedPoints: number; rewardStatus: string;
-  manual?: { eligible: boolean; enabled: boolean; checkedIn: boolean; verified: boolean; canScan: boolean; estimatedPoints: number };
-  workouts: { id: string; sport_name: string | null; start_at: string; date: string; canScan: boolean; verified: boolean; scanUntil: string; status: string }[];
-};
+import { CheckCircle2, ScanLine } from 'lucide-react';
+import MemberNextAction from '@/components/MemberNextAction';
+import type { VerificationStatus } from '@/lib/member-journey';
+export type { VerificationStatus } from '@/lib/member-journey';
 export default function GymWorkoutVerification({ scanner = false }: { scanner?: boolean }) {
   const [data, setData] = useState<VerificationStatus | null>(null);
   const [error, setError] = useState(''); const [message, setMessage] = useState('');
@@ -76,7 +74,9 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
         body: JSON.stringify({ workoutId, qr, requestId: requests.current[workoutId] ||= crypto.randomUUID() }), signal: AbortSignal.timeout(15000) });
       const result = await res.json(); if (!res.ok) throw new Error(result.error || 'Scan not accepted');
       if (mounted.current) setMessage(result.reward?.status === 'credited' ? 'Points credited' : result.reward?.status === 'not_activated' ? 'Gym verified — rewards not activated' : 'Gym verified — score or reward eligibility pending');
-      await refresh();
+      const next = await refresh();
+      if (mounted.current && next?.rewardStatus === 'credited') setMessage(`${next.creditedPoints} points earned. Your spendable balance is updated.`);
+      window.dispatchEvent(new Event('thrivv:workouts-synced'));
     } catch (e) { if (mounted.current) { setMessage(''); setError(e instanceof Error ? e.message : 'Verification unavailable. Scan again to retry safely.'); } }
     finally { if (mounted.current) setBusy(false); }
   }
@@ -107,35 +107,28 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
       if (mounted.current) { setMessage(''); setError(e instanceof Error ? e.message : 'Unable to prepare the camera.'); }
     } finally { if (mounted.current) setBusy(false); }
   }
-  return <section className="dark-card p-5 sm:p-7 space-y-4" aria-label="Gym workout verification">
-    <h2 className="text-xl font-semibold text-white">{scanner ? 'Scan your gym’s workout QR' : 'Verify your gym workout'}</h2>
-    <p className="text-sm text-gray-400">{data?.manual?.eligible
-      ? 'Without WHOOP: log today’s workout, then scan your gym’s changing QR for 40 spendable reward points plus up to 10 habit points. Maximum 50 per day; sleep does not add points.'
-      : 'Sync your WHOOP workout first, then scan the changing code displayed by your gym within two hours of finishing. WHOOP reward conversion is not activated yet.'}</p>
-    {error && <p role="alert" className="text-amber-300">{error} <button className="underline" onClick={() => void refresh()}>Refresh status</button></p>}
-    {message && <p role="status" className="text-thrivv-gold-400">{message}</p>}
-    {!data && !error && <p className="text-gray-400">Loading workout status…</p>}
-    {data && !data.gymId && <Link className="text-thrivv-gold-400 underline" href="/member/account/join-gym">Join a gym</Link>}
-    {data && !data.verificationEnabled && <p className="text-amber-300">Workout verification is not activated yet.</p>}
-    {data?.manual?.eligible && data.gymId && <div className="border-t border-gray-800 pt-4 space-y-3">
-      <p className="text-white">Today’s manual workout · {data.manual.verified ? `${data.creditedPoints} points credited` : data.manual.checkedIn ? 'Check-in saved' : 'Check-in required'}</p>
-      {!data.manual.checkedIn && data.manual.enabled && scanner
-        ? <button disabled={busy || running} onClick={() => void logWorkoutAndStart()} className="block rounded-xl bg-thrivv-gold-500 text-black px-4 py-3 font-semibold disabled:opacity-50">Log workout &amp; open camera</button>
-        : <Link className="text-thrivv-gold-400 underline" href="/member/checkin">{data.manual.checkedIn ? 'Update today’s habits' : 'Log today’s workout'}</Link>}
-      {data.manual.canScan && (scanner ? <button disabled={busy || running} onClick={() => void start('manual')} className="block rounded-xl bg-thrivv-gold-500 text-black px-4 py-3 font-semibold disabled:opacity-50">{data.manual.verified ? 'Scan again safely' : 'Scan gym QR'}</button>
-        : <Link className="block text-thrivv-gold-400 underline" href="/member/scan-workout">Scan gym QR to claim points</Link>)}
-      {data.manual.verified && <p className="text-sm text-gray-400">Additional scans never award another 40 points. Save habit updates in Check-In.</p>}
+  if (!scanner && data) return <MemberNextAction data={data} />;
+  return <section className="mx-auto max-w-3xl space-y-6" aria-label="Gym workout verification">
+    <div className="text-center"><span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-thrivv-gold-500/30 bg-thrivv-gold-500/10"><ScanLine size={26} className="text-thrivv-gold-400" /></span><h1 className="text-3xl font-semibold tracking-tight text-white">Verify your workout.</h1><p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-thrivv-text-secondary">Use the rotating workout QR displayed at your gym. Your gym joining code is separate.</p></div>
+    {error && <p role="alert" className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-200">{error} <button className="underline underline-offset-4" onClick={() => void refresh()}>Refresh status</button></p>}
+    {message && <p role="status" className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-300">{message}</p>}
+    {!data && !error && <p role="status" className="py-8 text-center text-thrivv-text-secondary">Loading workout status…</p>}
+    {data && !data.gymId && <MemberNextAction data={data} />}
+    {data && data.gymId && !data.verificationEnabled && <p className="rounded-xl border border-white/10 p-5 text-sm text-thrivv-text-secondary">Your gym’s workout verification is not available yet.</p>}
+    {data?.manual?.eligible && data.gymId && <div className="rounded-3xl border border-thrivv-gold-500/20 bg-gradient-to-br from-thrivv-gold-500/[0.06] to-[#0c0e0d] p-6 sm:p-8">
+      {data.manual.verified ? <div className="text-center"><CheckCircle2 className="mx-auto mb-4 text-emerald-400" size={36} /><h2 className="text-2xl font-semibold text-white">{data.rewardStatus === 'credited' ? `${data.creditedPoints} points earned` : 'Workout verified'}</h2><p className="mt-3 text-sm text-thrivv-text-secondary">{data.rewardStatus === 'credited' ? 'Today’s workout is complete and your points are in your spendable balance.' : 'Your gym visit is recorded. Check Rewards for the latest credit status.'}</p><Link href="/member/rewards" className="btn-primary mt-6 inline-flex px-6 py-3">View rewards</Link><Link href="/member/checkin" className="mt-4 block text-sm text-thrivv-gold-400">Update today’s habits</Link></div> : <>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-thrivv-gold-400">Today’s workout</p><h2 className="mt-3 text-2xl font-semibold text-white">{data.manual.checkedIn ? 'Ready for your gym QR.' : 'Log it. Then scan it.'}</h2><p className="mt-3 text-sm leading-relaxed text-thrivv-text-secondary">Earn 40 spendable points after verification, plus up to 10 habit points. Maximum 50 per day. Repeated scans do not add another workout reward.</p>
+        {!data.manual.checkedIn && data.manual.enabled && <button disabled={busy || running} onClick={() => void logWorkoutAndStart()} className="btn-primary mt-6 flex w-full items-center justify-center gap-2 px-5 py-3.5 disabled:opacity-50"><ScanLine size={18} />{busy ? 'Preparing your workout…' : 'Log workout & open camera'}</button>}
+        {data.manual.canScan && <button disabled={busy || running} onClick={() => void start('manual')} className="btn-primary mt-6 flex w-full items-center justify-center gap-2 px-5 py-3.5 disabled:opacity-50"><ScanLine size={18} />{running ? 'Camera is open' : 'Scan gym QR'}</button>}
+        {!data.manual.enabled && <p className="mt-4 text-sm text-thrivv-text-muted">Manual reward verification is not available right now.</p>}
+        {data.manual.checkedIn && data.manual.enabled && !data.manual.canScan && <p className="mt-4 text-sm text-thrivv-text-muted">Workout saved. <Link href="/member/account" className="text-thrivv-gold-400 underline">Check your membership</Link> to see why scanning is unavailable.</p>}
+      </>}
     </div>}
-    {data && !data.manual?.eligible && data.workouts.length === 0 && <p className="text-gray-400">No imported workouts in the last seven days. After your workout, sync WHOOP from Wearable.</p>}
-    {(scanner ? data?.workouts : data?.workouts.filter(w => w.canScan || w.date === data.date).slice(0,3))?.map(w => <div key={w.id} className="border-t border-gray-800 pt-4 flex flex-wrap items-center justify-between gap-3">
-      <div><p className="text-white">{w.sport_name || 'WHOOP workout'}</p><p className="text-xs text-gray-400">{w.date} · {w.status}</p></div>
-      {w.canScan && (scanner ? <button disabled={busy || running} onClick={() => void start(w.id)} className="rounded-xl bg-thrivv-gold-500 text-black px-4 py-3 font-semibold disabled:opacity-50">Scan gym QR</button>
-        : <Link className="rounded-xl bg-thrivv-gold-500 text-black px-4 py-3 font-semibold" href="/member/scan-workout">Scan gym QR to unlock points</Link>)}
-    </div>)}
-    {!scanner && Boolean(data?.workouts.length) && <Link href="/member/scan-workout" className="inline-block text-thrivv-gold-400 underline">View workout verification</Link>}
-    {scanner && <div className={running ? 'space-y-3' : 'hidden'}><p className="text-sm text-gray-400">Point your camera at the gym’s changing workout QR. Camera images stay on your device.</p>
-      <video ref={video} muted playsInline className="w-full max-w-lg rounded-xl bg-black" aria-label={`Camera for workout ${selected}`} />
-      <button className="text-thrivv-gold-400 underline" onClick={stop}>Stop camera</button></div>}
-    {scanner && <Link className="inline-block text-thrivv-gold-400 underline" href="/member/health">Back to Health</Link>}
+    {data && !data.manual?.eligible && <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"><h2 className="font-semibold text-white">Your WHOOP workouts</h2><p className="mt-2 text-sm text-thrivv-text-secondary">Sync your workout, then scan within two hours of finishing. WHOOP reward conversion is not activated yet.</p>
+      {!data.workouts.length && <div className="mt-5 text-sm text-thrivv-text-muted">No imported workouts in the last seven days. <Link href="/member/whoop" className="text-thrivv-gold-400 underline">Open WHOOP</Link> after your next workout.</div>}
+      {data.workouts.map(workout => <div key={workout.id} className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4"><div><h3 className="text-sm font-medium text-white">{workout.sport_name || 'WHOOP workout'}</h3><p className="mt-1 text-xs text-thrivv-text-muted">{workout.date} · {workout.status}</p></div>{workout.verified && <span className="flex items-center gap-1.5 text-xs text-emerald-400"><CheckCircle2 size={14} />Verified</span>}{workout.canScan && !workout.verified && <button disabled={busy || running} onClick={() => void start(workout.id)} className="btn-primary px-4 py-3 text-sm disabled:opacity-50">Scan gym QR</button>}</div>)}
+    </div>}
+    <div className={running ? 'rounded-2xl border border-thrivv-gold-500/30 bg-black p-3 space-y-3' : 'hidden'}><p className="px-2 text-sm text-thrivv-text-secondary">Point your camera at your gym’s current workout QR. Camera images stay on your device.</p><video ref={video} muted playsInline className="w-full rounded-xl bg-black" aria-label={`Camera for workout ${selected}`} /><button className="w-full rounded-xl border border-white/10 px-4 py-3 text-sm text-thrivv-gold-400" onClick={stop}>Stop camera</button></div>
+    <Link className="block py-2 text-center text-sm text-thrivv-text-secondary hover:text-white" href="/member/workouts">Back to workouts</Link>
   </section>;
 }

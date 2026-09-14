@@ -1,30 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
-
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const memberId = searchParams.get('memberId');
-    
-    let plans;
-    if (memberId) {
-      plans = store.getMemberWorkoutPlans(memberId);
-    } else {
-      plans = store.getAllWorkoutPlans();
-    }
-    
-    return NextResponse.json(plans);
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch workout plans' }, { status: 500 });
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const plan = store.addWorkoutPlan(body);
-    return NextResponse.json(plan, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to create workout plan' }, { status: 500 });
-  }
-}
+import { NextRequest } from 'next/server';
+import { supabase } from '@/lib/supabase';
+import { memberActor, memberBody, memberResult, MemberResourceError } from '@/lib/member-resource';
+import { workoutPlanView } from '@/lib/workout-records';
+export const dynamic='force-dynamic';
+export async function GET(req:NextRequest) { return memberResult(async()=>{
+ const user=await memberActor(req); const {data,error}=await supabase.from('workout_plans').select('*').eq('member_id',user.id).order('created_at',{ascending:false});
+ if(error) throw new MemberResourceError('Workout plans unavailable.',503);
+ return (data||[]).map(workoutPlanView);
+}); }
+export async function POST(req:NextRequest) { return memberResult(async()=>{
+ const user=await memberActor(req); const b=await memberBody(req,user.id);
+ if(typeof b.name!=='string'||!b.name.trim()) throw new MemberResourceError('Plan name required.',400);
+ const {data,error}=await supabase.from('workout_plans').insert({id:crypto.randomUUID(),member_id:user.id,name:b.name.slice(0,120),description:String(b.description||'').slice(0,2000),goal:b.goal,duration:b.duration,frequency:b.frequency,difficulty:b.difficulty,status:'active',created_by:'member',start_date:new Date().toISOString().slice(0,10)}).select().single();
+ if(error) throw new MemberResourceError('Unable to save plan.',503); return workoutPlanView(data);
+},201); }

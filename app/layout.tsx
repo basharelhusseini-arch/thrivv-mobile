@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import MainLayout from '@/components/MainLayout';
+import { getServerSessionIdentity } from '@/lib/server-session-identity';
+
+// The shared layout contains a request-bound identity. It must never be cached
+// as a static document and reused for another signed-in member or gym operator.
+export const dynamic = 'force-dynamic';
 
 const SITE_URL = "https://thrivv.dev";
 const SITE_NAME = "Thrivv Technologies";
@@ -76,11 +81,12 @@ const structuredData = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const serverIdentity = await getServerSessionIdentity();
   return (
     <html lang="en">
       <head>
@@ -91,7 +97,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <MainLayout>
+        <MainLayout serverIdentity={serverIdentity}>
           {children}
         </MainLayout>
       </body>

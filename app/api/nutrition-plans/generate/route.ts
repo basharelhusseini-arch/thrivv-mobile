@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { store } from '@/lib/store';
 import { generateWeeklyMealPlans } from '@/lib/meal-plan-generator';
 import { recipesData } from '@/lib/recipes';
 
 export async function POST(request: NextRequest) {
+  let user;
+  try { user = await requireAuth(); } catch { return NextResponse.json({ error: 'Please sign in' }, { status: 401 }); }
   try {
+    if (request.headers.get('sec-fetch-site') === 'cross-site' || (request.headers.get('origin') && request.headers.get('origin') !== request.nextUrl.origin)) return NextResponse.json({ error: 'Invalid request origin' }, { status: 403 });
     const body = await request.json();
+    if (body.memberId !== undefined && body.memberId !== user.id) return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     const {
-      memberId,
       goal,
       gender,
       age,
@@ -20,16 +24,25 @@ export async function POST(request: NextRequest) {
       preferences,
     } = body;
 
-    // Validate ONLY truly invalid inputs
+    const memberId = user.id;
+
+    // Validate input before generating the plan
     if (!memberId || !goal || !gender || !age || !height || !weight || !activityLevel || !duration) {
       return NextResponse.json(
         { 
           success: false,
           error: 'Missing required fields',
-          details: 'memberId, goal, gender, age, height, weight, activityLevel, and duration are required'
+          details: 'Goal, gender, age, height, weight, activity level and duration are required'
         },
         { status: 400 }
       );
+    }
+
+    if (![age, height, weight, duration].every(value => typeof value === 'number' && Number.isFinite(value))
+      || !Number.isInteger(duration) || !['weight_loss', 'muscle_gain', 'maintenance', 'performance', 'general_health'].includes(goal)
+      || !['male', 'female'].includes(gender) || !['sedentary', 'light', 'moderate', 'active', 'very_active'].includes(activityLevel)
+      || [dietaryRestrictions, preferences].some(value => value !== undefined && (!Array.isArray(value) || value.length > 30 || value.some(item => typeof item !== 'string' || item.length > 100)))) {
+      return NextResponse.json({ success: false, error: 'Invalid plan details' }, { status: 400 });
     }
 
     // Validate ranges
@@ -117,18 +130,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase insert error:', error);
-      // Even if DB save fails, we generated a valid plan - return it with a warning
-      warnings.push('Plan generated but not saved to database - try again or contact support');
-      
-      return NextResponse.json({
-        success: true,
-        plan: {
-          ...generatedPlan,
-          mealPlans,
-        },
-        warnings,
-        note: 'Plan generated successfully but could not be persisted. You can still use this plan.'
-      }, { status: 200 });
+      return NextResponse.json({ success: false, error: 'Your plan could not be saved. Please retry.' }, { status: 503 });
     }
 
     // Return the plan in the same format the UI expects

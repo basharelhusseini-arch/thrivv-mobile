@@ -35,3 +35,11 @@ test('manual scan requires a checkin and membership; read errors fail closed',as
  values.daily_checkins={did_workout:true};(scoreContext as jest.Mock).mockResolvedValue({gymId:null,today:'2026-09-13',timezone:'UTC',membershipStart:null});
  expect((await gymRewardStatus('member')).manual.canScan).toBe(false);
 });
+
+test('verified WHOOP workouts explain disabled reward conversion without inviting another scan', async () => {
+  (values.gym_reward_config as {rewards_enabled:boolean}).rewards_enabled = false;
+  values.gym_workout_verifications = [{ workout_id:'w', gym_id:'gym', start_at:w.start_at, end_at:w.end_at }];
+  const result = await gymRewardStatus('member');
+  expect(result.workouts[0]).toMatchObject({ verified:true, canScan:false, status:'Gym verified — WHOOP rewards not activated' });
+  expect(result.creditedPoints).toBe(0);
+});

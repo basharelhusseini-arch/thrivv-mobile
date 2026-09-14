@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { middleware } from '@/middleware';
-import { gymDestination, gymLoginPath, gymReturnPath, isGymLogin, portalLoginUrl } from '@/lib/gym-routing';
+import { gymDestination, gymLoginPath, gymReturnPath, isGymLogin, portalLoginUrl, portalWorkspaceUrl } from '@/lib/gym-routing';
 import { readFileSync } from 'fs';
 test('gym hostname entry goes to portal, and cross-host routes preserve the path', () => {
   for (const [url, expected] of [
@@ -47,4 +47,11 @@ test('both homepage gym CTAs now point at the portal', () => {
   const page = readFileSync('app/page.tsx', 'utf8');
   expect(page.match(/href="\/gym"/g)?.length).toBeGreaterThanOrEqual(2);
   expect(page).not.toMatch(/mailto:bashar@thrivv.dev/);
+});
+
+test('workspace switches keep explicit production hosts and local preview paths', () => {
+  expect(portalWorkspaceUrl('www.thrivv.dev', '/admin/gyms')).toBe('https://gyms.thrivv.dev/admin/gyms');
+  expect(portalWorkspaceUrl('gyms.thrivv.dev', '/member/dashboard')).toBe('https://thrivv.dev/member/dashboard');
+  expect(portalWorkspaceUrl('preview.vercel.app', '/admin/gyms')).toBe('/admin/gyms');
+  expect(portalWorkspaceUrl('localhost', 'https://evil.test')).toBe('/gym');
 });

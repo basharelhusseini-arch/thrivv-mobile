@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { store } from '@/lib/store';
+import { legacyJson, legacyMemberAccess } from '@/lib/legacy-api-access';
 import { Recipe } from '@/types';
 
 // Helper function to add backwards-compatible fields
@@ -20,16 +21,18 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const access = await legacyMemberAccess();
+    if (!access.ok) return access.response;
     const recipe = store.getRecipe(params.id);
     if (!recipe) {
-      return NextResponse.json(
+      return legacyJson(
         { error: 'Recipe not found' },
         { status: 404 }
       );
     }
-    return NextResponse.json(mapRecipeWithCompatFields(recipe));
+    return legacyJson(mapRecipeWithCompatFields(recipe));
   } catch (error) {
-    return NextResponse.json(
+    return legacyJson(
       { error: 'Failed to fetch recipe' },
       { status: 500 }
     );

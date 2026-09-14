@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+import { getCurrentUser } from '@/lib/auth';
 /**
  * API: Confidence Score Calculator
  * 
@@ -17,7 +19,7 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
+    const userId = (await getCurrentUser())?.id;
     
     if (!userId) {
       return NextResponse.json(

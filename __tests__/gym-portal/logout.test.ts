@@ -1,6 +1,6 @@
-jest.mock('next/headers', () => ({ cookies: jest.fn() }));
+jest.mock('next/headers', () => ({ cookies: jest.fn(), headers: jest.fn() }));
 jest.mock('@/lib/supabase', () => ({ supabase: { from: jest.fn() } }));
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { supabase } from '@/lib/supabase';
 import { createSession, getCurrentUser, requireAuth } from '@/lib/auth';
 import { POST } from '@/app/api/auth/logout/route';
@@ -14,6 +14,7 @@ beforeEach(async () => {
   jest.clearAllMocks(); revoked.clear(); unavailable = false;
   process.env.JWT_SECRET = 'synthetic-logout-test-secret'; process.env.COOKIE_DOMAIN = '.thrivv.dev';
   token = await createSession(user);
+  (headers as jest.Mock).mockReturnValue(new Headers());
   (cookies as jest.Mock).mockReturnValue({ get: () => ({ value: token }), getAll: () => [{ value: token }] });
   (supabase.from as jest.Mock).mockImplementation(() => ({
     insert: async ({ token_hash }: { token_hash: string }) => {

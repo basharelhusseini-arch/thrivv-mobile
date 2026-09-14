@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -11,12 +13,14 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = params;
     
     const { data: plan, error } = await supabase
       .from('workout_plans')
       .select('*')
-      .eq('id', id)
+      .eq('id', id).eq('member_id', user.id)
       .single();
     
     if (error || !plan) {
@@ -59,12 +63,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = params;
     
     const { error } = await supabase
       .from('workout_plans')
       .delete()
-      .eq('id', id);
+      .eq('id', id).eq('member_id', user.id);
     
     if (error) {
       console.error('Failed to delete workout plan:', error);
@@ -89,6 +95,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = params;
     const body = await request.json();
     
@@ -102,7 +110,7 @@ export async function PATCH(
     const { data: updatedPlan, error } = await supabase
       .from('workout_plans')
       .update(updates)
-      .eq('id', id)
+      .eq('id', id).eq('member_id', user.id)
       .select()
       .single();
     

@@ -1,16 +1,8 @@
-/**
- * Nutrition Log - Single Source of Truth for Daily Meal Tracking
- * Integrates Recipes with Diet Tracker and Health Score
- * 
- * Storage Strategy:
- * 1. Primary: Supabase table `daily_meals` (if configured)
- * 2. Fallback: localStorage (for development/offline)
- */
-
-import { recipesData, getRecipeById, type Recipe } from '@/lib/recipes';
+/** Account-scoped nutrition log. Server storage is authoritative; local history is retained as a backup. */
+import { getRecipeById, type Recipe } from '@/lib/recipes';
 import { scaleFood, portionLabel, type BrowserFood, type LoggedFoodPortion } from '@/lib/food-portions';
-
-// ===== TYPES =====
+import { getClientSession } from '@/lib/client-session';
+import { parseNutritionEntry, validNutritionDate, type NutritionEntry } from '@/lib/nutrition-log-validation';
 
 export interface LoggedMeal {
   foodPortion?: LoggedFoodPortion;
@@ -40,27 +32,6 @@ export interface NutritionTotals {
   mealCount: number;
 }
 
-// ===== STORAGE DETECTION =====
-
-function isSupabaseAvailable(): boolean {
-  // Check if Supabase is configured
-  return false; // TODO: Implement Supabase detection
-  // return typeof window !== 'undefined' && !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-}
-
-// ===== HELPER FUNCTIONS =====
-
-function getTodayDate(): string {
-  const today = new Date();
-  return today.toISOString().split('T')[0]; // YYYY-MM-DD
-}
-
-function getStorageKey(memberId: string, date: string): string {
-  return `nutrition_log_${memberId}_${date}`;
-}
-
-// ===== COMPUTE TOTALS FROM LOG =====
-
 export function computeTotals(log: DailyLog): NutritionTotals {
   let calories = 0;
   let protein_g = 0;
@@ -69,7 +40,7 @@ export function computeTotals(log: DailyLog): NutritionTotals {
 
   log.meals.forEach(meal => {
     // First, try to use stored nutrition data (for custom recipes)
-    if ((meal.foodPortion?.version === 1 || meal.calories) && meal.calories !== undefined && meal.protein_g !== undefined && meal.carbs_g !== undefined && meal.fat_g !== undefined) {
+    if (meal.calories !== undefined && meal.protein_g !== undefined && meal.carbs_g !== undefined && meal.fat_g !== undefined) {
       calories += meal.calories * meal.servings;
       protein_g += meal.protein_g * meal.servings;
       carbs_g += meal.carbs_g * meal.servings;
@@ -96,215 +67,101 @@ export function computeTotals(log: DailyLog): NutritionTotals {
   };
 }
 
-// ===== LOCALSTORAGE IMPLEMENTATION =====
 
-function getTodayLogFromLocalStorage(memberId: string): DailyLog {
-  const today = getTodayDate();
-  const key = getStorageKey(memberId, today);
-  
-  if (typeof window === 'undefined') {
-    return { date: today, meals: [] };
-  }
-
-  const stored = localStorage.getItem(key);
-  if (!stored) {
-    return { date: today, meals: [] };
-  }
-
-  try {
-    const parsed = JSON.parse(stored);
-    return parsed;
-  } catch (error) {
-    console.error('Failed to parse nutrition log:', error);
-    return { date: today, meals: [] };
-  }
+const today = () => new Date().toISOString().slice(0, 10);
+async function currentOwner(memberId: string) {
+  const session = await getClientSession();
+  if (!memberId || !session.user || session.user.id !== memberId) throw new Error('Please refresh and sign in to your account before changing food logs.');
 }
-
-function saveTodayLogToLocalStorage(memberId: string, log: DailyLog): void {
-  const key = getStorageKey(memberId, log.date);
-  localStorage.setItem(key, JSON.stringify(log));
-}
-
-// ===== SUPABASE IMPLEMENTATION (Placeholder) =====
-
-async function getTodayLogFromSupabase(memberId: string): Promise<DailyLog> {
-  // TODO: Implement Supabase fetch
-  // const { data, error } = await supabase
-  //   .from('daily_meals')
-  //   .select('*')
-  //   .eq('member_id', memberId)
-  //   .eq('date', getTodayDate());
-  
-  // For now, fallback to localStorage
-  return getTodayLogFromLocalStorage(memberId);
-}
-
-async function addMealToSupabase(memberId: string, recipeId: string, servings: number): Promise<DailyLog> {
-  // TODO: Implement Supabase insert
-  // const { data, error } = await supabase
-  //   .from('daily_meals')
-  //   .insert({
-  //     member_id: memberId,
-  //     date: getTodayDate(),
-  //     recipe_id: recipeId,
-  //     servings: servings,
-  //   });
-  
-  // For now, use localStorage
-  const log = getTodayLogFromLocalStorage(memberId);
-  log.meals.push({
-    recipeId,
-    servings,
-    addedAt: new Date().toISOString(),
+async function requestLog(memberId: string, method: string, body?: Record<string, unknown>): Promise<any> {
+  const response = await fetch(`/api/nutrition-log?date=${today()}&expectedUserId=${encodeURIComponent(memberId)}`, {
+    method, cache: 'no-store', credentials: 'same-origin',
+    ...(body && { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, expectedUserId: memberId }) }),
   });
-  saveTodayLogToLocalStorage(memberId, log);
-  return log;
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Your food log could not be saved. Please retry.');
+  return data;
 }
 
-async function removeMealFromSupabase(memberId: string, recipeId: string): Promise<DailyLog> {
-  // TODO: Implement Supabase delete
-  // For now, use localStorage
-  const log = getTodayLogFromLocalStorage(memberId);
-  log.meals = log.meals.filter(meal => meal.recipeId !== recipeId);
-  saveTodayLogToLocalStorage(memberId, log);
-  return log;
+/** Deterministic identities survive retries, other tabs, and repeated imports. */
+export async function legacyNutritionEntryId(date: string, meal: LoggedMeal, index: number): Promise<string> {
+  if (meal.recipeId.startsWith('food-entry:')) return `portion:${meal.recipeId.slice('food-entry:'.length)}`;
+  const bytes = new TextEncoder().encode(JSON.stringify([date, meal.recipeId, meal.addedAt, index]));
+  const hash = await crypto.subtle.digest('SHA-256', bytes);
+  return `legacy:${Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('')}`;
 }
 
-// ===== PUBLIC API =====
+/** Only exact keys belonging to the authenticated owner are considered. No local record is deleted or rewritten. */
+const importedSnapshots = new Map<string, string>();
+async function importLocalLogs(memberId: string) {
+  if (typeof window === 'undefined') return;
+  const prefix = `nutrition_log_${memberId}_`;
+  const entries: NutritionEntry[] = [];
+  const imported: Array<[string, string]> = [];
+  let storage: Storage;
+  try { storage = window.localStorage; } catch { return; } // Server logging also works when browser storage is disabled.
+  for (let index = 0; index < storage.length; index++) {
+    const key = storage.key(index);
+    if (!key?.startsWith(prefix)) continue;
+    const date = key.slice(prefix.length);
+    if (!validNutritionDate(date)) continue;
+    let log: DailyLog;
+    try {
+      const raw = storage.getItem(key) || 'null';
+      if (importedSnapshots.get(key) === raw) continue;
+      log = JSON.parse(raw);
+      imported.push([key, raw]);
+      if (!log || log.date !== date || !Array.isArray(log.meals)) throw new Error();
+      for (let mealIndex = 0; mealIndex < log.meals.length; mealIndex++) {
+        const meal = log.meals[mealIndex];
+        entries.push(parseNutritionEntry({ entryId: await legacyNutritionEntryId(date, meal, mealIndex), date, meal }));
+      }
+    } catch { throw new Error(`Your saved food log for ${date} could not be read. It has been kept unchanged. Contact support for help restoring it.`); }
+  }
+  for (let index = 0; index < entries.length; index += 100) await requestLog(memberId, 'POST', { entries: entries.slice(index, index + 100) });
+  for (const [key, raw] of imported) importedSnapshots.set(key, raw);
+}
 
 export async function getTodayLog(memberId: string): Promise<DailyLog> {
-  if (isSupabaseAvailable()) {
-    return await getTodayLogFromSupabase(memberId);
-  }
-  return getTodayLogFromLocalStorage(memberId);
+  await currentOwner(memberId);
+  await importLocalLogs(memberId);
+  return requestLog(memberId, 'GET');
 }
-
-/** Adds a browser portion atomically within this tab, with a stable ID for retries.
- * Uses the existing storage key; never merges into or rewrites legacy meal entries.
- */
-export async function addFoodPortionToToday(
-  memberId: string, food: BrowserFood, quantity: number,
-  unit: LoggedFoodPortion['unit'], submissionId: string
-): Promise<DailyLog> {
-  if (!memberId || !submissionId || typeof window === 'undefined') throw new Error('Sign in before adding food.');
+async function insertMeal(memberId: string, entryId: string, meal: LoggedMeal): Promise<DailyLog> {
+  await currentOwner(memberId);
+  await importLocalLogs(memberId);
+  await requestLog(memberId, 'POST', { entries: [parseNutritionEntry({ entryId, date: today(), meal })] });
+  return requestLog(memberId, 'GET');
+}
+export async function addFoodPortionToToday(memberId: string, food: BrowserFood, quantity: number, unit: LoggedFoodPortion['unit'], submissionId: string): Promise<DailyLog> {
   const nutrition = scaleFood(food, quantity, unit);
-  const date = getTodayDate();
-  const key = getStorageKey(memberId, date);
-  // Unlike the legacy reader, do not overwrite an unreadable existing log.
-  const stored = localStorage.getItem(key);
-  const log: DailyLog = stored ? JSON.parse(stored) : { date, meals: [] };
-  if (log.date !== date || !Array.isArray(log.meals)) throw new Error('Your food log could not be read. Nothing was changed.');
-  const recipeId = `food-entry:${submissionId}`;
-  if (log.meals.some(meal => meal.recipeId === recipeId)) return log;
-  log.meals.push({
-    recipeId, recipeName: food.name, servings: 1, addedAt: new Date().toISOString(), ...nutrition,
-    foodPortion: {
-      version: 1, sourceId: food.id, kind: food.kind, quantity, unit,
-      label: portionLabel(food, quantity, unit), sourceUrl: food.sourceUrl,
-    },
+  return insertMeal(memberId, `portion:${submissionId}`, {
+    recipeId: `food-entry:${submissionId}`, recipeName: food.name, servings: 1, addedAt: new Date().toISOString(), ...nutrition,
+    foodPortion: { version: 1, sourceId: food.id, kind: food.kind, quantity, unit, label: portionLabel(food, quantity, unit), sourceUrl: food.sourceUrl },
   });
-  saveTodayLogToLocalStorage(memberId, log);
-  return log;
 }
-
-export async function addMealToToday(
-  memberId: string,
-  recipeId: string,
-  servings: number = 1,
-  recipeData?: { name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }
+export async function addMealToToday(memberId: string, recipeId: string, servings = 1,
+  recipeData?: { name: string; calories: number; protein_g: number; carbs_g: number; fat_g: number }, submissionId = crypto.randomUUID()
 ): Promise<DailyLog> {
-  console.log('[nutrition-log] addMealToToday called:', { memberId, recipeId, servings, hasRecipeData: !!recipeData });
-  
-  // Try to get recipe data if not provided
-  let mealData = recipeData;
-  if (!mealData) {
-    const recipe = getRecipeById(recipeId);
-    if (recipe) {
-      console.log('[nutrition-log] Recipe found in recipesData:', recipe.name);
-      mealData = {
-        name: recipe.name,
-        calories: recipe.calories,
-        protein_g: recipe.protein_g,
-        carbs_g: recipe.carbs_g,
-        fat_g: recipe.fat_g,
-      };
-    } else {
-      console.log('[nutrition-log] Recipe not in recipesData (likely a custom recipe):', recipeId);
-    }
-  }
-
-  if (isSupabaseAvailable()) {
-    return await addMealToSupabase(memberId, recipeId, servings);
-  }
-
-  // localStorage implementation
-  console.log('[nutrition-log] Using localStorage');
-  const log = getTodayLogFromLocalStorage(memberId);
-  console.log('[nutrition-log] Current log:', log);
-  
-  // Check if already added today (prevent duplicates)
-  const existingIndex = log.meals.findIndex(m => m.recipeId === recipeId);
-  if (existingIndex >= 0) {
-    // Update servings instead of adding duplicate
-    console.log('[nutrition-log] Updating existing meal servings');
-    log.meals[existingIndex].servings += servings;
-  } else {
-    console.log('[nutrition-log] Adding new meal');
-    const newMeal: LoggedMeal = {
-      recipeId,
-      servings,
-      addedAt: new Date().toISOString(),
-    };
-    
-    // Add nutrition data if available
-    if (mealData) {
-      newMeal.recipeName = mealData.name;
-      newMeal.calories = mealData.calories;
-      newMeal.protein_g = mealData.protein_g;
-      newMeal.carbs_g = mealData.carbs_g;
-      newMeal.fat_g = mealData.fat_g;
-    }
-    
-    log.meals.push(newMeal);
-  }
-  
-  saveTodayLogToLocalStorage(memberId, log);
-  console.log('[nutrition-log] Meal added successfully, new log:', log);
-  return log;
+  const recipe = getRecipeById(recipeId);
+  // Built-in values describe the batch; saved values describe one serving.
+  const data = recipeData || (recipe && { name: recipe.name, calories: recipe.calories / recipe.servings, protein_g: recipe.protein_g / recipe.servings, carbs_g: recipe.carbs_g / recipe.servings, fat_g: recipe.fat_g / recipe.servings });
+  return insertMeal(memberId, `recipe:${submissionId}`, {
+    recipeId, servings, addedAt: new Date().toISOString(),
+    ...(data && { recipeName: data.name, calories: data.calories, protein_g: data.protein_g, carbs_g: data.carbs_g, fat_g: data.fat_g }),
+  });
 }
-
-export async function removeMealFromToday(
-  memberId: string,
-  recipeId: string
-): Promise<DailyLog> {
-  if (isSupabaseAvailable()) {
-    return await removeMealFromSupabase(memberId, recipeId);
-  }
-
-  // localStorage implementation
-  const log = getTodayLogFromLocalStorage(memberId);
-  log.meals = log.meals.filter(meal => meal.recipeId !== recipeId);
-  saveTodayLogToLocalStorage(memberId, log);
-  return log;
-}
-
-export async function updateMealServings(
-  memberId: string,
-  recipeId: string,
-  servings: number
-): Promise<DailyLog> {
+export async function removeMealFromToday(memberId: string, entryIdOrRecipeId: string): Promise<DailyLog> {
   const log = await getTodayLog(memberId);
-  const meal = log.meals.find(m => m.recipeId === recipeId);
-  
-  if (meal) {
-    meal.servings = servings;
-    saveTodayLogToLocalStorage(memberId, log);
-  }
-  
-  return log;
+  const meals = log.meals.filter(meal => meal.id === entryIdOrRecipeId || meal.recipeId === entryIdOrRecipeId);
+  let result = log;
+  for (const meal of meals) result = await requestLog(memberId, 'DELETE', { date: log.date, entryId: meal.id });
+  return result;
 }
-
-// ===== UTILITY FUNCTIONS =====
+export async function updateMealServings(memberId: string, entryId: string, servings: number): Promise<DailyLog> {
+  await currentOwner(memberId);
+  return requestLog(memberId, 'PATCH', { date: today(), entryId, servings });
+}
 
 export function getRecipeFromMeal(meal: LoggedMeal): Recipe | undefined {
   // First try to get from recipesData
@@ -335,21 +192,11 @@ export function getRecipeFromMeal(meal: LoggedMeal): Recipe | undefined {
   return undefined;
 }
 
-export function getTodayTotals(memberId: string): NutritionTotals {
-  const log = getTodayLogFromLocalStorage(memberId);
-  return computeTotals(log);
+
+export async function getTodayTotals(memberId: string): Promise<NutritionTotals> {
+  return computeTotals(await getTodayLog(memberId));
 }
-
 export function getMealMacros(meal: LoggedMeal): NutritionTotals | null {
-  const recipe = getRecipeById(meal.recipeId);
-  if (!recipe) return null;
-
-  const multiplier = meal.servings / recipe.servings;
-  return {
-    calories: Math.round(recipe.calories * multiplier),
-    protein_g: Math.round(recipe.protein_g * multiplier),
-    carbs_g: Math.round(recipe.carbs_g * multiplier),
-    fat_g: Math.round(recipe.fat_g * multiplier),
-    mealCount: 1,
-  };
+  if (meal.calories === undefined && !getRecipeById(meal.recipeId)) return null;
+  return computeTotals({ date: today(), meals: [meal] });
 }

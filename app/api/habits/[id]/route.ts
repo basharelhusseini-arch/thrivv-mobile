@@ -1,52 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { store } from '@/lib/store';
+import { memberActor, memberBody, memberResult, owned } from '@/lib/member-resource';
+import { habitFields } from '@/lib/habit-input';
+export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const habit = store.getHabit(params.id);
-  if (!habit) {
-    return NextResponse.json(
-      { error: 'Habit not found' },
-      { status: 404 }
-    );
-  }
-  return NextResponse.json(habit);
+type Context = { params: { id: string } };
+export async function GET(req: NextRequest, { params }: Context) {
+  return memberResult(async () => {
+    const user = await memberActor(req);
+    return owned(store.getHabit(params.id), user.id);
+  });
 }
-
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const body = await request.json();
-    const updatedHabit = store.updateHabit(params.id, body);
-    if (!updatedHabit) {
-      return NextResponse.json(
-        { error: 'Habit not found' },
-        { status: 404 }
-      );
-    }
-    return NextResponse.json(updatedHabit);
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to update habit' },
-      { status: 400 }
-    );
-  }
+export async function PUT(req: NextRequest, { params }: Context) {
+  return memberResult(async () => {
+    const user = await memberActor(req);
+    owned(store.getHabit(params.id), user.id);
+    return store.updateHabit(params.id, habitFields(await memberBody(req, user.id)));
+  });
 }
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const deleted = store.deleteHabit(params.id);
-  if (!deleted) {
-    return NextResponse.json(
-      { error: 'Habit not found' },
-      { status: 404 }
-    );
-  }
-  return NextResponse.json({ success: true });
+export async function DELETE(req: NextRequest, { params }: Context) {
+  return memberResult(async () => {
+    const user = await memberActor(req);
+    owned(store.getHabit(params.id), user.id);
+    store.deleteHabit(params.id);
+    return { success: true };
+  });
 }

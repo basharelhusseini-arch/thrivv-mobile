@@ -3,16 +3,39 @@ import { scaleFood, recipeFood, completeNutrition, formatNutrient } from '@/lib/
 import { recipesData } from '@/lib/recipes';
 import { addFoodPortionToToday, computeTotals, getTodayLog, removeMealFromToday } from '@/lib/nutrition-log';
 
+import { webcrypto } from 'node:crypto';
+import type { DailyLog } from '@/lib/nutrition-log';
+jest.mock('@/lib/client-session', () => ({ getClientSession: jest.fn() }));
+import { getClientSession } from '@/lib/client-session';
+const mockSession = getClientSession as jest.Mock;
+let server: Map<string, { entryId: string; date: string; meal: any; deleted?: boolean }>;
 const chicken = basicIngredients.find(food => food.fdcId === 171077)!;
 const egg = basicIngredients.find(food => food.fdcId === 171287)!;
 let store: Map<string, string>;
 beforeEach(() => {
-  store = new Map();
-  Object.defineProperty(global, 'window', { value: {}, configurable: true });
-  Object.defineProperty(global, 'localStorage', { value: {
+  store = new Map(); server = new Map();
+  mockSession.mockResolvedValue({ user: { id: 'test' } });
+  Object.defineProperty(global, 'crypto', { value: webcrypto, configurable: true });
+  const storage = {
+    get length() { return store.size; }, key: (index: number) => [...store.keys()][index] ?? null,
     getItem: (key: string) => store.get(key) ?? null,
     setItem: (key: string, value: string) => store.set(key, value),
-  }, configurable: true });
+  };
+  Object.defineProperty(global, 'window', { value: { localStorage: storage }, configurable: true });
+  Object.defineProperty(global, 'localStorage', { value: storage, configurable: true });
+  global.fetch = jest.fn(async (input, init) => {
+    const owner = new URL(String(input), 'http://localhost').searchParams.get('expectedUserId');
+    const body = init?.body ? JSON.parse(String(init.body)) : {};
+    if (init?.method === 'POST') {
+      for (const entry of body.entries) if (!server.has(`${owner}:${entry.entryId}`)) server.set(`${owner}:${entry.entryId}`, entry);
+      return Response.json({ success: true });
+    }
+    if (init?.method === 'DELETE') {
+      const row = server.get(`${owner}:${body.entryId}`); if (row) row.deleted = true;
+    }
+    const date = new Date().toISOString().slice(0, 10);
+    return Response.json({ date, meals: [...server.entries()].filter(([key, row]) => key.startsWith(`${owner}:`) && row.date === date && !row.deleted).map(([, row]) => ({ ...row.meal, id: row.entryId })) });
+  }) as typeof fetch;
 });
 
 test('verified USDA quantities scale grams and large eggs without premature rounding', () => {
@@ -66,18 +89,19 @@ test('legacy entries and totals remain unchanged when new ingredients are added'
   store.set(`nutrition_log_test_${date}`, JSON.stringify({ date, meals: [legacy] }));
   const before = computeTotals(await getTodayLog('test'));
   const log = await addFoodPortionToToday('test', chicken, 100, 'g', 'new');
-  expect(log.meals[0]).toEqual(legacy);
+  expect(log.meals[0]).toMatchObject(legacy);
+  expect(store.get(`nutrition_log_test_${date}`)).toBe(JSON.stringify({ date, meals: [legacy] }));
   expect(computeTotals(log).calories).toBe(before.calories + 120);
 });
 
-test('unreadable old history and storage failures do not report success or replace data', async () => {
+test('unreadable history is preserved; server saves work when browser writes are unavailable', async () => {
   const key = `nutrition_log_test_${new Date().toISOString().slice(0, 10)}`;
   store.set(key, 'broken history');
   await expect(addFoodPortionToToday('test', chicken, 100, 'g', 'new')).rejects.toThrow();
   expect(store.get(key)).toBe('broken history');
   store.clear();
   localStorage.setItem = () => { throw new Error('Storage full'); };
-  await expect(addFoodPortionToToday('test', chicken, 100, 'g', 'new')).rejects.toThrow('Storage full');
+  expect((await addFoodPortionToToday('test', chicken, 100, 'g', 'new')).meals).toHaveLength(1);
 });
 
 test('recipe portions retain their source link and exact nutrition alongside ingredients', async () => {
@@ -86,6 +110,8 @@ test('recipe portions retain their source link and exact nutrition alongside ing
   const log = await addFoodPortionToToday('test', food, 1.5, 'serving', 'recipe-request');
   expect(log.meals[0].foodPortion).toMatchObject({ sourceId: recipe.id, kind: 'recipe', label: '1.5 servings' });
   expect(log.meals[0].calories).toBe(recipe.calories / recipe.servings * 1.5);
+  await expect(getTodayLog('different-member')).rejects.toThrow('sign in');
+  mockSession.mockResolvedValue({ user: { id: 'different-member' } });
   expect((await getTodayLog('different-member')).meals).toHaveLength(0);
 });
 
@@ -101,4 +127,22 @@ test('ingredient search handles everyday names, preparation, case, and no matche
   expect(searchBasicIngredients('White rice — raw')).toHaveLength(1);
   expect(searchBasicIngredients('unavailable food')).toEqual([]);
   expect(searchBasicIngredients('')).toHaveLength(22);
+});
+
+test('re-import does not resurrect removed local entries, including after a fresh device read', async () => {
+  const date = new Date().toISOString().slice(0, 10);
+  const backup = JSON.stringify({ date, meals: [{ recipeId: 'food-entry:old', servings: 1, addedAt: new Date().toISOString(), calories: 100, protein_g: 5, carbs_g: 5, fat_g: 5 }] });
+  store.set(`nutrition_log_test_${date}`, backup);
+  const first = await getTodayLog('test');
+  await removeMealFromToday('test', first.meals[0].id!);
+  expect((await getTodayLog('test')).meals).toHaveLength(0);
+  expect(store.get(`nutrition_log_test_${date}`)).toBe(backup);
+});
+
+test('imports only authenticated owner history and reports failed persistence', async () => {
+  const date = new Date().toISOString().slice(0, 10);
+  store.set(`nutrition_log_other-user_${date}`, 'other users corrupted history');
+  expect((await getTodayLog('test')).meals).toHaveLength(0);
+  (global.fetch as jest.Mock).mockResolvedValueOnce(Response.json({ error: 'Service unavailable' }, { status: 503 }));
+  await expect(addFoodPortionToToday('test', chicken, 100, 'g', 'failed')).rejects.toThrow('Service unavailable');
 });

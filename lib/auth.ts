@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 import bcrypt from 'bcryptjs';
 import { getJWTSecret } from './env';
@@ -11,10 +11,38 @@ function sessionSecret(): Uint8Array {
 
 const COOKIE_NAME = 'thrivv-session';
 
-// When set (e.g. ".thrivv.dev"), the session cookie is shared across
-// subdomains so auth works on both thrivv.dev and gyms.thrivv.dev.
-// When unset, behavior is unchanged (host-only cookie).
-const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
+const SESSION_AGE = 60 * 60 * 24 * 7;
+const SHARED_SESSION_HOSTS = new Set(['thrivv.dev', 'www.thrivv.dev', 'gyms.thrivv.dev']);
+
+/** Never share a preview/development cookie or trust an arbitrary Host suffix. */
+export function sessionCookieDomain(hostname: string): string | undefined {
+  const host = hostname.toLowerCase().split(':')[0];
+  return SHARED_SESSION_HOSTS.has(host) ? '.thrivv.dev' : undefined;
+}
+
+function sessionTokens(rawCookies: string | null | undefined): string[] {
+  return [...new Set((rawCookies || '').split(';').flatMap(part => {
+    const [name, ...value] = part.trim().split('=');
+    return name === COOKIE_NAME && value.join('=') ? [value.join('=')] : [];
+  }))];
+}
+
+/** Explicit headers preserve same-name host-only and domain cookie writes. */
+export function writeSessionCookie(response: Response, token: string, hostname: string, expiresAt?: number): void {
+  const domain = sessionCookieDomain(hostname);
+  const secure = domain || process.env.NODE_ENV === 'production' ? '; Secure' : '';
+  const options = `Path=/; HttpOnly; SameSite=Lax${secure}`;
+  if (domain) response.headers.append('Set-Cookie', `${COOKIE_NAME}=; ${options}; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
+  const maxAge = expiresAt ? Math.max(0, Math.min(SESSION_AGE, expiresAt - Math.floor(Date.now() / 1000))) : SESSION_AGE;
+  response.headers.append('Set-Cookie', `${COOKIE_NAME}=${token}; ${options}; Max-Age=${maxAge}${domain ? `; Domain=${domain}` : ''}`);
+}
+
+export function clearSessionCookies(response: Response, hostname: string): void {
+  const domain = sessionCookieDomain(hostname);
+  const expired = `${COOKIE_NAME}=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax${domain || process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+  response.headers.append('Set-Cookie', expired);
+  if (domain) response.headers.append('Set-Cookie', `${expired}; Domain=${domain}`);
+}
 
 export interface SessionUser {
   id: string;
@@ -107,46 +135,39 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
 }
 
 // Set session cookie
-export async function setSessionCookie(user: SessionUser): Promise<void> {
+export async function setSessionCookie(user: SessionUser, response: Response, hostname: string): Promise<void> {
   const token = await createSession(user);
-  const cookieStore = await cookies();
-  
-  cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: '/',
-    ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
-  });
+  writeSessionCookie(response, token, hostname);
 }
 
-// Get current user from session cookie
-export async function getCurrentUser(): Promise<SessionUser | null> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(COOKIE_NAME)?.value;
-
-    if (!token) {
-      return null;
-    }
-
+export async function getAuthenticatedSession(): Promise<{ token: string; session: SessionPayload } | null> {
+  const cookieStore = await cookies();
+  // Next's parsed cookie store can discard duplicate cookie names. The raw
+  // header is necessary while existing host-only cookies migrate to shared scope.
+  const requestHeaders = await headers();
+  const raw = requestHeaders?.get('cookie');
+  const tokens = raw !== null && raw !== undefined ? sessionTokens(raw) :
+    [...new Set(cookieStore.getAll(COOKIE_NAME).map(cookie => cookie.value).filter(Boolean))];
+  let selected: { token: string; session: SessionPayload } | null = null;
+  for (const token of tokens) {
     const session = await verifySession(token);
-    if (!session || !session.user) {
-      return null;
-    }
-
+    if (!session) continue;
     // Fail closed if revocation storage is unavailable. Apply its migration first.
     const { data: revoked, error } = await supabase.from('revoked_app_sessions')
       .select('token_hash').eq('token_hash', createHash('sha256').update(token).digest('hex')).maybeSingle();
     if (error) throw new Error('Session verification unavailable');
+    // Never revive an older session when a logged-out cookie shadows it.
     if (revoked) return null;
-
-    return session.user;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
+    if (selected && selected.session.user.id !== session.user.id) return null;
+    if (!selected || (session.iat || 0) > (selected.session.iat || 0)) selected = { token, session };
   }
+  return selected;
+}
+
+// Unavailable verification is an error, not a signed-out session. This prevents
+// a temporary database outage from sending authenticated users back to login.
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  return (await getAuthenticatedSession())?.session.user || null;
 }
 
 // Revoke before the logout route emits cookie deletions. Do not mutate the
@@ -154,10 +175,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 export async function revokeCurrentSession(rawCookies?: string | null): Promise<void> {
   const cookieStore = await cookies();
   // Raw header preserves duplicate names across host-only/shared cookie scopes.
-  const tokens = rawCookies ? rawCookies.split(';').flatMap(part => {
-    const [name, ...value] = part.trim().split('=');
-    return name === COOKIE_NAME ? [value.join('=')] : [];
-  }) : cookieStore.getAll(COOKIE_NAME).map(cookie => cookie.value).filter(Boolean);
+  const tokens = rawCookies ? sessionTokens(rawCookies) : cookieStore.getAll(COOKIE_NAME).map(cookie => cookie.value).filter(Boolean);
   for (const token of new Set(tokens)) {
     if (!await verifySession(token)) continue;
     const { error } = await supabase.from('revoked_app_sessions').insert({

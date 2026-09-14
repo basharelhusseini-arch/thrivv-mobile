@@ -1,4 +1,5 @@
 'use client';
+import { useClientSession } from '@/lib/client-session';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -19,6 +20,7 @@ interface RecipeIngredient {
 }
 
 export default function RecipeBuilderPage() {
+  const { user } = useClientSession();
   const router = useRouter();
   const [memberId, setMemberId] = useState<string | null>(null);
   const [recipeName, setRecipeName] = useState('');
@@ -29,14 +31,12 @@ export default function RecipeBuilderPage() {
 
   // Check authentication on mount
   useEffect(() => {
-    const storedMemberId = localStorage.getItem('memberId');
+    const storedMemberId = user?.id;
     if (!storedMemberId) {
-      alert('Please log in to create custom recipes');
-      router.push('/member/login');
       return;
     }
     setMemberId(storedMemberId);
-  }, [router]);
+  }, [user?.id]);
 
   const categories = ['All', ...getAllCategories()];
 

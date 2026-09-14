@@ -40,12 +40,6 @@ export default function MemberLoginPage() {
       const data = await response.json();
 
       if (response.ok && data.user) {
-        localStorage.setItem('memberId', data.user.id);
-        localStorage.setItem(
-          'memberName',
-          `${data.user.firstName} ${data.user.lastName}`
-        );
-        localStorage.setItem('memberEmail', data.user.email);
         const params = new URLSearchParams(window.location.search);
         const gym = isGymLogin(window.location.hostname, params.get('portal'));
         window.location.replace(gym ? gymReturnPath(params.get('redirect')) : '/member/dashboard');

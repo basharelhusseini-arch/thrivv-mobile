@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { Member, Membership, Trainer, GymClass, Payment, EmailNotification, Exercise, WorkoutPlan, Workout, WorkoutExercise, WorkoutProgress, WorkoutTemplate, Recipe, NutritionPlan, DailyMealPlan, MacroTargets, ShoppingList, Meal, Habit, HabitEntry, WhoopConnection, WhoopData } from '@/types';
 import { calculateTargets, splitIntoMeals, type Sex, type ActivityLevel, type Goal } from './nutrition';
 import { exercisesDatabase } from './exercises';
@@ -1140,7 +1141,7 @@ class DataStore {
   addHabit(habit: Omit<Habit, 'id' | 'createdAt'>): Habit {
     const newHabit: Habit = {
       ...habit,
-      id: Date.now().toString(),
+      id: randomUUID(),
       createdAt: new Date().toISOString(),
     };
     this.habits.push(newHabit);
@@ -1157,9 +1158,10 @@ class DataStore {
   deleteHabit(id: string): boolean {
     const index = this.habits.findIndex(h => h.id === id);
     if (index === -1) return false;
+    const memberId = this.habits[index].memberId;
     this.habits.splice(index, 1);
-    // Also delete associated entries
-    this.habitEntries = this.habitEntries.filter(e => e.habitId !== id);
+    // Keep another member's legacy record if old timestamp IDs collided.
+    this.habitEntries = this.habitEntries.filter(e => e.habitId !== id || e.memberId !== memberId);
     return true;
   }
 
@@ -1179,14 +1181,14 @@ class DataStore {
   addHabitEntry(entry: Omit<HabitEntry, 'id'>): HabitEntry {
     const newEntry: HabitEntry = {
       ...entry,
-      id: Date.now().toString(),
+      id: randomUUID(),
     };
     this.habitEntries.push(newEntry);
     return newEntry;
   }
 
-  updateHabitEntry(id: string, updates: Partial<HabitEntry>): HabitEntry | null {
-    const index = this.habitEntries.findIndex(e => e.id === id);
+  updateHabitEntry(id: string, updates: Partial<HabitEntry>, scope?: { memberId: string; habitId: string }): HabitEntry | null {
+    const index = this.habitEntries.findIndex(e => e.id === id && (!scope || (e.memberId === scope.memberId && e.habitId === scope.habitId)));
     if (index === -1) return null;
     this.habitEntries[index] = { ...this.habitEntries[index], ...updates };
     return this.habitEntries[index];

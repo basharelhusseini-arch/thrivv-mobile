@@ -1,3 +1,4 @@
+import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { generateAthleteWorkoutPlan } from '@/lib/athlete-workout-generator';
@@ -10,8 +11,13 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await request.json();
-    const { memberId, goal, difficulty, duration, frequency, equipment, limitations } = body;
+    if (body.memberId && body.memberId !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const memberId = user.id;
+    const { goal, difficulty, duration, frequency, equipment, limitations } = body;
+    if (!Number.isInteger(duration) || duration < 1 || duration > 52 || !Number.isInteger(frequency) || frequency < 1 || frequency > 7) return NextResponse.json({ error: 'Choose 1–52 weeks and 1–7 sessions a week.' }, { status: 400 });
 
     console.log('Workout plan generation request:', { memberId, goal, difficulty, duration, frequency, equipment, limitations });
 

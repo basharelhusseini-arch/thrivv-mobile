@@ -89,16 +89,16 @@ export async function POST(request: NextRequest) {
     };
     
     await ensureMemberProfile(data.user);
-    await setSessionCookie(sessionUser);
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: sessionUser,
       session: {
         access_token: data.session.access_token,
         refresh_token: data.session.refresh_token,
       },
-    });
+    }, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } });
+    await setSessionCookie(sessionUser, response, request.nextUrl.hostname);
+    return response;
 
   } catch (error: any) {
     console.error('Login handler error:', {

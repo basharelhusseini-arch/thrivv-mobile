@@ -9,68 +9,38 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const user = await requireAuth();
-
-    const daily = await gymRewardStatus(user.id);
-    // Get user's reward points
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('reward_points')
-      .eq('id', user.id)
-      .single();
-
-    if (userError) {
-      console.error('User error:', userError);
-      return NextResponse.json(
-        { error: 'Failed to fetch reward points' },
-        { status: 500 }
-      );
-    }
-
-    const points = Number(userData.reward_points) || 0;
-    const tier = getRewardTier(points);
-
-    // Get recent reward history (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
-
-    const { data: historyData } = await supabase
-      .from('reward_history')
-      .select('date, health_score, points_earned')
-      .eq('user_id', user.id)
-      .gte('date', thirtyDaysAgoStr)
-      .order('date', { ascending: false })
-      .limit(30);
-
-    const { data: redemptions, error: redemptionError } = await supabase
-      .from('reward_redemptions').select('id,offer_id,status,created_at').eq('user_id', user.id);
-    if (redemptionError) throw new Error('Unable to read redemptions');
-    const { data: offers, error: offerError } = await supabase.from('reward_offers').select('id,points').eq('active', true);
-    if (offerError) throw new Error('Unable to read offers');
-    const { data: transactions, error: transactionError } = await supabase.from('reward_transactions').select('id,kind,amount,score_date,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(30);
-    if (transactionError) throw new Error('Unable to read reward transactions');
+    // These account-scoped reads are independent; avoid serial database round trips.
+    const [daily, balance, history, redemptions, offers, transactions] = await Promise.all([
+      gymRewardStatus(user.id),
+      supabase.from('users').select('reward_points').eq('id', user.id).single(),
+      supabase.from('reward_history').select('date, health_score, points_earned').eq('user_id', user.id)
+        .gte('date', thirtyDaysAgo.toISOString().split('T')[0]).order('date', { ascending: false }).limit(30),
+      supabase.from('reward_redemptions').select('id,offer_id,points,status,created_at,reward_offers(name)')
+        .eq('user_id', user.id).order('created_at', { ascending: false }).limit(100),
+      supabase.from('reward_offers').select('id,name,points').eq('active', true),
+      supabase.from('reward_transactions').select('id,kind,amount,score_date,created_at')
+        .eq('user_id', user.id).order('created_at', { ascending: false }).limit(30),
+    ]);
+    if (balance.error || !balance.data || redemptions.error || offers.error || transactions.error) {
+      throw new Error('Unable to read current reward account');
+    }
+    const points = Number(balance.data.reward_points) || 0;
+    const tier = getRewardTier(points);
     return NextResponse.json({
-      daily, transactions,
-      offers: daily.redemptionEnabled ? offers || [] : [],
-      redemptions: redemptions || [],
-      points,
-      tier: tier.tier,
-      nextTier: tier.nextTier,
-      pointsToNext: tier.pointsToNext,
-      tierColor: tier.color,
-      history: historyData || [],
+      daily, points,
+      offers: daily.redemptionEnabled ? offers.data || [] : [],
+      redemptions: redemptions.data || [],
+      transactions: transactions.data || [],
+      tier: tier.tier, nextTier: tier.nextTier, pointsToNext: tier.pointsToNext, tierColor: tier.color,
+      history: history.data || [],
     }, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } });
-  } catch (error: any) {
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     console.error('Reward points error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch reward points' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch reward points' }, { status: 500 });
   }
 }
