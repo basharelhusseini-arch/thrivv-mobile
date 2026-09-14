@@ -15,13 +15,13 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
   const video = useRef<HTMLVideoElement>(null); const stream = useRef<MediaStream | null>(null);
   const generation = useRef(0); const frame = useRef(0); const mounted = useRef(true); const loading = useRef(false);
   const requests = useRef<Record<string, string>>({});
-  const refresh = useCallback(async () => {
-    if (loading.current) return; loading.current = true;
+  const refresh = useCallback(async (): Promise<VerificationStatus | null> => {
+    if (loading.current) return null; loading.current = true;
     try {
       const res = await fetch('/api/member/workout-verification', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
       if (!res.ok) throw new Error('Workout verification status is unavailable. Please retry.');
-      const next = await res.json(); if (mounted.current) { setData(next); setError(''); }
-    } catch (e) { if (mounted.current) { setData(null); setError(e instanceof Error ? e.message : 'Status unavailable'); } }
+      const next = await res.json() as VerificationStatus; if (mounted.current) { setData(next); setError(''); } return next;
+    } catch (e) { if (mounted.current) { setData(null); setError(e instanceof Error ? e.message : 'Status unavailable'); } return null; }
     finally { loading.current = false; }
   }, []);
   const stop = useCallback(() => {
@@ -80,6 +80,33 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
     } catch (e) { if (mounted.current) { setMessage(''); setError(e instanceof Error ? e.message : 'Verification unavailable. Scan again to retry safely.'); } }
     finally { if (mounted.current) setBusy(false); }
   }
+  async function logWorkoutAndStart() {
+    setBusy(true); setError(''); setMessage('Saving today’s workout…');
+    try {
+      const currentResponse = await fetch('/api/checkin/today', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+      if (!currentResponse.ok) throw new Error('Unable to load today’s check-in. Please retry.');
+      const current = await currentResponse.json();
+      const checkin = current.checkin || {};
+      const saveResponse = await fetch('/api/checkin/today', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          didWorkout: true,
+          calories: Number(checkin.calories) || 0,
+          sleepHours: Number(checkin.sleep_hours) || 0,
+          habits: checkin.habit_details || {},
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+      const saved = await saveResponse.json();
+      if (!saveResponse.ok) throw new Error(saved.error || 'Unable to save today’s workout.');
+      const next = await refresh();
+      if (!next?.manual?.canScan) throw new Error('Workout saved, but QR scanning is not available for this membership. Refresh or check your gym membership.');
+      if (mounted.current) setBusy(false);
+      await start('manual');
+    } catch (e) {
+      if (mounted.current) { setMessage(''); setError(e instanceof Error ? e.message : 'Unable to prepare the camera.'); }
+    } finally { if (mounted.current) setBusy(false); }
+  }
   return <section className="dark-card p-5 sm:p-7 space-y-4" aria-label="Gym workout verification">
     <h2 className="text-xl font-semibold text-white">{scanner ? 'Scan your gym’s workout QR' : 'Verify your gym workout'}</h2>
     <p className="text-sm text-gray-400">{data?.manual?.eligible
@@ -92,7 +119,9 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
     {data && !data.verificationEnabled && <p className="text-amber-300">Workout verification is not activated yet.</p>}
     {data?.manual?.eligible && data.gymId && <div className="border-t border-gray-800 pt-4 space-y-3">
       <p className="text-white">Today’s manual workout · {data.manual.verified ? `${data.creditedPoints} points credited` : data.manual.checkedIn ? 'Check-in saved' : 'Check-in required'}</p>
-      <Link className="text-thrivv-gold-400 underline" href="/member/checkin">{data.manual.checkedIn ? 'Update today’s habits' : 'Log today’s workout'}</Link>
+      {!data.manual.checkedIn && data.manual.enabled && scanner
+        ? <button disabled={busy || running} onClick={() => void logWorkoutAndStart()} className="block rounded-xl bg-thrivv-gold-500 text-black px-4 py-3 font-semibold disabled:opacity-50">Log workout &amp; open camera</button>
+        : <Link className="text-thrivv-gold-400 underline" href="/member/checkin">{data.manual.checkedIn ? 'Update today’s habits' : 'Log today’s workout'}</Link>}
       {data.manual.canScan && (scanner ? <button disabled={busy || running} onClick={() => void start('manual')} className="block rounded-xl bg-thrivv-gold-500 text-black px-4 py-3 font-semibold disabled:opacity-50">{data.manual.verified ? 'Scan again safely' : 'Scan gym QR'}</button>
         : <Link className="block text-thrivv-gold-400 underline" href="/member/scan-workout">Scan gym QR to claim points</Link>)}
       {data.manual.verified && <p className="text-sm text-gray-400">Additional scans never award another 40 points. Save habit updates in Check-In.</p>}
