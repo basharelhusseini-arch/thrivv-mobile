@@ -1,15 +1,23 @@
 {
   "expo": {
-    "name": "thrivv-mobile",
-    "slug": "thrivv-mobile",
+    "name": "Thrivv",
+    "slug": "thrivv",
+    "owner": "thrivv-technologies",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "thrivvmobile",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0D0F14",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.thrivv.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Thrivv uses your camera to scan your gym's QR code and verify your workout.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -45,13 +53,17 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#0D0F14"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
+    "extra": {
+      "eas": {
+        "projectId": "785c8d66-2994-4969-8df7-e12aec4eb598"
+      }
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
