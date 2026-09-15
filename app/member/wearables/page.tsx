@@ -36,7 +36,7 @@ export default function WearablesPage() {
       <div className="relative mt-6 flex flex-wrap gap-2 text-xs text-thrivv-text-secondary">{['Workout history', 'Strain', 'Recovery', 'Sleep'].map(label => <span key={label} className="rounded-full border border-white/10 px-3 py-1.5">{label}</span>)}</div>
       <div className="relative mt-7 flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm text-thrivv-text-muted">{connection ? (connection.connected ? 'Manage your connection and sync activity.' : 'Connect once to bring in your WHOOP data.') : error ? 'Connection status unavailable.' : 'Checking connection…'}</p>
-        <Link href="/member/whoop" className="btn-primary inline-flex items-center gap-2 px-5 py-3">{connection?.connected ? 'Manage WHOOP' : 'Open WHOOP'}<ArrowUpRight size={16} /></Link>
+        <a href={connection?.connected ? '/member/whoop' : '/api/whoop/connect'} className="btn-primary inline-flex items-center gap-2 px-5 py-3">{connection?.connected ? 'Manage WHOOP' : 'Connect WHOOP'}<ArrowUpRight size={16} /></a>
       </div>
     </section>}
     <section className="flex items-start gap-3 rounded-2xl border border-white/10 p-5 text-sm text-thrivv-text-secondary"><Watch className="shrink-0 text-thrivv-text-muted" size={20} /><div><h2 className="font-medium text-thrivv-text-primary">Coming later</h2><p className="mt-1">Garmin and Apple Health. We’ll show connection options when they’re available.</p></div></section>

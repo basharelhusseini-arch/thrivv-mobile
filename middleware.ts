@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { isNativeApp } from '@/lib/mobile-app';
 
 /**
  * Hostname-based routing split.
@@ -54,6 +55,12 @@ export function middleware(req: NextRequest) {
   const host = rawHost.split(':')[0].toLowerCase();
   const url = req.nextUrl;
   const { pathname } = url;
+
+  if (pathname === '/' && host !== GYM_HOSTNAME && isNativeApp(req.headers.get('user-agent'))) {
+    const target = url.clone();
+    target.pathname = '/mobile';
+    return NextResponse.redirect(target);
+  }
 
   // Don't rewrite shared auth surface.
   if (isShared(pathname)) return NextResponse.next();

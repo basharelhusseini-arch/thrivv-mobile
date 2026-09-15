@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import MainLayout from '@/components/MainLayout';
+import { headers } from 'next/headers';
+import { isNativeApp } from '@/lib/mobile-app';
 import { getServerSessionIdentity } from '@/lib/server-session-identity';
 
 // The shared layout contains a request-bound identity. It must never be cached
@@ -88,7 +90,7 @@ export default async function RootLayout({
 }>) {
   const serverIdentity = await getServerSessionIdentity();
   return (
-    <html lang="en">
+    <html lang="en" data-native-app={isNativeApp(headers().get('user-agent')) ? 'true' : undefined}>
       <head>
         <script
           type="application/ld+json"

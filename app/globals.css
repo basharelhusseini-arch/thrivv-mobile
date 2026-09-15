@@ -44,7 +44,7 @@
   .premium-card:hover {
     @apply border-thrivv-gold-500/30;
     transform: scale(1.005);
-    box-shadow: 0 20px 60px -20px rgba(255, 208, 0, 0.18);
+    box-shadow: 0 20px 60px -20px rgba(216, 189, 125, 0.18);
   }
 
   /* Legacy alias used across older member pages — same surface as premium-card without the hover scale. */
@@ -56,7 +56,7 @@
 
   .dark-card:hover {
     @apply border-thrivv-gold-500/30;
-    box-shadow: 0 20px 60px -20px rgba(255, 208, 0, 0.14);
+    box-shadow: 0 20px 60px -20px rgba(216, 189, 125, 0.14);
   }
 
   /* Legacy alias for sticky header chrome. */
@@ -73,7 +73,7 @@
   .card-hover:hover {
     @apply border-thrivv-gold-500/30;
     transform: scale(1.005);
-    box-shadow: 0 20px 60px -20px rgba(255, 208, 0, 0.18);
+    box-shadow: 0 20px 60px -20px rgba(216, 189, 125, 0.18);
   }
 
   /* Primary button - solid THRIVV gold */
@@ -87,7 +87,7 @@
   .btn-primary:hover {
     @apply bg-thrivv-gold-400;
     transform: scale(1.015);
-    box-shadow: 0 12px 40px rgba(255, 208, 0, 0.35);
+    box-shadow: 0 12px 40px rgba(216, 189, 125, 0.35);
   }
 
   /* Ghost button */
@@ -105,7 +105,7 @@
 
   .input-premium:focus {
     @apply outline-none border-thrivv-gold-500/40 bg-thrivv-bg-card;
-    box-shadow: 0 0 0 4px rgba(255, 208, 0, 0.08);
+    box-shadow: 0 0 0 4px rgba(216, 189, 125, 0.08);
   }
 
   /* Override Chrome / Safari autofill so credentials don't paint inputs
@@ -118,13 +118,13 @@
     -webkit-text-fill-color: #f5f5f5 !important;
     -webkit-box-shadow: 0 0 0 1000px rgba(20, 22, 26, 0.95) inset !important;
     caret-color: #f5f5f5 !important;
-    border-color: rgba(255, 208, 0, 0.15) !important;
+    border-color: rgba(216, 189, 125, 0.15) !important;
     transition: background-color 9999s ease-in-out 0s;
   }
   
   /* Glow effect for active states */
   .glow-gold {
-    box-shadow: 0 0 20px rgba(255, 208, 0, 0.15);
+    box-shadow: 0 0 20px rgba(216, 189, 125, 0.15);
   }
   
   .glow-green {
@@ -267,14 +267,14 @@
 
 /* Member sections only: the landing page, gym admin and authentication retain their styles. */
 .member-future {
-  --member-accent: 255, 211, 61;
+  --member-accent: 216, 189, 125;
   max-width: 1480px;
   margin-inline: auto;
   padding-bottom: 1rem;
 }
-.member-future[data-section="health"] { --member-accent: 106, 230, 195; }
-.member-future[data-section="nutrition"] { --member-accent: 190, 224, 120; }
-.member-future[data-section="wearables"] { --member-accent: 116, 210, 244; }
+.member-future[data-section="health"] { --member-accent: 216, 189, 125; }
+.member-future[data-section="nutrition"] { --member-accent: 216, 189, 125; }
+.member-future[data-section="wearables"] { --member-accent: 216, 189, 125; }
 .member-section-header {
   position: relative;
   isolation: isolate;
@@ -323,9 +323,9 @@
 .member-future .glass-effect { background: #ffffff03; border: 1px solid #ffffff0b; border-radius: 16px; }
 .member-future :is(h2, h3) { letter-spacing: -.025em; }
 .member-future .icon-badge { border: 1px solid rgba(var(--member-accent), .2); border-radius: 14px; background: rgba(var(--member-accent), .06); box-shadow: inset 0 1px 0 #ffffff0a; }
-.member-future .btn-primary { border-radius: 12px; border: 1px solid #ffe783; background: linear-gradient(120deg, #ffe781, #ffd339); color: #101113; font-weight: 650; box-shadow: 0 6px 22px -12px #ffd33999; }
+.member-future .btn-primary { border-radius: 12px; border: 1px solid #e3cd9e; background: #d8bd7d; color: #101113; font-weight: 650; box-shadow: 0 6px 22px -12px #d8bd7d99; }
 .member-future :is(.btn-ghost, .btn-secondary) { border-radius: 12px; border: 1px solid #ffffff18; background: #ffffff05; }
-.member-future :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #ffe477; outline-offset: 4px; }
+.member-future :is(button, a, input, select, textarea):focus-visible { outline: 2px solid #dfc990; outline-offset: 4px; }
 .member-future :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { border-radius: 12px; border-color: #ffffff20; background-color: #0b0e14; }
 .member-future table { font-variant-numeric: tabular-nums; border-collapse: separate; border-spacing: 0 4px; }
 .member-future table th { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #a8b0bf; }
@@ -356,7 +356,7 @@
 @media (prefers-reduced-motion: reduce) {
   .member-future *, .member-future *::before, .member-future *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
-.member-future table tbody tr[class*="bg-thrivv-gold-500/10"] { background-color: #ffd33912; box-shadow: inset 2px 0 #ffd339; }
+.member-future table tbody tr[class*="bg-thrivv-gold-500/10"] { background-color: #d8bd7d12; box-shadow: inset 2px 0 #d8bd7d; }
 
 /* Short, one-shot member transitions. No route interception or delayed navigation. */
 @keyframes member-header-arrive {
@@ -447,10 +447,10 @@ html[data-session-hidden='true'] body { visibility: hidden; }
 
 /* Calm, precise interaction chrome shared by both workspaces. */
 :where(button, a, input, select, textarea):focus-visible {
-  outline: 2px solid #ffd339;
+  outline: 2px solid #d8bd7d;
   outline-offset: 4px;
 }
-:where(input, select, textarea) { accent-color: #ffd339; }
+:where(input, select, textarea) { accent-color: #d8bd7d; }
 :where(button, a) { -webkit-tap-highlight-color: transparent; }
 :where(button:disabled) { cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
@@ -461,3 +461,8 @@ html[data-session-hidden='true'] body { visibility: hidden; }
     scroll-behavior: auto !important;
   }
 }
+
+/* The installed app has native chrome; the website retains its own navigation. */
+html[data-native-app="true"] .app-auth-nav { display: none; }
+html[data-native-app="true"] .app-gym-switch { display: none; }
+html[data-native-app="true"] .pb-safe { padding-bottom: 8px; }

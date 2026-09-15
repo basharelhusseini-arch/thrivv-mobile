@@ -103,8 +103,8 @@ export default function EngagementChart({ data }: { data: Point[] }) {
             >
               <defs>
                 <linearGradient id="goldFill" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#FFD000" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#FFD000" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#d8bd7d" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#d8bd7d" stopOpacity="0" />
                 </linearGradient>
               </defs>
 
@@ -115,7 +115,7 @@ export default function EngagementChart({ data }: { data: Point[] }) {
                   x2={W - PAD_X}
                   y1={PAD_Y + (H - PAD_Y * 2) * t}
                   y2={PAD_Y + (H - PAD_Y * 2) * t}
-                  stroke="#FFD000"
+                  stroke="#d8bd7d"
                   strokeOpacity="0.06"
                   strokeDasharray="2 4"
                 />
@@ -135,7 +135,7 @@ export default function EngagementChart({ data }: { data: Point[] }) {
                 ref={lineRef}
                 d={path.line}
                 fill="none"
-                stroke="#FFD000"
+                stroke="#d8bd7d"
                 strokeWidth="2"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -154,7 +154,7 @@ export default function EngagementChart({ data }: { data: Point[] }) {
                   cx={pt.x}
                   cy={pt.y}
                   r={hoverIdx === i ? 4 : 2}
-                  fill="#FFD000"
+                  fill="#d8bd7d"
                   className="transition-all duration-150"
                   style={{
                     opacity: 0,
@@ -170,7 +170,7 @@ export default function EngagementChart({ data }: { data: Point[] }) {
                   x2={points[hoverIdx].x}
                   y1={PAD_Y}
                   y2={H - PAD_Y}
-                  stroke="#FFD000"
+                  stroke="#d8bd7d"
                   strokeOpacity="0.4"
                   strokeDasharray="2 3"
                 />

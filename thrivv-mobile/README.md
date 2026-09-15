@@ -1,7 +1,9 @@
 # Thrivv for iPhone
 
-An Expo / React Native iPhone app that opens the existing `https://thrivv.dev`
-product in a persistent WebView. Members use the same accounts, workouts,
+An Expo / React Native iPhone app with a dedicated `https://thrivv.dev/mobile`
+welcome screen and a persistent WebView for the member product. Signed-in users
+open their dashboard directly. The `ThrivvApp/1.0` user-agent suffix controls
+presentation only; all authentication and reward decisions stay on the server. Members use the same accounts, workouts,
 WHOOP connection, gym QR verification and rewards as on the website.
 
 This directory is the mobile app. The repository root is the separate Next.js
@@ -54,8 +56,9 @@ npm run build:ios
 npm run submit:ios
 ```
 
-After App Store Connect creates the app, its numeric app ID can be added as
-`submit.production.ios.ascAppId` in `eas.json` for unattended submissions.
+The existing App Store Connect app ID `6812335938` is configured in
+`submit.production.ios.ascAppId` for unattended TestFlight uploads. Uploading a
+build does not submit the app for public App Store review.
 
 ## Install directly on a registered iPhone
 
@@ -118,6 +121,18 @@ new iPhone build.
 - Navigate between member and gym pages; exercise back navigation and external links.
 - Disconnect the network, reload, then reconnect and use retry successfully.
 - Sign out, then sign in as another member and confirm account separation.
+
+## App experience
+
+The native header centres the Thrivv wordmark without a persistent Back button.
+WHOOP login keeps its provider hostname and Done control. First-time members
+choose WHOOP, no wearable, or another device. Only WHOOP is connectable today;
+other devices use gym QR verification. Actual server connection/workout state
+always overrides a manual preference, and reward source locks remain unchanged.
+Wearables is available directly in the More menu for later connection.
+
+The website keeps its marketing homepage; native sessions start at `/mobile`.
+Deploy the web routes before distributing a native build that loads them.
 
 ## Branding and scope
 

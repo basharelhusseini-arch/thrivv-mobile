@@ -1,4 +1,4 @@
-export const THRIVV_URL = 'https://thrivv.dev';
+export const THRIVV_URL = 'https://thrivv.dev/mobile';
 const APP_HOSTS = new Set(['thrivv.dev', 'www.thrivv.dev', 'gyms.thrivv.dev']);
 
 export function appUrl(value: string): URL | null {

@@ -18,18 +18,18 @@ const config: Config = {
             darker: '#060708',
             card: '#13151A',
           },
-          // UI accent gold; the wordmark uses its own champagne-gold finish.
+          // Shared champagne gold, matched to the Thrivv wordmark.
           gold: {
-            DEFAULT: '#FFD000',
-            50: '#FFFBEB',
-            100: '#FFF4CC',
-            200: '#FFE999',
-            300: '#FFDD66',
-            400: '#FFD633',
-            500: '#FFD000',
-            600: '#E6BB00',
-            700: '#CCA600',
-            800: '#B39100',
+            DEFAULT: '#D8BD7D',
+            50: '#FAF7EF',
+            100: '#F2E9D6',
+            200: '#EADCBC',
+            300: '#E3CD9E',
+            400: '#DFC990',
+            500: '#D8BD7D',
+            600: '#B89B5B',
+            700: '#927941',
+            800: '#725E31',
           },
           neon: {
             green: '#10B981',
@@ -41,8 +41,8 @@ const config: Config = {
           }
         },
         // Aliases for common usage
-        'brand-primary': '#FFD000',
-        'brand-gold': '#FFD000',
+        'brand-primary': '#D8BD7D',
+        'brand-gold': '#D8BD7D',
       },
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
@@ -93,10 +93,10 @@ const config: Config = {
         },
         'glow-pulse': {
           '0%, 100%': {
-            boxShadow: '0 0 20px rgba(255, 195, 0, 0.2), 0 0 40px rgba(255, 195, 0, 0.1)',
+            boxShadow: '0 0 20px rgba(216, 189, 125, 0.2), 0 0 40px rgba(216, 189, 125, 0.1)',
           },
           '50%': {
-            boxShadow: '0 0 30px rgba(255, 195, 0, 0.3), 0 0 60px rgba(255, 195, 0, 0.15)',
+            boxShadow: '0 0 30px rgba(216, 189, 125, 0.3), 0 0 60px rgba(216, 189, 125, 0.15)',
           },
         },
         'shimmer': {

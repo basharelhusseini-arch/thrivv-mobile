@@ -13,7 +13,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "dev.thrivv.app",
-      "buildNumber": "1",
       "infoPlist": {
         "NSCameraUsageDescription": "Thrivv uses your camera to scan your gym's QR code and verify your workout.",
         "ITSAppUsesNonExemptEncryption": false

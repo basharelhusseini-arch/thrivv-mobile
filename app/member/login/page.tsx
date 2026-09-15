@@ -58,7 +58,7 @@ export default function MemberLoginPage() {
       <BackgroundLayers />
 
       <main className="relative z-10 min-h-screen flex flex-col">
-        <nav className="px-6 lg:px-10 py-6 flex items-center justify-between">
+        <nav className="app-auth-nav px-6 lg:px-10 py-6 flex items-center justify-between">
           <Logo variant="gold" size="md" linkTo="/" />
           <Link
             href="/"
@@ -90,7 +90,7 @@ export default function MemberLoginPage() {
             </Reveal>
 
             <Reveal delay={120}>
-              <div className="relative glass-card overflow-hidden p-7 lg:p-8 shadow-[0_40px_140px_-30px_rgba(255,208,0,0.18)]">
+              <div className="relative glass-card overflow-hidden p-7 lg:p-8 shadow-[0_40px_140px_-30px_rgba(216, 189, 125,0.18)]">
                 <div
                   className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
                   aria-hidden
@@ -150,7 +150,7 @@ export default function MemberLoginPage() {
                 </form>
 
                 <div className="mt-7 text-center text-sm text-thrivv-text-secondary">
-                  <p className="mb-4">
+                  <p className="app-gym-switch mb-4">
                     {gymMode ? 'Are you a member? ' : 'Are you a gym owner or manager? '}
                     <a href={switchUrl} className="text-thrivv-gold-500 underline focus-visible:outline">
                       {gymMode ? 'Member login' : 'Gym login'}

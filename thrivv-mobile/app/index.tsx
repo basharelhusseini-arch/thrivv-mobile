@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, BackHandler, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { appUrl, navigationTarget, startsWhoop, THRIVV_URL } from '../lib/navigation';
@@ -12,6 +12,7 @@ export default function App() {
   const [instance, setInstance] = useState(0);
   const [canGoBack, setCanGoBack] = useState(false);
   const [providerHost, setProviderHost] = useState('');
+  const [welcome, setWelcome] = useState(true);
   const [loading, setLoading] = useState(true);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -66,29 +67,20 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'right', 'bottom', 'left']}>
-      {(canGoBack || Boolean(providerHost)) && (
-        <View style={styles.toolbar}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Go back" disabled={!canGoBack}
-            onPress={back} hitSlop={8} style={[styles.navigationButton, !canGoBack && styles.disabled]}>
-            <Text style={styles.link}>‹ Back</Text>
-          </Pressable>
-          <View style={styles.toolbarTitle}>
-            <Text style={styles.brand}>{providerHost ? 'WHOOP CONNECTION' : 'THRIVV'}</Text>
-            {!!providerHost && <Text numberOfLines={1} style={styles.host}>{providerHost}</Text>}
-          </View>
-          {!!providerHost && (
-            <Pressable accessibilityRole="button" accessibilityLabel="Return to Thrivv" onPress={returnToThrivv}
-              hitSlop={8} style={styles.navigationButton}>
-              <Text style={styles.link}>Done</Text>
-            </Pressable>
-          )}
+      {!welcome && <View style={styles.toolbar}>
+        <View style={styles.navigationButton} />
+        <View style={styles.toolbarTitle}>
+          {providerHost ? <><Text style={styles.brand}>WHOOP CONNECTION</Text><Text numberOfLines={1} style={styles.host}>{providerHost}</Text></> :
+            <Image source={require('../assets/images/splash-icon.png')} style={styles.wordmark} accessibilityLabel="Thrivv" resizeMode="contain" />}
         </View>
-      )}
+        <View style={styles.navigationButton}>{Boolean(providerHost) && <Pressable accessibilityRole="button" accessibilityLabel="Return to Thrivv" onPress={returnToThrivv} hitSlop={8}><Text style={styles.link}>Done</Text></Pressable>}</View>
+      </View>}
       <View style={styles.content}>
         <WebView
           key={instance}
           ref={webView}
           source={{ uri: source }}
+          applicationNameForUserAgent="ThrivvApp/1.0"
           style={styles.webView}
           containerStyle={styles.webView}
           // All schemes reach our policy so WebView cannot auto-open an unsafe
@@ -109,6 +101,7 @@ export default function App() {
           onNavigationStateChange={state => {
             currentUrl.current = state.url;
             setCanGoBack(state.canGoBack);
+            setWelcome(appUrl(state.url)?.pathname === '/mobile');
             if (appUrl(state.url)) setProviderHost('');
             else {
               try { setProviderHost(new URL(state.url).hostname); } catch { setProviderHost(''); }
@@ -166,10 +159,10 @@ const styles = StyleSheet.create({
   toolbar: { minHeight: 48, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#292D29' },
   navigationButton: { minHeight: 44, minWidth: 48, justifyContent: 'center' },
-  disabled: { opacity: 0.3 },
-  toolbarTitle: { flex: 1, paddingHorizontal: 12, paddingVertical: 9 },
+  toolbarTitle: { flex: 1, paddingHorizontal: 12, paddingVertical: 9, alignItems: 'center' },
+  wordmark: { width: 110, height: 22 },
   brand: { color: '#D8BD7D', fontSize: 10, letterSpacing: 2, fontWeight: '600' },
-  host: { color: '#B1B5B0', fontSize: 11, marginTop: 3 },
+  host: { color: '#B1B5B0', fontSize: 11, marginTop: 3, textAlign: 'center' },
   link: { color: '#D8BD7D', fontSize: 14 },
   progress: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, backgroundColor: '#D8BD7D' },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#0D0F14', alignItems: 'center',

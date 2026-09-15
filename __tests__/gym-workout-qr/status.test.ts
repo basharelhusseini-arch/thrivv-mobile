@@ -43,3 +43,19 @@ test('verified WHOOP workouts explain disabled reward conversion without invitin
   expect(result.workouts[0]).toMatchObject({ verified:true, canScan:false, status:'Gym verified — WHOOP rewards not activated' });
   expect(result.creditedPoints).toBe(0);
 });
+
+test('connecting WHOOP overrides a saved no-wearable preference without opening manual rewards', async () => {
+  values.user_health_profile = { has_wearable: false, wearable_type: null };
+  values.whoop_connections = { whoop_connected_at: '2026-09-13T10:00:00Z' };
+  values.whoop_workouts = [];
+  const result = await gymRewardStatus('member');
+  expect(result.mode).toBe('whoop'); expect(result.manual.eligible).toBe(false);
+});
+test('a WHOOP preference shows setup until connection; today’s imported workout still locks the reward source', async () => {
+  values.user_health_profile = { has_wearable: true, wearable_type: 'whoop' };
+  values.whoop_connections = null; values.whoop_workouts = [];
+  expect((await gymRewardStatus('member')).mode).toBe('whoop_setup');
+  values.whoop_workouts = [w];
+  const result = await gymRewardStatus('member');
+  expect(result.mode).toBe('whoop'); expect(result.manual.eligible).toBe(false);
+});
