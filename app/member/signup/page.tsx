@@ -133,7 +133,7 @@ export default function MemberSignupPage() {
             </Reveal>
 
             <Reveal delay={120}>
-              <div className="relative glass-card overflow-hidden p-7 lg:p-8 shadow-[0_40px_140px_-30px_rgba(255,208,0,0.18)]">
+              <div className="relative glass-card overflow-hidden p-7 lg:p-8 shadow-[0_40px_140px_-30px_rgba(216, 189, 125,0.18)]">
                 <div
                   className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
                   aria-hidden

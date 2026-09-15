@@ -8,6 +8,8 @@ let mockPath='/member/dashboard';
 jest.mock('next/navigation',()=>({usePathname:()=>mockPath}));
 jest.mock('@/components/Sidebar',()=>({__esModule:true,default:()=>null,isGymPortalPath:()=>false}));
 jest.mock('@/components/BackgroundLayers',()=>()=>null);
+// Onboarding has its own request lifecycle tests; isolate these session requests.
+jest.mock('@/components/WearableSetup',()=>()=>null);
 (global as any).React=React;
 const userA={id:'member-a',email:'a@example.test',firstName:'A',lastName:'Member'};
 const userB={...userA,id:'member-b',email:'b@example.test',firstName:'B'};

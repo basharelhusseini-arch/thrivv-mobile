@@ -2,6 +2,13 @@ import { NextRequest } from 'next/server';
 import { middleware } from '@/middleware';
 import { gymDestination, gymLoginPath, gymReturnPath, isGymLogin, portalLoginUrl, portalWorkspaceUrl } from '@/lib/gym-routing';
 import { readFileSync } from 'fs';
+test('only the installed member app redirects the marketing homepage to welcome', () => {
+  const request = (url: string, ua: string) => new NextRequest(url, { headers: { host: new URL(url).host, 'user-agent': ua } });
+  expect(middleware(request('https://thrivv.dev/', 'Mozilla ThrivvApp/1.0')).headers.get('location')).toBe('https://thrivv.dev/mobile');
+  expect(middleware(request('https://thrivv.dev/', 'Mozilla iPhone Safari')).headers.get('location')).toBeNull();
+  expect(middleware(request('https://thrivv.dev/mobile', 'Mozilla ThrivvApp/1.0')).headers.get('location')).toBeNull();
+  expect(middleware(request('https://gyms.thrivv.dev/', 'Mozilla ThrivvApp/1.0')).headers.get('location')).toBe('https://gyms.thrivv.dev/gym');
+});
 test('gym hostname entry goes to portal, and cross-host routes preserve the path', () => {
   for (const [url, expected] of [
     ['https://gyms.thrivv.dev/', 'https://gyms.thrivv.dev/gym'],

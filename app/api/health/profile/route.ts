@@ -94,14 +94,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upsert profile (create or update)
+    if ((has_wearable !== undefined && typeof has_wearable !== 'boolean') ||
+        (wearable_type != null && !['whoop', 'garmin', 'apple_watch', 'fitbit', 'oura', 'other'].includes(wearable_type))) {
+      return NextResponse.json({ error: 'Invalid wearable preference' }, { status: 400 });
+    }
+
+    // Upsert profile (create or update). Preferences never decide reward eligibility.
     const { data: profile, error } = await supabase
       .from('user_health_profile')
       .upsert({
         user_id: userId,
         goal,
         has_wearable: has_wearable || false,
-        wearable_type: wearable_type || null,
+        wearable_type: has_wearable ? wearable_type || null : null,
         ...(wants_wearable_provided !== undefined ? { wants_wearable_provided: wants_wearable_provided || null } : {}),
         ...(country !== undefined ? { country: country || null } : {}),
         updated_at: new Date().toISOString(),

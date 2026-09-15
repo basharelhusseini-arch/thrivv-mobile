@@ -12,8 +12,7 @@ installed fonts and stays legible at the 20px and 24px app sizes.
 - `thrivv-wordmark-preview.png` shows the actual vector geometry at large and small sizes; it is a design preview, not a browser screenshot.
 
 The wordmark contains its own clear space. Preserve its aspect ratio and solid
-finish; avoid adding skew, glow or trailing slashes. UI accent colors remain
-separate from the wordmark finish. Native wrapper launcher/splash assets are
+finish; avoid adding skew, glow or trailing slashes. UI accents share the champagne-gold finish (#D8BD7D); semantic status colours remain distinct. Native wrapper launcher/splash assets are
 outside this web-logo update.
 
 Validation: TypeScript and targeted lint passed. Both SVG variants were rendered

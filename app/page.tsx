@@ -64,7 +64,7 @@ function AmbientBackground() {
         aria-hidden
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,208,0,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,208,0,0.6) 1px, transparent 1px)',
+            'linear-gradient(rgba(216, 189, 125,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(216, 189, 125,0.6) 1px, transparent 1px)',
           backgroundSize: '72px 72px',
           maskImage:
             'radial-gradient(ellipse at center, black 30%, transparent 78%)',
@@ -88,7 +88,7 @@ function AmbientBackground() {
         aria-hidden
         style={{
           background:
-            'radial-gradient(ellipse 60vw 50vh at 50% 32%, rgba(255,208,0,0.07), transparent 70%)',
+            'radial-gradient(ellipse 60vw 50vh at 50% 32%, rgba(216, 189, 125,0.07), transparent 70%)',
         }}
       />
 
@@ -365,7 +365,7 @@ function HealthScoreVisual() {
         className="absolute -inset-12 bg-thrivv-gold-500/[0.18] blur-3xl rounded-full"
         aria-hidden
       />
-      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(255,208,0,0.28)]">
+      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(216, 189, 125,0.28)]">
         <div
           className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
           aria-hidden
@@ -386,7 +386,7 @@ function HealthScoreVisual() {
           <svg width="220" height="220" viewBox="0 0 220 220" className="block" aria-hidden="true">
             <defs>
               <linearGradient id="ring-gold" x1="0" x2="1" y1="0" y2="1">
-                <stop offset="0%" stopColor="#FFD000" />
+                <stop offset="0%" stopColor="#d8bd7d" />
                 <stop offset="100%" stopColor="#FFB800" />
               </linearGradient>
             </defs>
@@ -394,7 +394,7 @@ function HealthScoreVisual() {
               cx="110"
               cy="110"
               r="92"
-              stroke="rgba(255,208,0,0.08)"
+              stroke="rgba(216, 189, 125,0.08)"
               strokeWidth="14"
               fill="none"
             />
@@ -553,7 +553,7 @@ function RewardsVisual() {
         className="absolute -inset-12 bg-thrivv-gold-500/[0.16] blur-3xl rounded-full"
         aria-hidden
       />
-      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(255,208,0,0.24)]">
+      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(216, 189, 125,0.24)]">
         <div
           className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
           aria-hidden
@@ -711,7 +711,7 @@ function LeaderboardVisual() {
         className="absolute -inset-12 bg-thrivv-gold-500/[0.16] blur-3xl rounded-full"
         aria-hidden
       />
-      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(255,208,0,0.24)]">
+      <div className="relative glass-card p-7 lg:p-9 shadow-[0_50px_160px_-40px_rgba(216, 189, 125,0.24)]">
         <div
           className="absolute top-0 left-10 right-10 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
           aria-hidden

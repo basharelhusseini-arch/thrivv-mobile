@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { logoutClient } from '@/lib/client-session';
 import { portalLoginUrl } from '@/lib/gym-routing';
 import Logo from './Logo';
+import { isNativeApp } from '@/lib/mobile-app';
 import WorkspaceLink from './WorkspaceLink';
 
 type NavItem = { label: string; href: string; icon: typeof Activity };
@@ -18,6 +19,7 @@ const memberNavigation: NavItem[] = [
   { label: 'Health', href: '/member/health', icon: Activity },
   { label: 'Nutrition', href: '/member/nutrition', icon: UtensilsCrossed },
   { label: 'Bookings', href: '/member/bookings', icon: Calendar },
+  { label: 'Wearables', href: '/member/wearables', icon: Activity },
   { label: 'Account', href: '/member/account', icon: User },
 ];
 
@@ -28,7 +30,7 @@ export function isGymPortalPath(pathname: string | null): boolean {
 export function isItemActive(item: NavItem, pathname: string | null): boolean {
   if (!pathname) return false;
   if (pathname === item.href) return true;
-  if (item.href === '/member/account') return pathname.startsWith('/member/account/') || ['/member/profile', '/member/settings', '/member/wearables'].includes(pathname);
+    if (item.href === '/member/account') return pathname.startsWith('/member/account/') || ['/member/profile', '/member/settings'].includes(pathname);
   return item.href === '/member/bookings' && pathname === '/member/classes';
 }
 
@@ -84,7 +86,7 @@ export default function Sidebar({ memberData = null, isPlatformAdmin = false }: 
     logoutPending.current = true; setLoggingOut(true); setLogoutError('');
     try {
       await logoutClient();
-      window.location.replace(portalLoginUrl(window.location.hostname, isGymPortalPath(pathname)));
+      window.location.replace(!isGymPortalPath(pathname) && isNativeApp(navigator.userAgent) ? '/mobile' : portalLoginUrl(window.location.hostname, isGymPortalPath(pathname)));
     } catch (error) {
       setLogoutError(error instanceof Error ? error.message : 'Sign out failed. Please retry.');
       logoutPending.current = false; setLoggingOut(false);

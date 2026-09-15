@@ -14,7 +14,7 @@ export default function BackgroundLayers() {
         aria-hidden
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,208,0,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,208,0,0.6) 1px, transparent 1px)',
+            'linear-gradient(rgba(216, 189, 125,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(216, 189, 125,0.6) 1px, transparent 1px)',
           backgroundSize: '64px 64px',
           maskImage:
             'radial-gradient(ellipse at center, black 25%, transparent 75%)',

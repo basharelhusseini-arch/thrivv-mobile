@@ -93,7 +93,7 @@ export default function StreakLeaderboard({ rows }: { rows: Row[] }) {
                       <Flame
                         className={`w-4 h-4 ${
                           isTop
-                            ? 'text-thrivv-gold-500 drop-shadow-[0_0_6px_rgba(255,208,0,0.6)]'
+                            ? 'text-thrivv-gold-500 drop-shadow-[0_0_6px_rgba(216, 189, 125,0.6)]'
                             : 'text-thrivv-gold-400'
                         }`}
                       />
