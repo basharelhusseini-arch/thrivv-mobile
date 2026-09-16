@@ -7,11 +7,12 @@ import NotAuthorized from './_components/NotAuthorized';
 
 export const dynamic = 'force-dynamic';
 
-export default async function GymDashboardPage({
-  params,
-}: {
-  params: { gym_id: string };
-}) {
+export default async function GymDashboardPage(
+  props: {
+    params: Promise<{ gym_id: string }>;
+  }
+) {
+  const params = await props.params;
   const access = await checkGymAccess(params.gym_id);
 
   if (!access.ok) {

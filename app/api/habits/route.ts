@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { store } from '@/lib/store';
+import { memberRecords as store } from '@/lib/member-records';
 import { memberActor, memberBody, memberResult } from '@/lib/member-resource';
 import { habitFields } from '@/lib/habit-input';
 export const dynamic = 'force-dynamic';

@@ -34,7 +34,7 @@ import { POST as createCode } from '@/app/api/gym/[gym_id]/code/route';
 import { GET as account } from '@/app/api/account/route';
 test('only authorized gym administrators can generate a code', async () => {
  (checkGymAccess as jest.Mock).mockResolvedValue({ ok: false, status: 403, reason: 'Forbidden' });
- const res = await createCode(request({}), { params: { gym_id: 'another-gym' } });
+ const res = await createCode(request({}), { params: Promise.resolve({ gym_id: 'another-gym' }) });
  expect(res.status).toBe(403); expect(supabase.from).not.toHaveBeenCalled();
 });
 test('code generation stores a hash and scopes it to the authorized gym', async () => {
@@ -42,7 +42,7 @@ test('code generation stores a hash and scopes it to the authorized gym', async 
  process.env.GYM_CODE_ENCRYPTION_KEY = Buffer.alloc(32, 1).toString('base64');
  (checkGymAccess as jest.Mock).mockResolvedValue({ ok: true, user: { id: 'admin' } });
  const upsert = jest.fn().mockResolvedValue({ error: null }); (supabase.from as jest.Mock).mockReturnValue({ upsert });
- const res = await createCode(request({}), { params: { gym_id: 'authorized-gym' } });
+ const res = await createCode(request({}), { params: Promise.resolve({ gym_id: 'authorized-gym' }) });
  const data = await res.json(); expect(res.status).toBe(200);
   expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ gym_id: 'authorized-gym', code_hash: gymCodeHash(data.code), created_by: 'admin' }), { onConflict: 'gym_id' });
  expect(JSON.stringify(upsert.mock.calls)).not.toContain(data.code);

@@ -5,8 +5,9 @@ import { newGymCode } from '@/lib/gym-codes';
 import { decryptGymCode, encryptGymCode, GymCodeConfigurationError } from '@/lib/gym-code-encryption';
 export const dynamic = 'force-dynamic';
 const headers = { 'Cache-Control': 'private, no-store', 'Vary': 'Cookie' };
-type Context = { params: { gym_id: string } };
-export async function GET(_request: NextRequest, { params }: Context) {
+type Context = { params: Promise<{ gym_id: string }> };
+export async function GET(_request: NextRequest, props: Context) {
+  const params = await props.params;
   const access = await checkGymAccess(params.gym_id);
   if (!access.ok) return NextResponse.json({ error: access.reason }, { status: access.status, headers });
   const { data, error } = await supabase.from('gym_join_codes').select('code_hash,code_ciphertext,code_encryption_version').eq('gym_id', params.gym_id).maybeSingle();
@@ -21,7 +22,8 @@ export async function GET(_request: NextRequest, { params }: Context) {
     return NextResponse.json({ error: 'Stored code cannot be displayed. Contact Thrivv; the existing joining code remains valid.' }, { status: 503, headers });
   }
 }
-export async function POST(request: NextRequest, { params }: Context) {
+export async function POST(request: NextRequest, props: Context) {
+  const params = await props.params;
   if (request.headers.get('origin') !== request.nextUrl.origin) return NextResponse.json({ error: 'Invalid request origin' }, { status: 403, headers });
   const access = await checkGymAccess(params.gym_id);
   if (!access.ok) return NextResponse.json({ error: access.reason }, { status: access.status, headers });

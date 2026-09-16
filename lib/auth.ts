@@ -55,6 +55,8 @@ export interface SessionPayload {
   user: SessionUser;
   exp?: number;
   iat?: number;
+  sid?: string;
+  issuedAt?: number;
 }
 
 // Type guard to validate user object structure
@@ -89,8 +91,8 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 // Create JWT session token
-export async function createSession(user: SessionUser): Promise<string> {
-  const token = await new SignJWT({ user })
+export async function createSession(user: SessionUser, sid?: string): Promise<string> {
+  const token = await new SignJWT({ user, issuedAt: Date.now() / 1000, ...(sid ? { sid } : {}) })
     .setJti(randomUUID())
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d') // 7 days
@@ -128,6 +130,8 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
       },
       iat: payload.iat,
       exp: payload.exp,
+      ...(typeof payload.sid === 'string' ? { sid: payload.sid } : {}),
+      ...(typeof payload.issuedAt === 'number' ? { issuedAt: payload.issuedAt } : {}),
     };
   } catch (error) {
     return null;
@@ -135,8 +139,8 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
 }
 
 // Set session cookie
-export async function setSessionCookie(user: SessionUser, response: Response, hostname: string): Promise<void> {
-  const token = await createSession(user);
+export async function setSessionCookie(user: SessionUser, response: Response, hostname: string, sid?: string): Promise<void> {
+  const token = await createSession(user, sid);
   writeSessionCookie(response, token, hostname);
 }
 
@@ -158,6 +162,11 @@ export async function getAuthenticatedSession(): Promise<{ token: string; sessio
     if (error) throw new Error('Session verification unavailable');
     // Never revive an older session when a logged-out cookie shadows it.
     if (revoked) return null;
+    const { data: active, error: activeError } = await supabase.rpc('thrivv_session_valid', {
+      p_user: session.user.id, p_issued_at: session.issuedAt ?? session.iat ?? 0, p_session: session.sid ?? null,
+    });
+    if (activeError) throw new Error('Session verification unavailable');
+    if (active !== true) return null;
     if (selected && selected.session.user.id !== session.user.id) return null;
     if (!selected || (session.iat || 0) > (selected.session.iat || 0)) selected = { token, session };
   }

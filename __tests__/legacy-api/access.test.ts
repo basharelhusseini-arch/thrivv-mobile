@@ -39,9 +39,9 @@ import * as sessions from '@/app/api/member/[id]/sessions/route';
 import * as connection from '@/app/api/whoop/connection/route';
 import * as data from '@/app/api/whoop/data/route';
 
-type Handler = (request: NextRequest, context: { params: { id: string } }) => Promise<Response>;
+type Handler = (request: NextRequest, context: { params: Promise<{ id: string }> }) => Promise<Response>;
 const user = { id: 'member-a', email: 'member@example.test', firstName: 'Test', lastName: 'Member' };
-const context = { params: { id: 'record-a' } };
+const context = { params: Promise.resolve({ id: 'record-a' }) };
 const request = (method = 'GET', body?: unknown, query = '') => new NextRequest(`https://thrivv.example.test/api/test${query}`, {
   method,
   ...(body === undefined ? {} : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
@@ -152,10 +152,10 @@ test('payments and notifications expose no old simulated receipts or confirmatio
 });
 
 test('legacy session history is self-only and is never marked verified', async () => {
-  expect((await sessions.GET(request(), { params: { id: 'another-member' } })).status).toBe(403);
+  expect((await sessions.GET(request(), { params: Promise.resolve({ id: 'another-member' }) })).status).toBe(403);
   expect(store.getMemberSessions).not.toHaveBeenCalled();
   (store.getMemberSessions as jest.Mock).mockReturnValue(2);
-  const response = await sessions.GET(request(), { params: { id: user.id } });
+  const response = await sessions.GET(request(), { params: Promise.resolve({ id: user.id }) });
   expect(await response.json()).toEqual({ memberId: user.id, completedSessions: 2, source: 'legacy', verified: false });
   expect(store.getMemberSessions).toHaveBeenCalledWith(user.id);
 });

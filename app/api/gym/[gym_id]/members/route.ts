@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkGymAccess } from '@/lib/gym-auth';
 import { gymMembersData, nonnegativeOffset } from '@/lib/gym-operations-data';
 export const dynamic = 'force-dynamic';
-export async function GET(request: NextRequest, { params }: { params: { gym_id: string } }) {
+export async function GET(request: NextRequest, props: { params: Promise<{ gym_id: string }> }) {
+  const params = await props.params;
   const access = await checkGymAccess(params.gym_id);
   const headers = { 'Cache-Control': 'private, no-store', Vary: 'Cookie' };
   if (!access.ok) return NextResponse.json({ error: access.reason }, { status: access.status, headers });

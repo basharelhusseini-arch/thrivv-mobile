@@ -1,6 +1,7 @@
 import GymAccessPage from '../_components/GymAccessPage';
 import GymWorkoutQr from '@/components/GymWorkoutQr';
 export const dynamic = 'force-dynamic';
-export default function GymQrPage({ params }: { params: { gym_id: string } }) {
+export default async function GymQrPage(props: { params: Promise<{ gym_id: string }> }) {
+  const params = await props.params;
   return <GymAccessPage gymId={params.gym_id} section="qr" title="Ready when your members are" description="Keep this screen visible at reception. The workout QR refreshes automatically."><GymWorkoutQr gymId={params.gym_id} displayMode /></GymAccessPage>;
 }

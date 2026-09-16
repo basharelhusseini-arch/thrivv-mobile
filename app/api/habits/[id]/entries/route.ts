@@ -1,20 +1,22 @@
 import { NextRequest } from 'next/server';
-import { store } from '@/lib/store';
+import { memberRecords as store } from '@/lib/member-records';
 import { memberActor, memberBody, memberResult, owned, MemberResourceError } from '@/lib/member-resource';
 export const dynamic = 'force-dynamic';
 
-type Context = { params: { id: string } };
-export async function GET(req: NextRequest, { params }: Context) {
+type Context = { params: Promise<{ id: string }> };
+export async function GET(req: NextRequest, props: Context) {
+  const params = await props.params;
   return memberResult(async () => {
     const user = await memberActor(req);
-    owned(store.getHabit(params.id), user.id);
-    return store.getHabitEntries(params.id).filter(entry => entry.memberId === user.id);
+    owned(await store.getHabit(params.id, user.id), user.id);
+    return (await store.getHabitEntries(params.id, user.id)).filter(entry => entry.memberId === user.id);
   });
 }
-export async function POST(req: NextRequest, { params }: Context) {
+export async function POST(req: NextRequest, props: Context) {
+  const params = await props.params;
   return memberResult(async () => {
     const user = await memberActor(req);
-    owned(store.getHabit(params.id), user.id);
+    owned(await store.getHabit(params.id, user.id), user.id);
     const body = await memberBody(req, user.id);
     const parsedDate = typeof body.date === 'string' ? new Date(`${body.date}T00:00:00Z`) : null;
     if (typeof body.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.date) || !parsedDate || !Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== body.date || body.date > new Date().toISOString().slice(0, 10) || typeof body.completed !== 'boolean') {

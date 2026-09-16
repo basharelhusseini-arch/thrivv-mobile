@@ -48,7 +48,7 @@ while [[ ! $SUPABASE_SERVICE_KEY =~ ^eyJ ]]; do
 done
 
 # Generate JWT Secret
-JWT_SECRET=$(openssl rand -base64 32 2>/dev/null || echo "super-secret-jwt-key-change-in-production")
+JWT_SECRET=$(openssl rand -base64 32) || { echo "Unable to generate a secure session key. Install OpenSSL and retry."; exit 1; }
 
 # Create .env.local
 cat > .env.local << EOF

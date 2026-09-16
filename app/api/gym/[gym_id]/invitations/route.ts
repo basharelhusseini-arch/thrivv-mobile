@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkGymAccess } from '@/lib/gym-auth';
 import { supabase } from '@/lib/supabase';
 import { newInvitation } from '@/lib/gym-invitations';
-export async function POST(request: NextRequest, { params }: { params: { gym_id: string } }) {
+export async function POST(request: NextRequest, props: { params: Promise<{ gym_id: string }> }) {
+  const params = await props.params;
   const access = await checkGymAccess(params.gym_id);
   if (!access.ok) return NextResponse.json({ error: access.reason }, { status: access.status });
   const { token, hash } = newInvitation();

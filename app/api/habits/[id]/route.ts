@@ -1,28 +1,31 @@
 import { NextRequest } from 'next/server';
-import { store } from '@/lib/store';
+import { memberRecords as store } from '@/lib/member-records';
 import { memberActor, memberBody, memberResult, owned } from '@/lib/member-resource';
 import { habitFields } from '@/lib/habit-input';
 export const dynamic = 'force-dynamic';
 
-type Context = { params: { id: string } };
-export async function GET(req: NextRequest, { params }: Context) {
+type Context = { params: Promise<{ id: string }> };
+export async function GET(req: NextRequest, props: Context) {
+  const params = await props.params;
   return memberResult(async () => {
     const user = await memberActor(req);
-    return owned(store.getHabit(params.id), user.id);
+    return owned(await store.getHabit(params.id, user.id), user.id);
   });
 }
-export async function PUT(req: NextRequest, { params }: Context) {
+export async function PUT(req: NextRequest, props: Context) {
+  const params = await props.params;
   return memberResult(async () => {
     const user = await memberActor(req);
-    owned(store.getHabit(params.id), user.id);
-    return store.updateHabit(params.id, habitFields(await memberBody(req, user.id)));
+    owned(await store.getHabit(params.id, user.id), user.id);
+    return store.updateHabit(params.id, habitFields(await memberBody(req, user.id)), user.id);
   });
 }
-export async function DELETE(req: NextRequest, { params }: Context) {
+export async function DELETE(req: NextRequest, props: Context) {
+  const params = await props.params;
   return memberResult(async () => {
     const user = await memberActor(req);
-    owned(store.getHabit(params.id), user.id);
-    store.deleteHabit(params.id);
+    owned(await store.getHabit(params.id, user.id), user.id);
+    await store.deleteHabit(params.id, user.id);
     return { success: true };
   });
 }

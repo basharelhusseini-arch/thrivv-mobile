@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Clock, Users, CheckCircle, X } from 'lucide-react';
@@ -10,7 +10,8 @@ import { getRecipeImage, FALLBACK_IMAGE_URL } from '@/lib/recipe-images';
 import { useClientSession } from '@/lib/client-session';
 import { addMealToToday, getTodayLog, computeTotals, type DailyLog } from '@/lib/nutrition-log';
 
-export default function RecipeDetailPage({ params }: { params: { id: string } }) {
+export default function RecipeDetailPage() {
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const session = useClientSession();
   const memberId = session.user?.id;

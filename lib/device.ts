@@ -32,7 +32,7 @@ function generateDeviceId(): string {
  * Returns the device ID and a boolean indicating if it was newly created
  */
 export async function getOrCreateDeviceId(): Promise<{ deviceId: string; isNew: boolean }> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const existingDeviceId = cookieStore.get(DEVICE_ID_COOKIE_NAME)?.value;
 
   if (existingDeviceId && existingDeviceId.length > 0) {

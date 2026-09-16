@@ -30,7 +30,7 @@ test('member ticket list always filters to the session identity',async()=>{
 });
 test('cross-member thread requests are blocked before loading messages',async()=>{
  (supabase.from as jest.Mock).mockReturnValueOnce(query({id:'member'})).mockReturnValueOnce(query({id,user_id:'other'}));
- expect((await thread(new NextRequest('https://thrivv.dev/api/support/tickets/'+id),{params:{ticket_id:id}})).status).toBe(403);
+ expect((await thread(new NextRequest('https://thrivv.dev/api/support/tickets/'+id),{params:Promise.resolve({ticket_id:id})})).status).toBe(403);
  expect(supabase.from).not.toHaveBeenCalledWith('support_messages');
 });
 test('cross-origin submissions do not write tickets',async()=>{

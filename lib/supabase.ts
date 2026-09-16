@@ -27,7 +27,7 @@ try {
 }
 
 // Create client for API routes (with auth context from cookies)
-export function createClient(cookieStore: ReturnType<typeof cookies>) {
+export function createClient(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   const authToken = cookieStore.get('sb-access-token')?.value;
   const refreshToken = cookieStore.get('sb-refresh-token')?.value;
   

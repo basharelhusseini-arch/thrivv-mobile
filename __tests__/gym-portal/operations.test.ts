@@ -7,7 +7,7 @@ import { GET as members } from '@/app/api/gym/[gym_id]/members/route';
 import { GET as activity } from '@/app/api/gym/[gym_id]/activity/route';
 import { dailyCreditForScan, gymActivityData, gymMembersData, memberSearch, mergeGymScans, uniqueGymVisitors } from '@/lib/gym-operations-data';
 
-const ctx = { params: { gym_id: 'gym-a' } };
+const ctx = { params: Promise.resolve({ gym_id: 'gym-a' }) };
 beforeEach(() => jest.clearAllMocks());
 
 test.each([401, 403, 503])('member and activity APIs fail closed when gym access returns %s', async status => {
