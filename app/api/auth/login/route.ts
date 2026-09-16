@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseEnv } from '@/lib/env';
 import { setSessionCookie } from '@/lib/auth';
-import { decodeJwt } from 'jose';
 import { authBody } from '@/lib/auth-request';
 import { MemberResourceError } from '@/lib/member-resource';
 
@@ -96,9 +95,7 @@ export async function POST(request: NextRequest) {
       success: true,
       user: sessionUser,
     }, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } });
-    const sid = decodeJwt(data.session.access_token).session_id;
-    if (typeof sid !== 'string') throw new Error('Session identity unavailable');
-    await setSessionCookie(sessionUser, response, request.nextUrl.hostname, sid);
+    await setSessionCookie(sessionUser, response, request.nextUrl.hostname);
     return response;
 
   } catch (error: any) {
