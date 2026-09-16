@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
     const { data: workouts } = await supabase
       .from('workouts')
       .select('id, member_id, duration')
+      .not('workout_plan_id', 'is', null)
       .gte('created_at', yesterday.toISOString())
       .limit(1000);
 
@@ -118,6 +119,7 @@ export async function POST(request: NextRequest) {
           .from('workouts')
           .select('*', { count: 'exact', head: true })
           .eq('member_id', workout.member_id)
+          .not('workout_plan_id', 'is', null)
           .gte('created_at', new Date().toISOString().split('T')[0]);
 
         const validation = validateWorkoutLog({

@@ -5,6 +5,7 @@ import { ArrowUpRight, CheckCircle2, Clock3, Dumbbell, Plus } from 'lucide-react
 import { WorkoutPlan } from '@/types';
 import PageHeader from '@/components/MemberPageHeader';
 import MemberNextAction from '@/components/MemberNextAction';
+import LoggedWorkoutHistory from '@/components/LoggedWorkoutHistory';
 import { useClientSession } from '@/lib/client-session';
 import type { VerificationStatus } from '@/lib/member-journey';
 export default function MemberWorkoutsPage() {
@@ -29,10 +30,11 @@ export default function MemberWorkoutsPage() {
   useEffect(() => { void refresh(); const sync = () => void refresh(); window.addEventListener('thrivv:workouts-synced', sync); return () => window.removeEventListener('thrivv:workouts-synced', sync); }, [refresh]);
   if (!user || loading) return <div role="status" className="flex min-h-[45vh] items-center justify-center gap-3 text-thrivv-text-secondary"><Dumbbell size={20} className="text-thrivv-gold-500" />Loading workouts…</div>;
   return <div className="member-future space-y-6" data-section="workouts">
-    <PageHeader section="workouts" title="Every session counts." subtitle="Your activity, verification and training plans in one place." />
+    <PageHeader section="workouts" title="Every session counts." subtitle="Your activity, verification and training plans in one place." action={<Link href="/member/workouts/log" className="btn-primary inline-flex items-center gap-2 px-4 py-3 text-sm"><Plus size={16} />Log workout</Link>} />
     {error && <p role="alert" className="rounded-xl border border-amber-500/20 p-4 text-sm text-amber-200">{error} <button className="underline" onClick={() => void refresh()}>Retry</button></p>}
     <div className="inline-flex rounded-xl border border-white/10 bg-white/[0.025] p-1" aria-label="Workout views">{(['activity', 'plans'] as const).map(value => <button key={value} type="button" aria-pressed={tab === value} onClick={() => setTab(value)} className={`rounded-lg px-5 py-2.5 text-sm font-medium transition-colors ${tab === value ? 'bg-thrivv-gold-500 text-black' : 'text-thrivv-text-secondary hover:text-white'}`}>{value === 'activity' ? 'Your activity' : 'Training plans'}</button>)}</div>
     {tab === 'activity' ? <div className="space-y-6">
+      <LoggedWorkoutHistory key={user.id} memberId={user.id} />
       {data && <MemberNextAction data={data} />}
       <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 sm:p-6"><h2 className="font-semibold text-white">Recent activity</h2><p className="mt-1 text-xs text-thrivv-text-muted">WHOOP workouts from the past seven days and today’s manual check-in</p>
         {data?.manual?.eligible && data.manual.checkedIn && <div className="mt-4 flex items-center gap-4 border-b border-white/10 py-4"><Dumbbell size={20} className="text-thrivv-gold-400" /><div className="min-w-0 flex-1"><h3 className="text-sm font-medium text-white">Manual workout</h3><p className="mt-1 text-xs text-thrivv-text-muted">{data.date}</p></div><span className={`text-xs ${data.manual.verified ? 'text-emerald-400' : 'text-thrivv-gold-400'}`}>{data.manual.verified ? 'Gym verified' : 'Ready to verify'}</span></div>}
