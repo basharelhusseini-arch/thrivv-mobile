@@ -16,7 +16,7 @@ test('anonymous requests cannot list or change plans, workouts or health profile
  getCurrentUser.mockResolvedValue(null);
  expect((await plans.GET(req('/api/workout-plans'))).status).toBe(401);
  expect((await workouts.GET(req('/api/workouts'))).status).toBe(401);
- expect((await detail.DELETE(req('/api/workout-plans/other','DELETE'),{params:{id:'other'}})).status).toBe(401);
+ expect((await detail.DELETE(req('/api/workout-plans/other','DELETE'),{params:Promise.resolve({id:'other'})})).status).toBe(401);
  expect((await profile.GET(req('/api/health/profile'))).status).toBe(401);
  expect(from).not.toHaveBeenCalled();
 });
@@ -33,9 +33,9 @@ test('plan collection uses persisted records scoped to signed in owner',async()=
 });
 test('plan ID lookup and deletion always constrain owner',async()=>{
  const q=query(null);from.mockReturnValue(q);
- expect((await detail.GET(req('/api/workout-plans/other'),{params:{id:'other'}})).status).toBe(404);
+ expect((await detail.GET(req('/api/workout-plans/other'),{params:Promise.resolve({id:'other'})})).status).toBe(404);
  expect(q.eq).toHaveBeenCalledWith('member_id','owner');
- await detail.DELETE(req('/api/workout-plans/other','DELETE'),{params:{id:'other'}});
+ await detail.DELETE(req('/api/workout-plans/other','DELETE'),{params:Promise.resolve({id:'other'})});
  expect(q.eq.mock.calls.filter((a:any[])=>a[0]==='member_id')).toHaveLength(2);
 });
 test('workoutPlanId filtering cannot expose another owner workouts',async()=>{

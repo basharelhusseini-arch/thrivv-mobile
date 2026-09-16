@@ -2,10 +2,8 @@ import { NextRequest } from 'next/server';
 import { legacyJson, legacyMemberAccess } from '@/lib/legacy-api-access';
 import { store } from '@/lib/store';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const access = await legacyMemberAccess(params.id);
     if (!access.ok) return access.response;

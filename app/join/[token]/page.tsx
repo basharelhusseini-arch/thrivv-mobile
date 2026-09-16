@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-export default function JoinGym({ params }: { params: { token: string } }) {
+import { useParams } from 'next/navigation';
+export default function JoinGym() {
+  const params = useParams<{ token: string }>();
   const [message, setMessage] = useState('Sign in or create a Thrivv account, then return to this invitation to join your gym.');
   const [busy, setBusy] = useState(false);
   const [joined, setJoined] = useState(false);

@@ -90,7 +90,7 @@ export default async function RootLayout({
 }>) {
   const serverIdentity = await getServerSessionIdentity();
   return (
-    <html lang="en" data-native-app={isNativeApp(headers().get('user-agent')) ? 'true' : undefined}>
+    <html lang="en" data-native-app={isNativeApp((await headers()).get('user-agent')) ? 'true' : undefined}>
       <head>
         <script
           type="application/ld+json"

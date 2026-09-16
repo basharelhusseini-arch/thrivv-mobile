@@ -13,7 +13,7 @@ import { GET as meals } from '@/app/api/nutrition-plans/[id]/meals/route';
 import { POST as generate } from '@/app/api/nutrition-plans/generate/route';
 const auth = requireAuth as jest.Mock;
 const from = supabase.from as jest.Mock;
-const context = { params: { id: 'plan-id' } };
+const context = { params: Promise.resolve({ id: 'plan-id' }) };
 let query: any;
 beforeEach(() => {
   jest.clearAllMocks(); auth.mockResolvedValue({ id: 'owner' });

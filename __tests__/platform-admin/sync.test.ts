@@ -9,7 +9,7 @@ import {checkAdminAccess} from '@/lib/gym-auth';
 import {syncDaily} from '@/lib/whoop/sync-daily';
 import {withWhoopLock,SyncBusyError} from '@/lib/whoop/sync';
 import {POST} from '@/app/api/admin/members/[user_id]/sync/route';
-const id='00000000-0000-4000-8000-000000000001',ctx={params:{user_id:id}};
+const id='00000000-0000-4000-8000-000000000001',ctx={params:Promise.resolve({user_id:id})};
 const request=()=>new NextRequest('https://gyms.thrivv.dev/api/admin/members/'+id+'/sync?date=2000-01-01',{method:'POST',headers:{origin:'https://gyms.thrivv.dev'},body:JSON.stringify({requestId:id,reason:'Member reported failed sync',date:'2000-01-01'})});
 let q:any;
 beforeEach(()=>{jest.resetAllMocks();(checkAdminAccess as jest.Mock).mockResolvedValue({ok:true,user:{id:'admin'}});q={select:jest.fn().mockReturnThis(),eq:jest.fn().mockReturnThis(),update:jest.fn().mockReturnThis(),maybeSingle:jest.fn().mockResolvedValue({data:{id,whoop_connected_at:'2026-01-01'},error:null}),then:(r:any)=>Promise.resolve({error:null}).then(r)};(supabase.from as jest.Mock).mockReturnValue(q);(supabase.rpc as jest.Mock).mockResolvedValue({data:true,error:null});});

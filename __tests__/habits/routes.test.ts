@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { store } from '@/lib/store';
+import { memberRecords as store } from '@/lib/member-records';
 import { GET as list, POST as create } from '@/app/api/habits/route';
 import { GET as listEntries } from '@/app/api/habits/entries/route';
 import { GET as read, PUT as update, DELETE as remove } from '@/app/api/habits/[id]/route';
@@ -8,7 +8,7 @@ import { GET as readEntries, POST as addEntry } from '@/app/api/habits/[id]/entr
 import { PUT as toggle } from '@/app/api/habits/[id]/entries/[entryId]/route';
 
 jest.mock('@/lib/auth', () => ({ getCurrentUser: jest.fn() }));
-jest.mock('@/lib/store', () => ({ store: {
+jest.mock('@/lib/member-records', () => ({ memberRecords: {
   getMemberHabits: jest.fn(), getHabit: jest.fn(), addHabit: jest.fn(), updateHabit: jest.fn(), deleteHabit: jest.fn(),
   getMemberHabitEntries: jest.fn(), getHabitEntries: jest.fn(), addHabitEntry: jest.fn(), updateHabitEntry: jest.fn(),
 } }));
@@ -17,8 +17,8 @@ const data = store as jest.Mocked<typeof store>;
 const owner = 'member-a';
 const habit = { id: 'habit-a', memberId: owner, name: 'Stretch', category: 'fitness' as const, frequency: 'daily' as const, createdAt: '2026-01-01', status: 'active' as const };
 const entry = { id: 'entry-a', memberId: owner, habitId: habit.id, date: '2026-01-01', completed: false };
-const ctx = { params: { id: habit.id } };
-const entryCtx = { params: { ...ctx.params, entryId: entry.id } };
+const ctx = { params: Promise.resolve({ id: habit.id }) };
+const entryCtx = { params: Promise.resolve({ id: habit.id, entryId: entry.id }) };
 function request(method = 'GET', body?: unknown, query = '', origin = 'https://www.thrivv.dev') {
   return new NextRequest(`https://www.thrivv.dev/api/habits${query}`, {
     method,
@@ -29,14 +29,14 @@ function request(method = 'GET', body?: unknown, query = '', origin = 'https://w
 beforeEach(() => {
   jest.clearAllMocks();
   auth.mockResolvedValue({ id: owner });
-  data.getHabit.mockReturnValue(habit);
-  data.getMemberHabits.mockReturnValue([habit]);
-  data.getHabitEntries.mockReturnValue([entry]);
-  data.getMemberHabitEntries.mockReturnValue([entry]);
-  data.addHabit.mockImplementation(fields => ({ ...fields, id: habit.id, createdAt: habit.createdAt }));
-  data.updateHabit.mockImplementation((id, fields) => ({ ...habit, ...fields, id }));
-  data.addHabitEntry.mockImplementation(fields => ({ ...fields, id: entry.id }));
-  data.updateHabitEntry.mockImplementation((id, fields) => ({ ...entry, ...fields, id }));
+  data.getHabit.mockResolvedValue(habit);
+  data.getMemberHabits.mockResolvedValue([habit]);
+  data.getHabitEntries.mockResolvedValue([entry]);
+  data.getMemberHabitEntries.mockResolvedValue([entry]);
+  data.addHabit.mockImplementation(async fields => ({ ...fields, id: habit.id, createdAt: habit.createdAt }));
+  data.updateHabit.mockImplementation(async (id, fields) => ({ ...habit, ...fields, id }));
+  data.addHabitEntry.mockImplementation(async fields => ({ ...fields, id: entry.id }));
+  data.updateHabitEntry.mockImplementation(async (id, fields) => ({ ...entry, ...fields, id }));
 });
 
 test('all habit reads and mutations require a current session', async () => {
@@ -59,7 +59,7 @@ test('lists use the session actor and reject another member in the query', async
 });
 
 test('another member cannot read, change, delete, or append to a habit', async () => {
-  data.getHabit.mockReturnValue({ ...habit, memberId: 'victim' });
+  data.getHabit.mockResolvedValue({ ...habit, memberId: 'victim' });
   const responses = await Promise.all([
     read(request(), ctx), update(request('PUT', { name: 'Changed' }), ctx), remove(request('DELETE'), ctx),
     readEntries(request(), ctx), addEntry(request('POST', { date: entry.date, completed: true }), ctx), toggle(request('PUT', { completed: true }), entryCtx),
@@ -77,7 +77,7 @@ test('new habits derive their identity from the session and ignore client ids an
 
 test('own updates cannot reassign member or record identities', async () => {
   expect((await update(request('PUT', { name: 'Walk', id: 'forged', memberId: owner, createdAt: '1900-01-01' }), ctx)).status).toBe(200);
-  expect(data.updateHabit).toHaveBeenCalledWith(habit.id, { name: 'Walk' });
+  expect(data.updateHabit).toHaveBeenCalledWith(habit.id, { name: 'Walk' }, owner);
   expect((await update(request('PUT', { memberId: 'victim' }), ctx)).status).toBe(403);
 });
 
@@ -93,15 +93,15 @@ test('new entries use the owned parent and actor, never client entry ids or pare
 });
 
 test('toggles update only completion and scope legacy duplicate ids to the owner and parent', async () => {
-  data.getHabitEntries.mockReturnValue([{ ...entry, memberId: 'victim' }, entry]);
+  data.getHabitEntries.mockResolvedValue([{ ...entry, memberId: 'victim' }, entry]);
   expect((await toggle(request('PUT', { completed: true, habitId: 'victim-habit', id: 'forged', date: '1900-01-01' }), entryCtx)).status).toBe(200);
   expect(data.updateHabitEntry).toHaveBeenCalledWith(entry.id, { completed: true }, { memberId: owner, habitId: habit.id });
-  data.getHabitEntries.mockReturnValue([{ ...entry, memberId: 'victim' }]);
+  data.getHabitEntries.mockResolvedValue([{ ...entry, memberId: 'victim' }]);
   expect((await toggle(request('PUT', { completed: false }), entryCtx)).status).toBe(404);
 });
 
 test('entry lists filter another member even if legacy parent ids collide', async () => {
-  data.getHabitEntries.mockReturnValue([entry, { ...entry, memberId: 'victim' }]);
+  data.getHabitEntries.mockResolvedValue([entry, { ...entry, memberId: 'victim' }]);
   expect(await (await readEntries(request(), ctx)).json()).toEqual([entry]);
 });
 
@@ -112,7 +112,7 @@ test.each(['2026-02-31', '2026-13-01', '2099-01-01', {}, null])('invalid or futu
 
 test('same-origin bodyless DELETE works while cross-origin requests cannot mutate data', async () => {
   expect((await remove(request('DELETE'), ctx)).status).toBe(200);
-  expect(data.deleteHabit).toHaveBeenCalledWith(habit.id);
+  expect(data.deleteHabit).toHaveBeenCalledWith(habit.id, owner);
   data.deleteHabit.mockClear();
   expect((await remove(request('DELETE', undefined, '', 'https://attacker.test'), ctx)).status).toBe(403);
   const crossSite = new NextRequest('https://www.thrivv.dev/api/habits', { method: 'DELETE', headers: { 'sec-fetch-site': 'cross-site' } });

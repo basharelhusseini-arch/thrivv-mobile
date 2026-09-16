@@ -59,6 +59,8 @@ try {
     await page.getByRole('textbox', { name: 'Gym joining code' }).waitFor();
     assert.equal(await page.getByRole('textbox', { name: 'Gym joining code' }).inputValue(), firstCode);
     await page.getByRole('button', { name: 'Replace code', exact: true }).click();
+    await page.getByRole('group', { name: 'Confirm joining code replacement' }).waitFor();
+    await page.getByRole('button', { name: 'Replace joining code', exact: true }).click();
     await page.getByRole('status').filter({ hasText: 'Gym code saved' }).waitFor();
     assert.notEqual(await page.getByRole('textbox', { name: 'Gym joining code' }).inputValue(), firstCode);
     await page.clock.install();

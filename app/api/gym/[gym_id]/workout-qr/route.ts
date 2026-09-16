@@ -5,7 +5,8 @@ import { createGymWorkoutQr } from '@/lib/gym-workout-qr';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 const headers = { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie', 'X-Content-Type-Options': 'nosniff' };
-export async function GET(_req: NextRequest, { params }: { params: { gym_id: string } }) {
+export async function GET(_req: NextRequest, props: { params: Promise<{ gym_id: string }> }) {
+  const params = await props.params;
   const access = await checkGymAccess(params.gym_id);
   if (!access.ok) return NextResponse.json({ error: access.reason }, { status: access.status, headers });
   try {

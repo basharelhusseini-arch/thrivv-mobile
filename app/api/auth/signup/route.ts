@@ -2,14 +2,17 @@ import { ensureMemberProfile } from '@/lib/member-profile';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseEnv, getSupabaseServiceKey } from '@/lib/env';
+import { setSessionCookie } from '@/lib/auth';
+import { authBody } from '@/lib/auth-request';
+import { MemberResourceError } from '@/lib/member-resource';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await authBody(request);
     const { firstName, lastName, email, password, phone } = body;
 
     // Validation
-    if (!firstName || !lastName || !email || !password) {
+    if (typeof firstName !== 'string' || !firstName.trim() || firstName.length > 100 || typeof lastName !== 'string' || !lastName.trim() || lastName.length > 100 || !email || !password || (phone !== undefined && (typeof phone !== 'string' || phone.length > 40))) {
       return NextResponse.json(
         { error: 'All fields are required' },
         { status: 400 }
@@ -101,19 +104,10 @@ export async function POST(request: NextRequest) {
       
       await ensureMemberProfile(data.user);
 
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: data.user.id,
-          email: data.user.email,
-          firstName: firstName,
-          lastName: lastName,
-        },
-        session: {
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        },
-      });
+      const user = { id: data.user.id, email: data.user.email || email, firstName, lastName };
+      const response = NextResponse.json({ success: true, user }, { headers: { 'Cache-Control': 'private, no-store' } });
+      await setSessionCookie(user, response, request.nextUrl.hostname);
+      return response;
     }
 
     // Unexpected: no error but also no user
@@ -124,6 +118,7 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error: any) {
+    if (error instanceof MemberResourceError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error('Signup handler error:', {
       message: error?.message || 'Unknown error',
       stack: error?.stack,

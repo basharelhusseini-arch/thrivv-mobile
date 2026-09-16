@@ -1,59 +1,36 @@
-import { getCurrentUser } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
-import { NextRequest, NextResponse } from 'next/server';
-import { store } from '@/lib/store';
+import { NextRequest } from 'next/server';
+import { memberRecords } from '@/lib/member-records';
+import { memberActor, memberBody, memberResult, MemberResourceError } from '@/lib/member-resource';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({error:'Unauthorized'}, {status:401});
-    const {data: workout} = await supabase.from('workouts').select('id').eq('id',params.id).eq('member_id',user.id).maybeSingle();
-    if (!workout) return NextResponse.json({error:'Workout not found'}, {status:404});
-    const progress = store.getWorkoutProgress(params.id);
-    return NextResponse.json(progress.filter(p => p.memberId === user.id));
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch workout progress' }, { status: 500 });
-  }
+async function owner(request: NextRequest, id: string) {
+  const user = await memberActor(request);
+  const { data, error } = await supabase.from('workouts').select('id').eq('id', id).eq('member_id', user.id).maybeSingle();
+  if (error) throw new Error('Workout storage unavailable');
+  if (!data) throw new MemberResourceError('Workout not found', 404);
+  return user;
 }
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({error:'Unauthorized'}, {status:401});
-    const {data: workout} = await supabase.from('workouts').select('id').eq('id',params.id).eq('member_id',user.id).maybeSingle();
-    if (!workout) return NextResponse.json({error:'Workout not found'}, {status:404});
-    const body = await request.json();
-    if (body.memberId && body.memberId !== user.id) return NextResponse.json({error:'Forbidden'}, {status:403});
-    const memberId=user.id;
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  return memberResult(async () => {
+    const { id } = await props.params;
+    const user = await owner(request, id);
+    return memberRecords.getWorkoutProgress(id, user.id);
+  });
+}
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+  return memberResult(async () => {
+    const { id } = await props.params;
+    const user = await owner(request, id);
+    const body = await memberBody(request, user.id);
     const { exerciseId, setsCompleted, repsCompleted, weightUsed, durationCompleted, restTimeActual, notes } = body;
-
-    if (!memberId || !exerciseId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: memberId, exerciseId' },
-        { status: 400 }
-      );
+    if (typeof exerciseId !== 'string' || !exerciseId.trim() || exerciseId.length > 200 || !Number.isInteger(setsCompleted) || setsCompleted < 0 || setsCompleted > 100) throw new MemberResourceError('Check the exercise and completed sets.', 400);
+    for (const values of [repsCompleted, weightUsed]) {
+      if (values !== undefined && (!Array.isArray(values) || values.length > 100 || values.some(v => typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 10000))) throw new MemberResourceError('Check the reps and weights.', 400);
     }
-
-    const progress = store.addWorkoutProgress({
-      workoutId: params.id,
-      memberId,
-      exerciseId,
-      setsCompleted,
-      repsCompleted,
-      weightUsed,
-      durationCompleted,
-      restTimeActual,
-      notes,
-    });
-
-    return NextResponse.json(progress, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to save workout progress' }, { status: 500 });
-  }
+    for (const value of [durationCompleted, restTimeActual]) {
+      if (value !== undefined && (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 86400)) throw new MemberResourceError('Check the workout duration.', 400);
+    }
+    if (notes !== undefined && (typeof notes !== 'string' || notes.length > 2000)) throw new MemberResourceError('Notes must be under 2,000 characters.', 400);
+    return memberRecords.addWorkoutProgress({ workoutId: id, memberId: user.id, exerciseId, setsCompleted, repsCompleted, weightUsed, durationCompleted, restTimeActual, notes });
+  }, 201);
 }

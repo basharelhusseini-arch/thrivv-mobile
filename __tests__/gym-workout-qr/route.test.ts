@@ -3,7 +3,7 @@ import {checkGymAccess} from '@/lib/gym-auth';
 import {GET} from '@/app/api/gym/[gym_id]/workout-qr/route';
 import {NextRequest} from 'next/server';
 const gym='00000000-0000-4000-8000-000000000001',user='00000000-0000-4000-8000-000000000002';
-const req=new NextRequest('https://gyms.thrivv.dev/api/gym/'+gym+'/workout-qr');const context={params:{gym_id:gym}};
+const req=new NextRequest('https://gyms.thrivv.dev/api/gym/'+gym+'/workout-qr');const context={params:Promise.resolve({gym_id:gym})};
 const original=process.env.GYM_WORKOUT_QR_SECRET;
 const originalJwt=process.env.JWT_SECRET;
 beforeEach(()=>{jest.clearAllMocks();process.env.GYM_WORKOUT_QR_SECRET=Buffer.alloc(32,9).toString('base64');process.env.JWT_SECRET='test-session-secret-for-domain-separated-qr-key';});

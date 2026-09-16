@@ -7,7 +7,7 @@ import { GET as code, POST as replace } from '@/app/api/gym/[gym_id]/code/route'
 import { POST as assign } from '@/app/api/admin/gyms/[gym_id]/operators/route';
 import { encryptGymCode } from '@/lib/gym-code-encryption';
 import { newGymCode } from '@/lib/gym-codes';
-const ctx = { params: { gym_id: 'gym-a' } };
+const ctx = { params: Promise.resolve({ gym_id: 'gym-a' }) };
 const original = process.env.GYM_CODE_ENCRYPTION_KEY;
 const request = (body: object = {}, origin = 'https://gyms.thrivv.dev') => new NextRequest('https://gyms.thrivv.dev/api/gym/gym-a/code', {method:'POST',headers:{origin,'Content-Type':'application/json'},body:JSON.stringify(body)});
 beforeEach(() => { jest.clearAllMocks(); process.env.GYM_CODE_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64'); (checkGymAccess as jest.Mock).mockResolvedValue({ok:true,user:{id:'operator'}}); });
@@ -55,6 +55,6 @@ test('operator cannot assign access; admin RPC uses session actor, not request a
   (supabase.rpc as jest.Mock).mockResolvedValue({error:null});
   const userId='00000000-0000-4000-8000-000000000001';
   const gymId='00000000-0000-4000-8000-000000000002', requestId='00000000-0000-4000-8000-000000000003';
-  expect((await assign(request({userId,grant:true,actor:'forged',requestId,reason:'Owner approved'}),{params:{gym_id:gymId}})).status).toBe(200);
+  expect((await assign(request({userId,grant:true,actor:'forged',requestId,reason:'Owner approved'}),{params:Promise.resolve({gym_id:gymId})})).status).toBe(200);
   expect(supabase.rpc).toHaveBeenCalledWith('thrivv_admin_change',{p_actor:'real-admin',p_request:requestId,p_action:'operator.grant',p_target:gymId,p_reason:'Owner approved',p_data:{user_id:userId}});
 });

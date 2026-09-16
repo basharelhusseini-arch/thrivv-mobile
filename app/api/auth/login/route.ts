@@ -3,10 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabaseEnv } from '@/lib/env';
 import { setSessionCookie } from '@/lib/auth';
+import { authBody } from '@/lib/auth-request';
+import { MemberResourceError } from '@/lib/member-resource';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await authBody(request);
     const { email, password } = body;
 
     // Validation
@@ -92,15 +94,12 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       user: sessionUser,
-      session: {
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      },
     }, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } });
     await setSessionCookie(sessionUser, response, request.nextUrl.hostname);
     return response;
 
   } catch (error: any) {
+    if (error instanceof MemberResourceError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error('Login handler error:', {
       message: error?.message || 'Unknown error',
       stack: error?.stack,

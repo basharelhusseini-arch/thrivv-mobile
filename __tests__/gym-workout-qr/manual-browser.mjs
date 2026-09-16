@@ -12,7 +12,7 @@ const server=createServer(async(req,res)=>{
  if(req.url==='/api/member/workout-verification'){
   if(req.method==='POST'){let raw='';for await(const c of req)raw+=c;const body=JSON.parse(raw);assert.equal(body.workoutId,'manual');assert.equal(body.qr,code);assert.match(body.requestId,/^[a-f0-9-]{36}$/);posts++;verified=true;return json({verified:true,reward:{status:'credited',awarded:40}});}
   if(fail)return json({},503);
-  return json({gymId:'gym',date:'2026-09-13',timezone:'UTC',verificationEnabled:true,rewardsEnabled:true,workouts:[],creditedPoints:verified?40:0,manual:{eligible:true,enabled:true,checkedIn:checked,verified,canScan:checked,estimatedPoints:40}});
+  return json({gymId:'gym',date:'2026-09-13',timezone:'UTC',verificationEnabled:true,rewardsEnabled:true,workouts:[],creditedPoints:verified?40:0,rewardStatus:verified?'credited':'pending',manual:{eligible:true,enabled:true,checkedIn:checked,verified,canScan:checked,estimatedPoints:40}});
  }
  if(req.url==='/api/checkin/today'){
   if(req.method==='POST'){
@@ -38,19 +38,19 @@ try{
     const stream=canvas.captureStream(10);window.testStream=stream;return stream;
    };
   },png);
-  await page.goto(origin);await page.getByRole('button',{name:'Log workout & open camera'}).click();
-  await page.getByRole('status').filter({hasText:'Points credited'}).waitFor();assert.equal(posts,1);
-  await page.getByText('Today’s manual workout · 40 points credited').waitFor();
+  await page.goto(origin);await page.getByRole('button',{name:'Scan gym QR',exact:true}).click();
+  await page.getByRole('status').filter({hasText:'40 points earned.'}).waitFor();assert.equal(posts,1);
+  await page.getByRole('heading',{name:'40 points earned'}).waitFor();
   assert.equal(await page.evaluate(()=>window.testStream.getTracks().every(t=>t.readyState==='ended')),true);
   assert.equal(await page.getByRole('button',{name:'Scan gym QR',exact:true}).count(),0);
   verified=false;posts=0;await page.reload();await page.getByRole('button',{name:'Scan gym QR',exact:true}).click();
-  await page.getByRole('status').filter({hasText:'Points credited'}).waitFor();assert.equal(posts,1);
-  await page.getByText('Today’s manual workout · 40 points credited').waitFor();
+  await page.getByRole('status').filter({hasText:'40 points earned.'}).waitFor();assert.equal(posts,1);
+  await page.getByRole('heading',{name:'40 points earned'}).waitFor();
   assert.equal(await page.evaluate(()=>window.testStream.getTracks().every(t=>t.readyState==='ended')),true);
-  await page.getByRole('button',{name:'Scan again safely'}).click();await page.getByRole('status').filter({hasText:'Points credited'}).waitFor();assert.equal(posts,2);
+  assert.equal(await page.getByRole('button',{name:'Scan gym QR',exact:true}).count(),0,'credited workouts do not offer another scan');
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.screenshot({path:`/tmp/thrivv-manual-${width}.png`,fullPage:true});
-  fail=true;await page.reload();await page.getByRole('alert').waitFor();fail=false;await page.getByRole('button',{name:'Refresh status'}).click();await page.getByText('Today’s manual workout · 40 points credited').waitFor();
+  fail=true;await page.reload();await page.getByRole('alert').waitFor();fail=false;await page.getByRole('button',{name:'Refresh status'}).click();await page.getByRole('heading',{name:'40 points earned'}).waitFor();
   assert.deepEqual(errors,[]);await page.close();console.log(`PASS ${width}px manual checkin gate, synthetic camera QR decoding, request payload, credit feedback, safe repeat, camera cleanup, refresh retry, no overflow/errors.`);
  }
 }finally{await browser.close();server.closeAllConnections();server.close();}
