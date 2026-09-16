@@ -2,9 +2,10 @@
 import Link from 'next/link';
 import WorkspaceLink from '@/components/WorkspaceLink';
 import { useEffect, useState } from 'react';
+import AdminRewards from '@/components/AdminRewards';
 import GymJoinCode from '@/components/GymJoinCode';
 import SupportInbox, { readJson, useAction, inputClass, buttonClass, Pager } from '@/components/SupportInbox';
-const tabs = ['Overview', 'Gyms', 'Access requests', 'Members', 'Support', 'Audit history'];
+const tabs = ['Overview', 'Gyms', 'Access requests', 'Members', 'Support', 'Rewards', 'Audit history'];
 function useData(url: string) {
   const [data, setData] = useState<any>(null); const [error, setError] = useState('');
   async function reload() { const d = await readJson(url); setData(d); setError(''); }
@@ -35,7 +36,7 @@ export default function AdminGymsView() {
   return <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-7 min-w-0">
     <header className="glass-card p-6 sm:p-10 space-y-4"><p className="text-xs uppercase tracking-[0.28em] text-thrivv-gold-500">Thrivv / Platform administration</p><h1 className="text-3xl sm:text-5xl font-semibold tracking-tighter">Your gyms. One workspace.</h1><p className="text-thrivv-text-secondary">Manage gym access, assist members and review changes.</p><WorkspaceLink className="text-sm text-thrivv-gold-500 underline" href="/member/dashboard">Open member dashboard</WorkspaceLink></header>
     <nav aria-label="Administration sections" className="flex flex-wrap gap-2">{tabs.map(t => <button aria-current={tab === t ? 'page' : undefined} key={t} onClick={() => setTab(t)} className={tab === t ? buttonClass : 'btn-ghost px-4 py-3 text-sm'}>{t}</button>)}</nav>
-    {tab === 'Overview' && <Overview />}{tab === 'Gyms' && <Gyms />}{tab === 'Access requests' && <AccessRequests />}{tab === 'Members' && <Members />}{tab === 'Support' && <SupportInbox admin />}{tab === 'Audit history' && <Audit />}
+    {tab === 'Overview' && <Overview />}{tab === 'Gyms' && <Gyms />}{tab === 'Access requests' && <AccessRequests />}{tab === 'Members' && <Members />}{tab === 'Support' && <SupportInbox admin />}{tab === 'Rewards' && <AdminRewards />}{tab === 'Audit history' && <Audit />}
   </main>;
 }
 function Overview() {

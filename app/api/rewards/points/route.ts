@@ -17,9 +17,9 @@ export async function GET() {
       supabase.from('users').select('reward_points').eq('id', user.id).single(),
       supabase.from('reward_history').select('date, health_score, points_earned').eq('user_id', user.id)
         .gte('date', thirtyDaysAgo.toISOString().split('T')[0]).order('date', { ascending: false }).limit(30),
-      supabase.from('reward_redemptions').select('id,offer_id,points,status,created_at,reward_offers(name)')
+      supabase.from('reward_redemptions').select('id,offer_id,points,status,created_at,discount_code,expires_at,offer_snapshot,reward_offers(name)')
         .eq('user_id', user.id).order('created_at', { ascending: false }).limit(100),
-      supabase.from('reward_offers').select('id,name,points').eq('active', true),
+      supabase.rpc('thrivv_reward_catalog', { p_actor: user.id, p_admin: false }),
       supabase.from('reward_transactions').select('id,kind,amount,score_date,created_at')
         .eq('user_id', user.id).order('created_at', { ascending: false }).limit(30),
     ]);
