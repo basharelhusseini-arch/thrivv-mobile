@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Target, Calendar, Clock, TrendingUp, Dumbbell, Trash2, ChevronDown, ChevronUp, CheckCircle2, Wind, Timer, Zap, Activity } from 'lucide-react';
+import { ArrowLeft, Target, Calendar, Clock, TrendingUp, Dumbbell, ChevronDown, ChevronUp, CheckCircle2, Wind, Timer, Zap, Activity } from 'lucide-react';
 import { WorkoutPlan, Workout, Exercise } from '@/types';
+import WorkoutDeleteButton from '@/components/WorkoutDeleteButton';
 
 export default function WorkoutPlanDetailPage() {
   const params = useParams();
@@ -15,76 +16,48 @@ export default function WorkoutPlanDetailPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [exercises, setExercises] = useState<Record<string, Exercise>>({});
   const [loading, setLoading] = useState(true);
+  const [loadedPlanId, setLoadedPlanId] = useState<string | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set());
 
-  const fetchExercises = useCallback(async () => {
-    try {
-      const response = await fetch('/api/exercises');
-      if (response.ok) {
-        const exercisesData: Exercise[] = await response.json();
+  useEffect(() => {
+    if (!planId) return;
+    let active = true;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+    setPlan(null);
+    setWorkouts([]);
+    setExpandedExercises(new Set());
+    setLoading(true);
+
+    const load = async (url: string) => {
+      const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      return response.ok ? response.json() : null;
+    };
+    void Promise.allSettled([
+      load(`/api/workout-plans/${encodeURIComponent(planId)}`),
+      load(`/api/workouts?workoutPlanId=${encodeURIComponent(planId)}`),
+      load('/api/exercises'),
+    ]).then(([planResult, workoutsResult, exercisesResult]) => {
+      if (!active) return;
+      if (planResult.status === 'fulfilled' && planResult.value?.id === planId) setPlan(planResult.value);
+      if (workoutsResult.status === 'fulfilled' && Array.isArray(workoutsResult.value)) setWorkouts(workoutsResult.value);
+      if (exercisesResult.status === 'fulfilled' && Array.isArray(exercisesResult.value)) {
         const exercisesMap: Record<string, Exercise> = {};
-        exercisesData.forEach(ex => {
-          exercisesMap[ex.id] = ex;
-        });
+        exercisesResult.value.forEach((exercise: Exercise) => { exercisesMap[exercise.id] = exercise; });
         setExercises(exercisesMap);
       }
-    } catch (error) {
-      console.error('Failed to fetch exercises:', error);
-    }
-  }, []);
+      setLoadedPlanId(planId);
+      setLoading(false);
+    }).finally(() => clearTimeout(timeout));
 
-  const fetchPlanData = useCallback(async () => {
-    if (!planId) return;
-
-    try {
-      const [planRes, workoutsRes] = await Promise.all([
-        fetch(`/api/workout-plans/${planId}`),
-        fetch(`/api/workouts?workoutPlanId=${planId}`),
-      ]);
-
-      if (planRes.ok) {
-        const planData = await planRes.json();
-        setPlan(planData);
-      }
-
-      if (workoutsRes.ok) {
-        const workoutsData = await workoutsRes.json();
-        setWorkouts(workoutsData);
-      }
-    } catch (error) {
-      console.error('Failed to fetch plan data:', error);
-    }
+    return () => {
+      active = false;
+      controller.abort();
+      clearTimeout(timeout);
+    };
   }, [planId]);
 
-  useEffect(() => {
-    if (planId) {
-      setLoading(true);
-      Promise.all([fetchPlanData(), fetchExercises()]).finally(() => {
-        setLoading(false);
-      });
-    }
-  }, [planId, fetchPlanData, fetchExercises]);
-
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this workout plan?')) return;
-
-    try {
-      const response = await fetch(`/api/workout-plans/${planId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        router.push('/workouts');
-      } else {
-        alert('Failed to delete workout plan');
-      }
-    } catch (error) {
-      console.error('Failed to delete workout plan:', error);
-      alert('Failed to delete workout plan');
-    }
-  };
-
-  if (loading) {
+  if (loading || loadedPlanId !== planId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark">
         <div className="text-center">
@@ -95,7 +68,7 @@ export default function WorkoutPlanDetailPage() {
     );
   }
 
-  if (!plan) {
+  if (!plan || plan.id !== planId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-thrivv-bg-dark">
         <div className="premium-card p-12 text-center">
@@ -144,8 +117,8 @@ export default function WorkoutPlanDetailPage() {
 
       {/* Hero Section - Plan Header */}
       <div className="mb-12 animate-fade-in-up">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+          <div className="min-w-0 flex-1 basis-64">
             <h1 className="text-4xl font-semibold text-thrivv-text-primary mb-2">
               {plan.name}
             </h1>
@@ -180,13 +153,8 @@ export default function WorkoutPlanDetailPage() {
             }`}>
               {plan.status}
             </span>
-            <button
-              onClick={handleDelete}
-              className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors border border-red-500/20"
-              title="Delete workout plan"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
+            <WorkoutDeleteButton key={plan.id} kind="plan" id={plan.id} memberId={plan.memberId} name={plan.name}
+              onDeleted={() => router.replace('/member/workouts')} />
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Mail, Lock, User, Phone } from 'lucide-react';
 import BackgroundLayers from '@/components/BackgroundLayers';
 import Logo from '@/components/Logo';
 import Reveal from '@/components/Reveal';
+import { PRIVACY_POLICY_VERSION } from '@/lib/privacy-policy';
 
 export default function MemberSignupPage() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ export default function MemberSignupPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptedPrivacyPolicy, setAcceptedPrivacyPolicy] = useState(false);
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,6 +35,11 @@ export default function MemberSignupPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (!acceptedPrivacyPolicy) {
+      setError('Please read and agree to the Privacy Policy before creating your account.');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -61,6 +68,8 @@ export default function MemberSignupPage() {
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
+          acceptedPrivacyPolicy,
+          privacyPolicyVersion: PRIVACY_POLICY_VERSION,
         }),
       });
 
@@ -79,6 +88,7 @@ export default function MemberSignupPage() {
           setTimeout(() => router.push('/member/dashboard'), 1500);
         }
       } else {
+        if (data.code === 'privacy_policy_updated') setAcceptedPrivacyPolicy(false);
         const errorMessage = data.error || 'Registration failed';
         const errorDetails = data.details ? ` (${data.details})` : '';
         setError(errorMessage + errorDetails);
@@ -233,8 +243,39 @@ export default function MemberSignupPage() {
                     />
                   </div>
 
+                  <div className="flex items-start gap-3 py-1">
+                    <input
+                      id="acceptedPrivacyPolicy"
+                      name="acceptedPrivacyPolicy"
+                      type="checkbox"
+                      checked={acceptedPrivacyPolicy}
+                      onChange={event => setAcceptedPrivacyPolicy(event.target.checked)}
+                      required
+                      disabled={loading}
+                      aria-describedby="privacy-policy-scope"
+                      className="mt-1 h-4 w-4 shrink-0 accent-thrivv-gold-500"
+                    />
+                    <div className="min-w-0 text-sm text-thrivv-text-secondary">
+                      <label htmlFor="acceptedPrivacyPolicy">
+                        I have read and agree to the{' '}
+                        <Link
+                          href="/privacy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-thrivv-gold-500 hover:text-thrivv-gold-400 underline underline-offset-4"
+                        >
+                          Privacy Policy
+                          <span className="sr-only"> (opens in a new tab)</span>
+                        </Link>.
+                      </label>
+                      <p id="privacy-policy-scope" className="mt-1 text-xs text-thrivv-text-muted">
+                        This does not opt you into marketing or connect wearable accounts.
+                      </p>
+                    </div>
+                  </div>
+
                   {error && (
-                    <div className="error-badge px-4 py-3 text-sm">{error}</div>
+                    <div role="alert" className="error-badge px-4 py-3 text-sm">{error}</div>
                   )}
 
                   {success && (
@@ -245,7 +286,7 @@ export default function MemberSignupPage() {
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !acceptedPrivacyPolicy}
                     className="w-full btn-primary py-4 px-6 disabled:opacity-50 disabled:cursor-not-allowed text-base inline-flex items-center justify-center gap-2 group"
                   >
                     {loading ? (

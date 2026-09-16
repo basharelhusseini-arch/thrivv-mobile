@@ -103,3 +103,79 @@ test('aborts an outstanding request and removes the refresh listener on unmount'
   act(() => { fakeWindow.dispatchEvent(new Event('thrivv:workouts-synced')); });
   expect(global.fetch).toHaveBeenCalledTimes(1);
 });
+
+test('deleting a logged workout updates history and preserves the remaining coaching tips', async () => {
+  const remaining = { ...workout, id: 'workout-b', name: 'Another workout' };
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce(response([workout, remaining]))
+    .mockResolvedValueOnce({ ok: true })
+    .mockResolvedValueOnce(response([remaining]));
+  await act(async () => { renderer = TestRenderer.create(<LoggedWorkoutHistory memberId="member-a" />); });
+  const remove = renderer!.root.findAllByType('button').find(node => node.children.includes('Delete logged workout'))!;
+  await act(async () => { remove.props.onClick(); });
+  expect(text()).not.toContain('Upper body session');
+  expect(text()).toContain('Another workout');
+  expect(text()).toContain('Coaching tips: bench-press');
+  expect(renderer!.root.findAllByType('details')).toHaveLength(1);
+  expect(global.fetch).toHaveBeenCalledWith('/api/workouts/workout-a?expectedUserId=member-a', expect.objectContaining({ method: 'DELETE' }));
+});
+
+test('deleting the last logged workout exposes the empty state', async () => {
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce(response([workout]))
+    .mockResolvedValueOnce({ ok: true })
+    .mockResolvedValueOnce(response([]));
+  await act(async () => { renderer = TestRenderer.create(<LoggedWorkoutHistory memberId="member-a" />); });
+  const remove = renderer!.root.findAllByType('button').find(node => node.children.includes('Delete logged workout'))!;
+  await act(async () => { remove.props.onClick(); });
+  expect(text()).toContain('No workouts logged yet.');
+  expect(renderer!.root.findAllByType('details')).toHaveLength(0);
+});
+
+test('announces deletion and focuses the surviving heading after removing the focused workout', async () => {
+  const focus = jest.fn();
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce(response([workout]))
+    .mockResolvedValueOnce({ ok: true })
+    .mockResolvedValueOnce(response([]));
+  await act(async () => {
+    renderer = TestRenderer.create(<LoggedWorkoutHistory memberId="member-a" />, {
+      createNodeMock: element => element.type === 'h2' ? { focus } : null,
+    });
+  });
+  expect(focus).not.toHaveBeenCalled();
+  const region = renderer!.root.findByProps({ 'aria-live': 'polite' });
+  expect(region.props['aria-atomic']).toBe('true');
+  expect(region.children).toHaveLength(0);
+  const remove = renderer!.root.findAllByType('button').find(node => node.children.includes('Delete logged workout'))!;
+  await act(async () => { remove.props.onClick(); });
+  expect(focus).toHaveBeenCalledTimes(1);
+  expect(renderer!.root.findByType('h2').props.tabIndex).toBe(-1);
+  expect(renderer!.root.findAllByType('details')).toHaveLength(0);
+  expect(text()).toContain('Logged workout deleted.');
+});
+
+test('does not announce or move focus for failed deletion and clears notices on an account switch', async () => {
+  const focus = jest.fn();
+  global.fetch = jest.fn()
+    .mockResolvedValueOnce(response([workout]))
+    .mockResolvedValueOnce({ ok: false, status: 503 })
+    .mockResolvedValueOnce({ ok: true })
+    .mockResolvedValueOnce(response([]))
+    .mockResolvedValueOnce(response([]));
+  await act(async () => {
+    renderer = TestRenderer.create(<LoggedWorkoutHistory memberId="member-a" />, {
+      createNodeMock: element => element.type === 'h2' ? { focus } : null,
+    });
+  });
+  const remove = renderer!.root.findAllByType('button').find(node => node.children.includes('Delete logged workout'))!;
+  await act(async () => { remove.props.onClick(); });
+  expect(focus).not.toHaveBeenCalled();
+  expect(text()).not.toContain('Logged workout deleted.');
+  await act(async () => { remove.props.onClick(); });
+  expect(focus).toHaveBeenCalledTimes(1);
+  expect(text()).toContain('Logged workout deleted.');
+  await act(async () => { renderer!.update(<LoggedWorkoutHistory memberId="member-b" />); });
+  expect(focus).toHaveBeenCalledTimes(1);
+  expect(text()).not.toContain('Logged workout deleted.');
+});

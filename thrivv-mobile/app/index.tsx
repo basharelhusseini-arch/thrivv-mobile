@@ -90,6 +90,10 @@ export default function App() {
             ? request.url.startsWith('https://') || request.url === 'about:blank'
             : allowNavigation(request.url)}
           onOpenWindow={({ nativeEvent }) => {
+            if (appUrl(nativeEvent.targetUrl)?.pathname === '/privacy') {
+              void openExternal(nativeEvent.targetUrl);
+              return;
+            }
             if (allowNavigation(nativeEvent.targetUrl)) {
               // Navigate the existing page so repeated target="_blank" links
               // still work after back navigation and keep the OAuth cookie store.
