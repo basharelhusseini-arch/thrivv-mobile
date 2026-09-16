@@ -5,6 +5,6 @@ export async function POST(request: NextRequest) { return handled(async () => {
   const user = await actor(false); const body = await bodyOf(request);
   if (typeof body.offerId !== 'string' || body.offerId.length > 100) throw new HttpError(400, 'Invalid offer');
   const { data, error } = await supabase.rpc('thrivv_redeem', { p_user: user.id, p_offer: body.offerId, p_request: body.requestId });
-  if (error) throw new HttpError(409, 'Offer unavailable, insufficient points, or a correction needs review');
+  if (error) throw new HttpError(409, 'Unable to redeem: the offer may be expired or out of codes, your points may be insufficient, or a correction needs review. Check My redemptions before retrying.');
   return json({ redemption: data });
 }); }
