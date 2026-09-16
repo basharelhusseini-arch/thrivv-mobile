@@ -1,16 +1,34 @@
 import { ensureMemberProfile } from '@/lib/member-profile';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getSupabaseEnv, getSupabaseServiceKey } from '@/lib/env';
+import { getSupabaseEnv } from '@/lib/env';
 import { setSessionCookie } from '@/lib/auth';
 import { decodeJwt } from 'jose';
 import { authBody } from '@/lib/auth-request';
 import { MemberResourceError } from '@/lib/member-resource';
+import { PRIVACY_POLICY_VERSION } from '@/lib/privacy-policy';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await authBody(request);
     const { firstName, lastName, email, password, phone } = body;
+
+    if (body.acceptedPrivacyPolicy !== true) {
+      return NextResponse.json(
+        { error: 'Please read and agree to the Privacy Policy before creating your account.' },
+        { status: 400 }
+      );
+    }
+
+    if (body.privacyPolicyVersion !== PRIVACY_POLICY_VERSION) {
+      return NextResponse.json(
+        {
+          error: 'The Privacy Policy has changed. Refresh this page, review the latest policy, and agree before creating your account.',
+          code: 'privacy_policy_updated',
+        },
+        { status: 409 }
+      );
+    }
 
     // Validation
     if (typeof firstName !== 'string' || !firstName.trim() || firstName.length > 100 || typeof lastName !== 'string' || !lastName.trim() || lastName.length > 100 || !email || !password || (phone !== undefined && (typeof phone !== 'string' || phone.length > 40))) {
@@ -60,6 +78,9 @@ export async function POST(request: NextRequest) {
           first_name: firstName,
           last_name: lastName,
           phone: phone || null,
+          privacy_policy_accepted: true,
+          privacy_policy_version: PRIVACY_POLICY_VERSION,
+          privacy_policy_accepted_at: new Date().toISOString(),
         },
       },
     });

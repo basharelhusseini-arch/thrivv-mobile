@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { getCurrentUser } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { memberActor, memberResult, MemberResourceError } from '@/lib/member-resource';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -58,32 +59,20 @@ export async function GET(request: NextRequest, props: { params: Promise<{ id: s
 
 export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  try {
-    const user = await getCurrentUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const { id } = params;
-    
-    const { error } = await supabase
+  return memberResult(async () => {
+    const user = await memberActor(request);
+    const expectedUserId = request.nextUrl.searchParams.get('expectedUserId');
+    if (expectedUserId !== null && expectedUserId !== user.id) {
+      throw new MemberResourceError('Your account changed. Refresh before continuing.', 403);
+    }
+    const { data, error } = await supabase
       .from('workout_plans')
       .delete()
-      .eq('id', id).eq('member_id', user.id);
-    
-    if (error) {
-      console.error('Failed to delete workout plan:', error);
-      return NextResponse.json(
-        { error: 'Workout plan not found' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json({ message: 'Workout plan deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting workout plan:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete workout plan' },
-      { status: 500 }
-    );
-  }
+      .eq('id', params.id).eq('member_id', user.id).select('id');
+    if (error) throw new MemberResourceError('Unable to delete workout plan.', 503);
+    if (!data?.length) throw new MemberResourceError('Workout plan not found.', 404);
+    return { message: 'Workout plan deleted successfully' };
+  });
 }
 
 export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {

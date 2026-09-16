@@ -16,6 +16,8 @@ export default function MemberLoginPage() {
   const [gymMode, setGymMode] = useState(false);
   const [switchUrl, setSwitchUrl] = useState('/member/login?portal=gym');
   useEffect(() => {
+    // MainLayout owns recovery routing; do not replace its token with a portal redirect.
+    if (new URLSearchParams(window.location.hash?.slice(1)).get('type') === 'recovery') return;
     const mode = isGymLogin(window.location.hostname, new URLSearchParams(window.location.search).get('portal'));
     const target = portalLoginUrl(window.location.hostname, mode);
     if (target.startsWith('https://') && new URL(target).hostname !== window.location.hostname && window.location.hostname !== `www.${new URL(target).hostname}`) {
@@ -127,6 +129,12 @@ export default function MemberLoginPage() {
                       className="input-premium w-full pl-11 pr-5 py-4 text-base"
                       placeholder="Password"
                     />
+                  </div>
+
+                  <div className="text-right">
+                    <Link href="/member/forgot-password" className="text-sm text-thrivv-gold-500 hover:underline">
+                      Forgot password?
+                    </Link>
                   </div>
 
                   {error && (

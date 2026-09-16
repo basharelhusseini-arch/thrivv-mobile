@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Dumbbell } from 'lucide-react';
 import WorkoutCoachingTips from '@/components/WorkoutCoachingTips';
+import WorkoutDeleteButton from '@/components/WorkoutDeleteButton';
 import type { LoggedWorkout } from '@/lib/manual-workouts';
 
 type HistoryState = {
@@ -21,6 +22,13 @@ function formatWorkoutDate(date: string) {
 export default function LoggedWorkoutHistory({ memberId }: { memberId: string }) {
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<HistoryState>({ memberId, workouts: [], loading: true, error: '' });
+  const [deletionNotice, setDeletionNotice] = useState<{ memberId: string; count: number } | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => { setDeletionNotice(null); }, [memberId]);
+  useEffect(() => {
+    if (deletionNotice?.memberId === memberId) heading.current?.focus();
+  }, [deletionNotice, memberId]);
 
   useEffect(() => {
     const refresh = () => setRevision(value => value + 1);
@@ -59,8 +67,11 @@ export default function LoggedWorkoutHistory({ memberId }: { memberId: string })
   return <section id="workout-log" aria-label="Logged workouts" aria-busy={current.loading} className="space-y-4">
     <div className="flex items-center gap-2.5">
       <Dumbbell size={18} aria-hidden="true" className="shrink-0 text-thrivv-gold-400" />
-      <h2 className="font-semibold text-white">Logged workouts</h2>
+      <h2 ref={heading} tabIndex={-1} className="font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-thrivv-gold-400">Logged workouts</h2>
     </div>
+    <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+      {deletionNotice?.memberId === memberId ? <span key={deletionNotice.count}>Logged workout deleted.</span> : null}
+    </p>
     {current.loading && !current.workouts.length && <p role="status" className="py-5 text-sm text-thrivv-text-secondary">Loading logged workouts...</p>}
     {current.error && <p role="alert" className="text-sm text-amber-200">
       {current.error}{' '}
@@ -85,6 +96,15 @@ export default function LoggedWorkoutHistory({ memberId }: { memberId: string })
             <WorkoutCoachingTips exerciseId={exercise.exerciseId} />
           </li>)}
         </ol>
+        <div className="flex justify-end border-t border-white/10 px-4 py-3">
+          <WorkoutDeleteButton kind="workout" id={workout.id} memberId={memberId} name={workout.name}
+            onDeleted={() => {
+              setState(previous => previous.memberId === memberId
+                ? { ...previous, workouts: previous.workouts.filter(item => item.id !== workout.id) }
+                : previous);
+              setDeletionNotice(previous => ({ memberId, count: (previous?.count || 0) + 1 }));
+            }} />
+        </div>
       </details>)}
     </div>
   </section>;

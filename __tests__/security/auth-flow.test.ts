@@ -4,6 +4,7 @@ import { setSessionCookie } from '@/lib/auth';
 import { POST as login } from '@/app/api/auth/login/route';
 import { POST as signup } from '@/app/api/auth/signup/route';
 import { ensureMemberProfile } from '@/lib/member-profile';
+import { PRIVACY_POLICY_VERSION } from '@/lib/privacy-policy';
 jest.mock('@supabase/supabase-js', () => ({ createClient: jest.fn() }));
 jest.mock('@/lib/auth', () => ({ setSessionCookie: jest.fn(), getCurrentUser: jest.fn() }));
 jest.mock('@/lib/env', () => ({ getSupabaseEnv: () => ({ supabaseUrl: 'https://example.supabase.co', supabaseAnonKey: 'test-public' }) }));
@@ -15,7 +16,7 @@ const signInWithPassword = jest.fn(), signUp = jest.fn();
 function req(path: string, body: unknown, origin = 'https://thrivv.dev', type = 'application/json') {
   return new NextRequest(`https://thrivv.dev/api/auth/${path}`, { method: 'POST', headers: { origin, 'content-type': type }, body: JSON.stringify(body) });
 }
-const form = { email: user.email, password: 'test-password', firstName: 'Member', lastName: 'A' };
+const form = { email: user.email, password: 'test-password', firstName: 'Member', lastName: 'A', acceptedPrivacyPolicy: true, privacyPolicyVersion: PRIVACY_POLICY_VERSION };
 beforeEach(() => {
   jest.clearAllMocks();
   (createClient as jest.Mock).mockReturnValue({ auth: { signInWithPassword, signUp } });

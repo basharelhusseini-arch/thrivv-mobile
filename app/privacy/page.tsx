@@ -18,6 +18,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import Logo from '@/components/Logo';
+import { PRIVACY_POLICY_LAST_UPDATED, PRIVACY_POLICY_VERSION } from '@/lib/privacy-policy';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
@@ -26,7 +27,6 @@ export const metadata: Metadata = {
   alternates: { canonical: '/privacy' },
 };
 
-const LAST_UPDATED = 'May 2026';
 const SUPPORT_EMAIL = 'bashar@thrivv.dev';
 
 export default function PrivacyPolicyPage() {
@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
             Privacy Policy
           </h1>
           <p className="mt-5 text-thrivv-text-muted text-sm">
-            Last updated: {LAST_UPDATED}
+            Last updated: {PRIVACY_POLICY_LAST_UPDATED} · Version: {PRIVACY_POLICY_VERSION}
           </p>
         </header>
 
@@ -59,9 +59,11 @@ export default function PrivacyPolicyPage() {
               information.
             </p>
             <p>
-              By creating a Thrivv account or connecting a wearable
-              device to Thrivv, you agree to the practices described
-              here. If you do not agree, please do not use the Service.
+              Before creating an account, we ask you to read and
+              acknowledge this policy. This acknowledgement does not
+              opt you into marketing or authorise access to any wearable
+              account. Connecting a wearable is a separate, optional
+              step that requires your authorisation.
             </p>
           </Section>
 
@@ -72,7 +74,11 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-2">
               <li>
                 Information you provide when you sign up, including your
-                name, email address, and a hashed password.
+                name, email address, phone number, and a hashed password.
+              </li>
+              <li>
+                The version of the Privacy Policy you agreed to and
+                the time your agreement was recorded during signup.
               </li>
               <li>
                 Optional profile details such as your gym, membership

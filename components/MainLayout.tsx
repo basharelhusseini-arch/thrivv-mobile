@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar, { isGymPortalPath } from './Sidebar';
 import BackgroundLayers from './BackgroundLayers';
@@ -31,9 +31,25 @@ function AuthenticatedLayout({ children, pathname }: { children: ReactNode; path
 
 export default function MainLayout({ children, serverIdentity }: { children: ReactNode; serverIdentity: ServerSessionIdentity }) {
   const pathname = usePathname() || '/';
+  const [recoveryChecked, setRecoveryChecked] = useState(false);
   const isProtected = isGymPortalPath(pathname) || /^\/(member|members|workouts|nutrition|classes|trainers|memberships|exercises|recipes|habits|health)(\/|$)/.test(pathname);
-  const isPublic = !isProtected || pathname === '/member/login' || pathname === '/member/signup';
+  const isPublic = !isProtected || ['/member/login', '/member/signup', '/member/forgot-password', '/member/reset-password'].includes(pathname);
+  useEffect(() => {
+    const fragment = new URLSearchParams(window.location.hash?.slice(1));
+    if (pathname !== '/member/reset-password' && fragment.get('type') === 'recovery') {
+      // Supabase can fall back to its Site URL. Keep recovery out of normal sign-in routing.
+      const recovery = new URLSearchParams({ type: 'recovery' });
+      const accessTokens = fragment.getAll('access_token');
+      if (fragment.getAll('type').length === 1 && accessTokens.length === 1 && accessTokens[0]) {
+        recovery.set('access_token', accessTokens[0]);
+      }
+      window.location.replace(`/member/reset-password#${recovery.toString()}`);
+      return;
+    }
+    setRecoveryChecked(true);
+  }, [pathname]);
   useEffect(() => { if (isPublic || serverIdentity.status === 'unavailable') delete document.documentElement.dataset.sessionHidden; }, [isPublic, serverIdentity.status]);
+  if (!isPublic && !recoveryChecked) return <SessionLoading />;
   if (isPublic) return <div className="min-h-screen bg-thrivv-bg-dark">{children}</div>;
   if (serverIdentity.status === 'unavailable') return <div role="alert" className="min-h-screen bg-thrivv-bg-darker p-8 text-white flex flex-col items-center justify-center gap-4"><p>Unable to verify this workspace. Please retry.</p><button onClick={() => window.location.reload()} className="btn-primary px-6 py-3">Try again</button></div>;
   return <ClientSessionProvider route={pathname} serverUserId={serverIdentity.status === 'authenticated' ? serverIdentity.userId : null}><AuthenticatedLayout pathname={pathname}>{children}</AuthenticatedLayout></ClientSessionProvider>;

@@ -25,7 +25,10 @@ export async function PUT(req:NextRequest, props:Ctx) {
 export async function DELETE(req:NextRequest, props:Ctx) {
  const params = await props.params;
  return memberResult(async()=>{
-  const user=await memberActor(req);const {data,error}=await supabase.from('workouts').delete().eq('id',params.id).eq('member_id',user.id).select('id');
+  const user=await memberActor(req);
+  const expectedUserId=req.nextUrl.searchParams.get('expectedUserId');
+  if(expectedUserId!==null&&expectedUserId!==user.id)throw new MemberResourceError('Your account changed. Refresh before continuing.',403);
+  const {data,error}=await supabase.from('workouts').delete().eq('id',params.id).eq('member_id',user.id).select('id');
   if(error)throw new MemberResourceError('Unable to delete workout.',503);if(!data?.length)throw new MemberResourceError('Workout not found.',404);return {success:true};
  });
 }
