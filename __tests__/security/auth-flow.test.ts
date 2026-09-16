@@ -27,16 +27,16 @@ test.each([['login', login], ['signup', signup]] as const)('%s blocks cross-site
   expect((await handler(req(path, form, 'https://thrivv.dev', 'text/plain'))).status).toBe(415);
   expect(signUp).not.toHaveBeenCalled(); expect(signInWithPassword).not.toHaveBeenCalled();
 });
-test('normal login sets the HttpOnly app session and exposes no tokens', async () => {
+test('normal login binds cookie to the upstream session and exposes no tokens', async () => {
   const response = await login(req('login', form));
   expect(response.status).toBe(200);
-  expect(setSessionCookie).toHaveBeenCalledWith(expect.objectContaining({ id: user.id }), response, 'thrivv.dev');
+  expect(setSessionCookie).toHaveBeenCalledWith(expect.objectContaining({ id: user.id }), response, 'thrivv.dev', sid);
   expect(await response.text()).not.toContain(access);
 });
 test('immediate signup establishes the app session before the dashboard redirect', async () => {
   const response = await signup(req('signup', form));
   expect(response.status).toBe(200); expect(ensureMemberProfile).toHaveBeenCalledWith(user);
-  expect(setSessionCookie).toHaveBeenCalledWith(expect.objectContaining({ id: user.id }), response, 'thrivv.dev');
+  expect(setSessionCookie).toHaveBeenCalledWith(expect.objectContaining({ id: user.id }), response, 'thrivv.dev', sid);
   const data = await response.json(); expect(data.success).toBe(true); expect(data.session).toBeUndefined();
 });
 test('email-confirmation signup keeps its existing flow and issues no app cookie', async () => {

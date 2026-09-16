@@ -1,5 +1,5 @@
 jest.mock('next/headers', () => ({ cookies: jest.fn(), headers: jest.fn() }));
-jest.mock('@/lib/supabase', () => ({ supabase: { from: jest.fn() } }));
+jest.mock('@/lib/supabase', () => ({ supabase: { from: jest.fn(), rpc: jest.fn(async () => ({ data: true, error: null })) } }));
 import { cookies, headers } from 'next/headers';
 import { supabase } from '@/lib/supabase';
 import { createSession, getCurrentUser, requireAuth } from '@/lib/auth';
