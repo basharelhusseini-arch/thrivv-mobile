@@ -1,3 +1,4 @@
+import { recordProductionError } from '@/lib/error-reporting';
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAdminAccess } from '@/lib/gym-auth';
 import { getCurrentUser } from '@/lib/auth';
@@ -29,7 +30,7 @@ export async function bodyOf(req: NextRequest) {
 }
 export function pageOffset(req: NextRequest) { const n = Number(req.nextUrl.searchParams.get('offset') || 0); if (!Number.isInteger(n) || n < 0 || n > 1000000) throw new HttpError(400, 'Invalid page'); return n; }
 export async function handled(fn: () => Promise<NextResponse>) {
-  try { return await fn(); } catch (e) { return json({ error: e instanceof HttpError ? e.message : 'This information or action is unavailable. Please retry.' }, e instanceof HttpError ? e.status : 503); }
+  try { return await fn(); } catch (e) { if(!(e instanceof HttpError)||e.status>=500) await recordProductionError('server','/api/admin',e); return json({ error: e instanceof HttpError ? e.message : 'This information or action is unavailable. Please retry.' }, e instanceof HttpError ? e.status : 503); }
 }
 export async function change(userId: string, b: any, action: string, target: string | null, data: unknown) {
   if (target !== null && !uuid(target)) throw new HttpError(400, 'Invalid record ID');

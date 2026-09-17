@@ -8,6 +8,7 @@ for(const t of schema.tables) await db.exec(`CREATE TABLE public."${t.name}" (${
 for(const c of schema.constraints) await db.exec(`ALTER TABLE public.${c.table_name.replace(/^public\./,'')} ADD CONSTRAINT "${c.conname}" ${c.definition};`);
 await db.exec(await readFile(new URL('../../supabase/migrations/20260917134339_account_deletion.sql',import.meta.url),'utf8'));
 await db.exec(await readFile(new URL('../../supabase/migrations/20260917184334_pilot_scale_readiness.sql',import.meta.url),'utf8'));
+await db.exec(await readFile(new URL('../../supabase/migrations/20260917232708_member_experience_reliability.sql',import.meta.url),'utf8'));
 console.log('PASS: forward migration compiles against the current schema snapshot.');
 const ids=Array.from({length:8},(_,i)=>`00000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`);
 const [admin,a,b,g,g2,lease,lease2,req]=ids;
@@ -89,9 +90,28 @@ for (const scheduled of localReminders.scheduled.filter(r=>r.kind==='weekly')) {
  assert.equal(await scalar(`SELECT extract(hour FROM $1::timestamptz AT TIME ZONE 'Asia/Beirut')::int value`,[scheduled.at]),18);
  assert.equal(await scalar(`SELECT extract(isodow FROM $1::timestamptz AT TIME ZONE 'Asia/Beirut')::int value`,[scheduled.at]),6);
 }
+// Member summaries deduplicate daily visits and count only recognised habit activity.
+const activity=await scalar(`SELECT thrivv_member_activity('${b}',current_date) value`);
+assert.equal(activity.visits,1);assert.equal(activity.weekDays,1);assert.equal(activity.todayHabits,6);assert.equal(activity.habitDays,1);
+const issueQueue=await scalar(`SELECT thrivv_operation_queue(0,50) value`);
+assert.ok(issueQueue.issues.some(i=>i.kind==='stock'));
+assert.ok(issueQueue.issues.every((i,n,all)=>n===0||all[n-1].priority<=i.priority));
+await scalar(`SELECT thrivv_record_runtime_error('fixture','server','/api/workouts','TypeError') value`);
+await scalar(`SELECT thrivv_record_runtime_error('fixture','server','/api/workouts','TypeError') value`);
+assert.equal(await scalar(`SELECT occurrences::int value FROM runtime_errors WHERE fingerprint='fixture'`),2);
+assert.equal((await scalar(`SELECT thrivv_operation_queue(0,1) value`)).issues.length,1);
+assert.equal(await scalar(`SELECT thrivv_claim_operation_alert('fixture','${lease}') value`),true);
+assert.equal(await scalar(`SELECT thrivv_claim_operation_alert('fixture','${lease2}') value`),false);
+await scalar(`SELECT thrivv_finish_operation_alert('fixture','${lease2}',true) value`);
+assert.equal(await scalar(`SELECT sent_at value FROM operation_alert_deliveries WHERE fingerprint='fixture'`),null);
+await scalar(`SELECT thrivv_finish_operation_alert('fixture','${lease}',false) value`);
+assert.equal(await scalar(`SELECT thrivv_claim_operation_alert('fixture','${lease2}') value`),true);
+await scalar(`SELECT thrivv_finish_operation_alert('fixture','${lease2}',true) value`);
+assert.equal(await scalar(`SELECT thrivv_claim_operation_alert('fixture','${lease}') value`),false);
+console.log('PASS: full member activity, issue prioritisation, telemetry aggregation and alert delivery lease/retry/deduplication.');
 // Server-only access: no caller-selected identity may be used directly by a browser.
 await db.exec('SET ROLE anon');
-for(const sql of [`SELECT thrivv_weekly_points_leaderboard('${a}')`,`SELECT thrivv_reward_catalog('${a}',false)`,`SELECT thrivv_gym_pilot_analytics('${g}')`,`SELECT thrivv_member_reminders('${a}')`,`SELECT thrivv_claim_sync('${lease}',3)`])await assert.rejects(db.query(sql),/permission denied/);
+for(const sql of [`SELECT thrivv_weekly_points_leaderboard('${a}')`,`SELECT thrivv_reward_catalog('${a}',false)`,`SELECT thrivv_gym_pilot_analytics('${g}')`,`SELECT thrivv_member_reminders('${a}')`,`SELECT thrivv_claim_sync('${lease}',3)`,`SELECT thrivv_member_activity('${a}',current_date)`,`SELECT thrivv_operation_queue()`,`SELECT * FROM runtime_errors`,`SELECT thrivv_claim_operation_alert('x','${lease}')`])await assert.rejects(db.query(sql),/permission denied/);
 await db.exec('RESET ROLE; SET ROLE service_role');
 assert.equal((await scalar(`SELECT thrivv_weekly_points_leaderboard('${a}') value`)).hasGym,true);
 await db.exec('RESET ROLE');

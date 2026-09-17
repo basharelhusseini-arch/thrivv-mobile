@@ -1,3 +1,4 @@
+import {recordProductionError} from '@/lib/error-reporting';
 import { gymRewardStatus } from '@/lib/gym-reward-status';
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
@@ -40,6 +41,7 @@ export async function GET() {
     if (error instanceof Error && error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    await recordProductionError('server','/api/rewards/points',error);
     console.error('Reward points error:', error);
     return NextResponse.json({ error: 'Failed to fetch reward points' }, { status: 500 });
   }

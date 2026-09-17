@@ -4,6 +4,10 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { exercisesDatabase } from '@/lib/exercises';
 import type { LoggedWorkout } from '@/lib/manual-workouts';
+import {useWorkoutProgress} from '@/lib/use-workout-progress';
+import { enqueueWorkout } from '@/lib/workout-upload-queue';
+import { parseManualWorkoutInput } from '@/lib/manual-workouts';
+import WorkoutRestTimer from '@/components/WorkoutRestTimer';
 import WorkoutCoachingTips from '@/components/WorkoutCoachingTips';
 
 type MovementDraft = { key: number; name: string; sets: string; reps: string; setDetails?: { reps: string; weightKg: string }[] };
@@ -33,31 +37,34 @@ function restoreDraft(value: string | null): WorkoutDraft | null {
 
 const inputClass = 'w-full min-w-0 rounded-lg border border-white/15 bg-black/20 px-3 py-3 text-sm text-white outline-none focus:border-thrivv-gold-500 disabled:opacity-60';
 
-export default function WorkoutLogForm({ memberId, onSaved }: { memberId: string; onSaved: (workout: LoggedWorkout) => void }) {
+export default function WorkoutLogForm({ memberId, onSaved, initialWorkout }: { memberId: string; onSaved: (workout?: LoggedWorkout) => void; initialWorkout?: LoggedWorkout }) {
   const [draft, setDraft] = useState<WorkoutDraft>({ name: '', date: '', exercises: [{ key: 0, name: '', sets: '', reps: '' }] });
   const [ready, setReady] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [syncState, setSyncState] = useState('');
+  const {progress:previous,error:previousError} = useWorkoutProgress(memberId,0,draft.date,initialWorkout?.id);
   const [error, setError] = useState('');
   const nextKey = useRef(1);
   const submitting = useRef(false);
   const request = useRef<AbortController | null>(null);
-  const storageKey = `thrivv:workout-log-draft:${memberId}`;
+  const storageKey = `thrivv:workout-log-draft:${memberId}${initialWorkout ? `:edit:${initialWorkout.id}` : ''}`;
 
   useEffect(() => {
     let restored: WorkoutDraft | null = null;
     try { restored = restoreDraft(localStorage.getItem(storageKey)); } catch { /* Storage can be unavailable. */ }
+    if (!restored && initialWorkout) restored = {name:initialWorkout.name,date:initialWorkout.date,exercises:initialWorkout.exercises.map((e,key)=>({key,name:e.name,sets:String(e.sets),reps:String(e.reps),...(e.setDetails && {setDetails:e.setDetails.map(s=>({reps:String(s.reps),weightKg:s.weightKg===null?'':String(s.weightKg)}))})}))};
     setDraft(restored ? {...restored, requestId: restored.requestId && /^[a-f0-9-]{36}$/i.test(restored.requestId) ? restored.requestId : crypto.randomUUID()} : { requestId: crypto.randomUUID(), name: '', date: today(), exercises: [{ key: 0, name: '', sets: '', reps: '' }] });
     nextKey.current = restored?.exercises.length || 1;
     setDirty(!!restored);
     setReady(true);
     return () => request.current?.abort();
-  }, [storageKey]);
+  }, [storageKey, initialWorkout]);
 
   useEffect(() => {
     if (!ready || !dirty || saved) return;
-    try { localStorage.setItem(storageKey, JSON.stringify(draft)); } catch { /* Logging still works without draft storage. */ }
+    try { localStorage.setItem(storageKey, JSON.stringify(draft)); setSyncState('Saved on this device'); } catch { setSyncState('Not saved on this device — storage unavailable'); }
   }, [draft, dirty, ready, saved, storageKey]);
 
   useEffect(() => {
@@ -91,45 +98,38 @@ export default function WorkoutLogForm({ memberId, onSaved }: { memberId: string
     setError('');
     const controller = new AbortController();
     request.current = controller;
-    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-      const response = await fetch('/api/workouts/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          expectedUserId: memberId, requestId: draft.requestId,
-          name: draft.name.trim(), date: draft.date,
-          exercises: draft.exercises.map(row => ({
-            name: row.name.trim(), exerciseId: findExercise(row.name)?.id,
-            sets: Number(row.sets), reps: Number(row.reps),
-            ...(row.setDetails && {setDetails: row.setDetails.map(set => ({reps: Number(set.reps), weightKg: set.weightKg.trim() === '' ? null : Number(set.weightKg)}))}),
-          })),
-        }),
+      const input = parseManualWorkoutInput({
+        name:draft.name.trim(),date:draft.date,exercises:draft.exercises.map(row=>({
+          name:row.name.trim(),exerciseId:findExercise(row.name)?.id,sets:Number(row.sets),reps:Number(row.reps),
+          ...(row.setDetails && {setDetails:row.setDetails.map(set=>({reps:Number(set.reps),weightKg:set.weightKg.trim()===''?null:Number(set.weightKg)}))}),
+        })),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Unable to save this workout. Please retry.');
-      if (!data.workout?.id) throw new Error('Unable to confirm this workout was saved. Check your workout history before retrying.');
-      if (controller.signal.aborted) return;
-      try { localStorage.removeItem(storageKey); } catch { /* The workout is saved on the server. */ }
-      setSaved(true);
-      setDirty(false);
+      if(initialWorkout) {
+        if(!navigator.onLine) throw new Error('Connect to the internet to update this saved workout. Your edits remain on this device.');
+        const response=await fetch(`/api/workouts/log/${encodeURIComponent(initialWorkout.id)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...input,expectedUserId:memberId}),signal:AbortSignal.any([controller.signal,AbortSignal.timeout(20000)])});
+        const data=await response.json();if(!response.ok||!data.workout?.id) throw new Error(data.error||'Unable to confirm your changes. Retry safely.');
+        setSyncState('Synced');
+      } else {
+        enqueueWorkout({...input,expectedUserId:memberId,requestId:draft.requestId!});
+        setSyncState('Saved on this device · waiting to sync');
+      }
+      try {localStorage.removeItem(storageKey);} catch { /* Durable upload/server save already exists. */ }
+      setSaved(true);setDirty(false);
       window.dispatchEvent(new Event('thrivv:workouts-synced'));
-      onSaved(data.workout);
-    } catch (failure) {
-      setError(failure instanceof Error && failure.name !== 'AbortError' ? failure.message :
-        'The save could not be confirmed. Your entries are still here. Check your workout history before retrying.');
-    } finally {
-      clearTimeout(timeout);
-      submitting.current = false;
-      setSaving(false);
-    }
+      onSaved();
+    } catch(failure) {
+      setError(failure instanceof Error ? failure.message : 'Unable to save. Keep this workout open and retry.');
+    } finally { submitting.current=false;setSaving(false); }
   }
 
   if (!ready) return <p role="status" className="text-sm text-thrivv-text-secondary">Loading workout...</p>;
 
   return (
     <form onSubmit={submit} className="space-y-6">
+      <WorkoutRestTimer />
+      {previousError && <p className="text-xs text-thrivv-text-muted">Previous weights are temporarily unavailable.</p>}
+      {syncState && <p role="status" className="text-sm text-thrivv-text-secondary">{syncState}</p>}
       <fieldset disabled={saving || saved} className="min-w-0 space-y-6">
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,200px)]">
           <label className="min-w-0 space-y-2 text-sm text-thrivv-text-secondary">
@@ -166,6 +166,7 @@ export default function WorkoutLogForm({ memberId, onSaved }: { memberId: string
                   <input type="number" inputMode="numeric" min={1} max={1000} step={1} className={inputClass} value={row.reps} onChange={event => updateMovement(row.key, { reps: event.target.value })} required />
                 </label>
               </div>
+              {previous.filter(p=>p.name.trim().toLowerCase()===row.name.trim().toLowerCase()).map(p=><p key={p.name} className="mt-3 text-xs text-thrivv-gold-400">Previous recorded weight: {p.latestKg} kg · {p.date}</p>)}
               <button type="button" className="mt-4 text-sm text-thrivv-gold-400 underline" disabled={!Number.isInteger(Number(row.sets)) || Number(row.sets)<1 || Number(row.sets)>100} onClick={() => updateMovement(row.key, {setDetails: row.setDetails ? undefined : Array.from({length: Number(row.sets)}, () => ({reps: row.reps, weightKg: ''}))})}>{row.setDetails ? 'Use simple sets and reps' : 'Add weights / customize each set'}</button>
               {row.setDetails && <div className="mt-3 space-y-2">{row.setDetails.map((set, setIndex) => <div key={setIndex} className="grid grid-cols-[40px_1fr_1fr] items-end gap-2"><span className="pb-3 text-xs">Set {setIndex+1}</span><label className="text-xs">Reps<input type="number" min={1} max={1000} required value={set.reps} className={inputClass} onChange={e => updateMovement(row.key,{setDetails:row.setDetails!.map((s,i)=>i===setIndex?{...s,reps:e.target.value}:s)})} /></label><label className="text-xs">Weight (kg)<input type="number" min={0} max={1500} step="0.1" placeholder="Optional" value={set.weightKg} className={inputClass} onChange={e => updateMovement(row.key,{setDetails:row.setDetails!.map((s,i)=>i===setIndex?{...s,weightKg:e.target.value}:s)})} /></label></div>)}</div>}
               {row.name.trim() && <WorkoutCoachingTips exerciseId={findExercise(row.name)?.id} />}

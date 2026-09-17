@@ -4,6 +4,10 @@
     {
       "path": "/api/internal/whoop/process",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/internal/operations",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

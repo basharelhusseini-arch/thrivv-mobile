@@ -13,6 +13,7 @@ type Snapshot = { score: Score | null; average: number | null; history: Score[];
 type Board = { hasGym: boolean; currentRank: number | null; rankedCount: number; weekStart: string; weekEnd: string; leaderboard: { id: string; name: string; rank: number; score: number; scored_days: number }[] };
 export default function MemberDashboardPage() {
   const { user } = useClientSession();
+  const [activity,setActivity]=useState<{visits:number;weekDays:number;habitDays:number;todayHabits:number;weekStart:string}|null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [board, setBoard] = useState<Board | null>(null);
   const [daily, setDaily] = useState<VerificationStatus | null>(null);
@@ -21,7 +22,7 @@ export default function MemberDashboardPage() {
   const [loading, setLoading] = useState(true);
   const refresh = useCallback(async () => {
     setError('');
-    const paths = ['/api/score/today', '/api/leaderboard', '/api/rewards/points'];
+    const paths = ['/api/score/today', '/api/leaderboard', '/api/rewards/points','/api/member/activity'];
     const results = await Promise.allSettled(paths.map(async path => {
       const response = await fetch(path, { cache: 'no-store', signal: AbortSignal.timeout(12000) });
       if (!response.ok) throw new Error('Dashboard data unavailable');
@@ -30,6 +31,7 @@ export default function MemberDashboardPage() {
     if (results[0].status === 'fulfilled') setSnapshot(results[0].value); else setSnapshot(null);
     if (results[1].status === 'fulfilled') setBoard(results[1].value); else setBoard(null);
     if (results[2].status === 'fulfilled') { setDaily(results[2].value.daily); setPoints(Number(results[2].value.points)); } else { setDaily(null); setPoints(null); }
+    if(results[3].status==='fulfilled')setActivity(results[3].value);else setActivity(null);
     if (results.some(r => r.status === 'rejected')) setError('Some of your activity is unavailable. Your saved progress is unchanged.');
     setLoading(false);
   }, []);
@@ -46,13 +48,14 @@ export default function MemberDashboardPage() {
       <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"><p className="text-sm text-thrivv-text-secondary">Credited today</p><p className="mt-3 text-4xl font-semibold tracking-tight text-white">{daily?.creditedPoints ?? '—'}<span className="ml-2 text-sm font-normal text-thrivv-text-muted">points</span></p><p className="mt-2 text-xs text-thrivv-text-muted">40 for a verified workout · up to 10 for habits</p></div>
     </section>
     <div className="grid gap-4 lg:grid-cols-[1fr_1.15fr]">
-      <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6" aria-label="Your progress">
+      {daily?.whoopConnected ? <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6" aria-label="Your progress">
         <div className="flex items-center justify-between gap-3"><h2 className="font-semibold text-white">Your Health Score</h2><Link href="/member/health" className="text-sm text-thrivv-gold-400">Details <span aria-hidden="true">↗</span></Link></div>
         <div className="mt-5 flex items-end gap-2"><span className="text-4xl font-semibold text-white">{snapshot?.score?.score ?? '—'}</span><span className="pb-1 text-sm text-thrivv-text-muted">/110</span></div>
         <p className="mt-2 text-xs text-thrivv-text-muted">{snapshot?.score && !snapshot.score.complete ? `Provisional components: ${snapshot.score.subtotal}/110. Waiting for verified data.` : 'Training, recovery and habits. Separate from spendable points.'}</p>
         <div className="mt-6 flex h-28 items-end gap-2" aria-label="Recent daily Health Scores">{history.length ? history.map(day => <div key={day.date} className="flex h-full flex-1 flex-col justify-end gap-2 text-center"><div className="flex min-h-0 flex-1 items-end justify-center"><div className={`w-full max-w-9 rounded-t-md ${day.complete ? 'bg-gradient-to-t from-thrivv-gold-500/30 to-thrivv-gold-400' : 'bg-white/10'}`} style={{ height: day.complete && day.score !== null ? `${Math.max(3, day.score / 110 * 100)}%` : '3%' }} title={`${day.date}: ${day.complete ? day.score : 'Incomplete'}`} /></div><span className="text-[10px] text-thrivv-text-muted">{new Date(`${day.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'narrow' })}</span></div>) : <p className="self-center text-sm text-thrivv-text-muted">Your weekly trend appears as scores become available.</p>}</div>
         <p className="mt-4 text-xs text-thrivv-text-muted">7-day average: {snapshot?.average ?? '—'} · {snapshot?.coverage ?? 0} of {snapshot?.expected ?? 7} complete days</p>
       </section>
+      : <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6" aria-label="Your consistency"><h2 className="font-semibold">Your consistency</h2><dl className="mt-5 grid grid-cols-2 gap-5"><div><dt className="text-sm text-thrivv-text-secondary">Verified visit days</dt><dd className="mt-2 text-3xl">{activity?.visits ?? '—'}</dd><p className="text-xs text-thrivv-text-muted">All time · one per day</p></div><div><dt className="text-sm text-thrivv-text-secondary">This week</dt><dd className="mt-2 text-3xl">{activity?.weekDays ?? '—'}<span className="text-sm"> / 7 days</span></dd><p className="text-xs text-thrivv-text-muted">Week begins Monday</p></div><div><dt className="text-sm text-thrivv-text-secondary">Habits today</dt><dd className="mt-2 text-3xl">{activity?.todayHabits ?? '—'}</dd></div><div><dt className="text-sm text-thrivv-text-secondary">Days with habits this week</dt><dd className="mt-2 text-3xl">{activity?.habitDays ?? '—'}</dd></div></dl><div className="mt-6 flex flex-wrap gap-4 text-sm text-thrivv-gold-400"><Link href="/member/habits">Record habits ↗</Link><Link href="/member/wearables">Connect WHOOP anytime ↗</Link></div></section>}
       <section className="rounded-2xl border border-white/10 bg-white/[0.025] p-6" aria-label="Weekly gym leaderboard">
         <div className="flex items-center justify-between gap-3"><h2 className="flex items-center gap-2 font-semibold text-white"><Trophy size={18} className="text-thrivv-gold-400" />Your gym this week</h2>{board?.currentRank != null && <span className="rounded-full bg-thrivv-gold-500/10 px-3 py-1 text-sm text-thrivv-gold-400">You · #{board.currentRank}</span>}</div>
         <p className="mt-2 text-xs text-thrivv-text-muted">Weekly earned points · Everyone together · Spending does not affect rank</p>

@@ -24,13 +24,13 @@ test('a first-time no-wearable choice is persisted before the dialog closes', as
   await act(async () => renderer.root.findByType('button').props.onClick());
   const post = (global.fetch as jest.Mock).mock.calls.find(call => call[1]?.method === 'POST');
   expect(JSON.parse(post[1].body)).toMatchObject({ has_wearable: false, wearable_type: null });
-  expect(renderer.toJSON()).toBeNull(); expect(assign).not.toHaveBeenCalled();
+  expect(renderer.toJSON()).toBeNull(); expect(assign).toHaveBeenCalledWith('/member/dashboard');
 });
-test('choosing WHOOP saves the preference and opens Wearables, without claiming connection', async () => {
+test('choosing WHOOP saves the preference and opens the dashboard, without claiming connection', async () => {
   global.fetch = jest.fn(async (url, options) => json(options?.method === 'POST' ? { success: true } : String(url).includes('/profile') ? { exists: false } : { connected: false })) as any;
   await mount(); await act(async () => renderer.root.findByProps({ value: 'whoop' }).props.onChange());
   await act(async () => renderer.root.findByType('button').props.onClick());
-  expect(assign).toHaveBeenCalledWith('/member/wearables');
+  expect(assign).toHaveBeenCalledWith('/member/dashboard');
 });
 test('failed preference writes keep setup open with a retry instead of losing the choice', async () => {
   global.fetch = jest.fn(async (url, options) => options?.method === 'POST' ? json({}, 503) : json(String(url).includes('/profile') ? { exists: false } : { connected: false })) as any;

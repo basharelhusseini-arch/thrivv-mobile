@@ -39,6 +39,7 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
     return () => { mounted.current = false; clearInterval(interval); stop(); window.removeEventListener('thrivv:workouts-synced', tick); document.removeEventListener('visibilitychange', tick); };
   }, [refresh, stop]);
   async function start(workoutId: string) {
+    if (navigator.onLine === false) { setError('Connect to the internet to verify attendance. Scans cannot be saved offline.'); return; }
     stop(); setError(''); setMessage(''); setSelected(workoutId);
     const attempt = generation.current;
     try {
@@ -71,6 +72,7 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
     } catch { if (generation.current === attempt) { stop(); setError('Unable to open camera. Allow camera permission, then tap Scan again. You can also open this page in Safari or Chrome.'); } }
   }
   async function submit(workoutId: string, qr: string) {
+    if (navigator.onLine === false) { setError('Connect to the internet and scan again. Attendance needs a live connection.'); return; }
     setBusy(true); setMessage('Verifying your workout…');
     try {
       const res = await fetch('/api/member/workout-verification', { method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -129,8 +131,7 @@ export default function GymWorkoutVerification({ scanner = false }: { scanner?: 
     {!data && !error && <p role="status" className="py-8 text-center text-thrivv-text-secondary">Loading workout status…</p>}
     {data && !data.gymId && <MemberNextAction data={data} />}
     {data && data.gymId && !data.verificationEnabled && <p className="rounded-xl border border-white/10 p-5 text-sm text-thrivv-text-secondary">Your gym’s workout verification is not available yet.</p>}
-    {data?.mode === 'whoop_setup' && <MemberNextAction data={data} />}
-    {data?.manual?.eligible && data.mode !== 'whoop_setup' && data.gymId && <div className="rounded-3xl border border-thrivv-gold-500/20 bg-gradient-to-br from-thrivv-gold-500/[0.06] to-[#0c0e0d] p-6 sm:p-8">
+    {data?.manual?.eligible && data.gymId && <div className="rounded-3xl border border-thrivv-gold-500/20 bg-gradient-to-br from-thrivv-gold-500/[0.06] to-[#0c0e0d] p-6 sm:p-8">
       {data.manual.verified ? <div className="text-center"><CheckCircle2 className="mx-auto mb-4 text-emerald-400" size={36} /><h2 className="text-2xl font-semibold text-white">{data.rewardStatus === 'credited' ? `${data.creditedPoints} points earned` : 'Workout verified'}</h2><p className="mt-3 text-sm text-thrivv-text-secondary">{data.rewardStatus === 'credited' ? 'Today’s workout is complete and your points are in your spendable balance.' : 'Your gym visit is recorded. Check Rewards for the latest credit status.'}</p><Link href="/member/rewards" className="btn-primary mt-6 inline-flex px-6 py-3">View rewards</Link><Link href="/member/checkin" className="mt-4 block text-sm text-thrivv-gold-400">Update today’s habits</Link></div> : <>
         <p className="text-[11px] uppercase tracking-[0.2em] text-thrivv-gold-400">Today’s workout</p><h2 className="mt-3 text-2xl font-semibold text-white">Scan your gym QR.</h2><p className="mt-3 text-sm leading-relaxed text-thrivv-text-secondary">Earn 40 spendable points after verification, plus up to 10 habit points. Maximum 50 per day. Repeated scans do not add another workout reward.</p>
         {!data.manual.checkedIn && data.manual.enabled && <button disabled={busy || running} onClick={() => void logWorkoutAndStart()} className="btn-primary mt-6 flex w-full items-center justify-center gap-2 px-5 py-3.5 disabled:opacity-50"><ScanLine size={18} />{busy ? 'Preparing your workout…' : 'Scan gym QR'}</button>}

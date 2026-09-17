@@ -1,3 +1,4 @@
+jest.mock('@/lib/use-workout-progress',()=>({useWorkoutProgress:()=>({progress:[],error:''})}));
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import LoggedWorkoutHistory from '@/components/LoggedWorkoutHistory';

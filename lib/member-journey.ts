@@ -14,7 +14,6 @@ export type MemberNextStep = { eyebrow: string; title: string; description: stri
 /** The server decides eligibility. This helper only selects the next useful screen. */
 export function memberNextStep(data: VerificationStatus): MemberNextStep {
   if (!data.gymId) return { eyebrow: 'Start here', title: 'Make it your gym.', description: 'Enter your gym’s joining code to connect your membership and see your community.', href: '/member/account/join-gym', action: 'Join your gym' };
-  if (data.mode === 'whoop_setup') return { eyebrow: 'Your wearable', title: 'Connect your WHOOP.', description: 'Link your WHOOP to see your performance and verify your workouts here.', href: '/member/wearables', action: 'Connect WHOOP' };
   if (data.manual?.eligible) {
     if (data.manual.verified) return { eyebrow: 'Today · verified', title: data.rewardStatus === 'credited' ? `${data.creditedPoints} points earned.` : 'Your workout is verified.', description: data.rewardStatus === 'credited' ? 'Your points are in your spendable balance. Today’s habits can add up to 10 points, within your 50-point daily limit.' : 'Your gym visit is recorded. Check Rewards for the latest credit status.', href: '/member/rewards', action: 'View rewards', complete: true };
     if (!data.manual.enabled) return { eyebrow: 'Your training', title: 'Keep your progress going.', description: 'Manual gym rewards are not available right now. Your workout plans and activity are still here.', href: '/member/workouts', action: 'View workouts' };

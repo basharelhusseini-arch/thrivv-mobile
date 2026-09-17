@@ -34,6 +34,7 @@ function RewardAccount() {
   useEffect(() => { if (user?.id) void refresh(); }, [user?.id, refresh]);
   async function redeem() {
     if (!selected || busy) return;
+    if (navigator.onLine === false) { setError('Connect to the internet to redeem a reward. Redemptions cannot be queued offline.'); return; }
     const offer = selected; setBusy(true); setError(''); setMessage('');
     try {
       const response = await fetch('/api/rewards/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ offerId: offer.id, requestId: requests.current[offer.id] ||= crypto.randomUUID() }), signal: AbortSignal.timeout(15000) });

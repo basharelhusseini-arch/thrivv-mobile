@@ -1,3 +1,5 @@
+jest.mock('@/components/WorkoutRestTimer',()=>()=>null);
+jest.mock('@/lib/use-workout-progress',()=>({useWorkoutProgress:()=>({progress:[],error:''})}));
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import WorkoutLogForm from '@/components/WorkoutLogForm';
@@ -96,61 +98,27 @@ test.each([
   expect(onSaved).not.toHaveBeenCalled();
 });
 
-test('saves the member-bound movements once, refreshes history, and clears only the saved member draft', async () => {
-  let resolve!: (response: unknown) => void;
-  global.fetch = jest.fn().mockImplementation(() => new Promise(resolveRequest => { resolve = resolveRequest; }));
-  const historyRefresh = jest.fn();
-  fakeWindow.addEventListener('thrivv:workouts-synced', historyRefresh);
-  storage.set('thrivv:workout-log-draft:member-b', 'untouched');
-  await mount();
-  fillWorkout();
-  addMovement();
-  change('Movement', '  Band pull-apart  ', 1);
-  change('Sets', '2', 1);
-  change('Reps per set', '12', 1);
-  expect(storage.has(storageKey)).toBe(true);
-  act(() => { void submit(); void submit(); });
-  expect(global.fetch).toHaveBeenCalledTimes(1);
-  expect(renderer!.root.findByType('fieldset').props.disabled).toBe(true);
-  const [url, request] = (global.fetch as jest.Mock).mock.calls[0];
-  expect(url).toBe('/api/workouts/log');
-  expect(request.method).toBe('POST');
-  expect(JSON.parse(request.body)).toEqual({
-    requestId: expect.any(String), expectedUserId: 'member-a', name: 'Upper body', date: '2026-09-16', exercises: [
-      { exerciseId: knownExercise.id, name: knownExercise.name, sets: 3, reps: 8 },
-      { name: 'Band pull-apart', sets: 2, reps: 12 },
-    ],
-  });
-  await act(async () => { resolve({ ok: true, json: async () => ({ workout: savedWorkout }) }); });
-  expect(onSaved).toHaveBeenCalledWith(savedWorkout);
-  expect(onSaved).toHaveBeenCalledTimes(1);
-  expect(historyRefresh).toHaveBeenCalledTimes(1);
+test('queues a member-bound workout once and clears only its draft after durable storage', async () => {
+  storage.set('thrivv:workout-log-draft:member-b','untouched');
+  await mount();fillWorkout();
+  await act(async()=>{await submit();await submit();});
+  const items=[...storage.entries()].filter(([key])=>key.startsWith('thrivv:workout-upload:member-a:'));
+  expect(items).toHaveLength(1);
+  expect(JSON.parse(items[0][1]).payload).toMatchObject({expectedUserId:'member-a',name:'Upper body',exercises:[{name:knownExercise.name,sets:3,reps:8}]});
   expect(storage.has(storageKey)).toBe(false);
   expect(storage.get('thrivv:workout-log-draft:member-b')).toBe('untouched');
-  expect(text()).toContain('Workout saved.');
-  await act(async () => { await submit(); });
-  expect(global.fetch).toHaveBeenCalledTimes(1);
+  expect(onSaved).toHaveBeenCalledTimes(1);
+  expect(text()).toContain('waiting to sync');
 });
 
-test('keeps entries and the local draft after a server error and allows retry', async () => {
-  global.fetch = jest.fn()
-    .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Workout storage is temporarily unavailable.' }) })
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ workout: savedWorkout }) });
-  await mount();
-  fillWorkout();
-  await act(async () => { await submit(); });
-  expect(text()).toContain('Workout storage is temporarily unavailable.');
-  expect(field('Workout name').props.value).toBe('Upper body');
-  expect(field('Movement').props.value).toBe(knownExercise.name);
-  expect(field('Sets').props.value).toBe('3');
-  expect(field('Reps per set').props.value).toBe('8');
-  expect(storage.has(storageKey)).toBe(true);
-  expect(renderer!.root.findByType('fieldset').props.disabled).toBe(false);
-  expect(onSaved).not.toHaveBeenCalled();
-  await act(async () => { await submit(); });
-  expect(global.fetch).toHaveBeenCalledTimes(2);
-  expect(onSaved).toHaveBeenCalledTimes(1);
-  expect(storage.has(storageKey)).toBe(false);
+test('keeps entries when the durable upload cannot be stored',async()=>{
+ await mount();fillWorkout();
+ (localStorage.setItem as jest.Mock).mockImplementation(()=>{throw new Error('Storage full');});
+ await act(async()=>{await submit();});
+ expect(text()).toContain('Storage full');
+ expect(onSaved).not.toHaveBeenCalled();
+ expect(field('Workout name').props.value).toBe('Upper body');
+ expect(renderer!.root.findByType('fieldset').props.disabled).toBe(false);
 });
 
 test('restores a member draft after reload without exposing it to another member', async () => {

@@ -1,3 +1,4 @@
+import {recordProductionError} from '@/lib/error-reporting';
 import { uuid } from '@/lib/admin/http';
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,7 +10,10 @@ export const dynamic = 'force-dynamic';
 
 const headers = { 'Cache-Control': 'no-store' };
 const columns = 'id,member_id,name,date,exercises,completed_at';
-const failure = (error: string, status: number) => NextResponse.json({ error }, { status, headers });
+const failure = async (error: string, status: number) => {
+  if(status>=500) await recordProductionError('server','/api/workouts/log',new Error());
+  return NextResponse.json({ error }, { status, headers });
+};
 
 function crossOrigin(request: NextRequest): boolean {
   const origin = request.headers.get('origin');

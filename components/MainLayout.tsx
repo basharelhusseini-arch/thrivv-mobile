@@ -9,6 +9,7 @@ import { ClientSessionProvider, useClientSession } from '@/lib/client-session';
 import { portalLoginUrl } from '@/lib/gym-routing';
 import type { ServerSessionIdentity } from '@/lib/server-session-identity';
 import { isNativeApp } from '@/lib/mobile-app';
+import WorkoutUploadStatus from './WorkoutUploadStatus';
 import WearableSetup from './WearableSetup';
 
 function SessionLoading() {
@@ -26,7 +27,7 @@ function AuthenticatedLayout({ children, pathname }: { children: ReactNode; path
   return <div key={user.id} data-gym-portal={isGymPortal ? 'true' : undefined} className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-x-hidden">
     <BackgroundLayers />
     <Sidebar memberData={{ id: user.id, name: `${user.firstName} ${user.lastName}`.trim(), email: user.email }} isPlatformAdmin={isPlatformAdmin} />
-    <main id="main-content" className="relative z-10 lg:ml-60 px-4 sm:px-7 lg:px-10 pt-6 pb-28 lg:py-8">{!isGymPortal && <WearableSetup key={user.id} userId={user.id} />}{children}</main>
+    <main id="main-content" className="relative z-10 lg:ml-60 px-4 sm:px-7 lg:px-10 pt-6 pb-28 lg:py-8">{!isGymPortal && <WearableSetup key={user.id} userId={user.id} />}{!isGymPortal && <WorkoutUploadStatus key={user.id} memberId={user.id} />}{children}</main>
   </div>;
 }
 
