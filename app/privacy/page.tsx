@@ -274,7 +274,18 @@ export default function PrivacyPolicyPage() {
               sync.
             </p>
 
-            <SubHeading>Delete previously synced data</SubHeading>
+            <SubHeading>Delete your account in the app</SubHeading>
+            <p>
+              Open Account settings and choose Delete my account. Enter your
+              current password and confirm deletion to permanently remove your
+              account and its associated personal data, including workout and
+              nutrition records, habits, health data, points and reward history.
+              Successful deletion signs you out on all devices and stops WHOOP
+              syncing. Deleting Thrivv does not cancel a gym membership or WHOOP
+              subscription. Records belonging to other gym members are preserved
+              without your account identity.
+            </p>
+            <SubHeading>Other data requests</SubHeading>
             <p>
               On request, we will delete the wearable data we have
               stored for your account. To request deletion of WHOOP

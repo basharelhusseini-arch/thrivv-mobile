@@ -9,6 +9,7 @@ import Logo from '@/components/Logo';
 import Reveal from '@/components/Reveal';
 
 export default function MemberLoginPage() {
+  const [accountDeleted, setAccountDeleted] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,6 +24,7 @@ export default function MemberLoginPage() {
     if (target.startsWith('https://') && new URL(target).hostname !== window.location.hostname && window.location.hostname !== `www.${new URL(target).hostname}`) {
       window.location.replace(target); return;
     }
+    setAccountDeleted(new URLSearchParams(window.location.search).get('accountDeleted') === '1');
     setGymMode(mode);
     setSwitchUrl(portalLoginUrl(window.location.hostname, !mode));
   }, []);
@@ -137,6 +139,7 @@ export default function MemberLoginPage() {
                     </Link>
                   </div>
 
+                  {accountDeleted && <p role="status" className="mb-4 rounded-xl border border-green-500/30 p-4 text-sm text-green-300">Your account has been deleted. You have been signed out on all devices.</p>}
                   {error && (
                     <div className="error-badge px-4 py-3 text-sm">{error}</div>
                   )}

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requireAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import DeleteAccount from '@/components/DeleteAccount';
 import AccountPreferences from '@/components/AccountPreferences';
 import { Activity, ArrowUpRight, HelpCircle } from 'lucide-react';
 import MemberPageHeader from '@/components/MemberPageHeader';
@@ -34,6 +35,7 @@ export default async function AccountPage() {
       <Link href="/member/account/support" className="dark-card group flex items-center gap-4 p-5"><HelpCircle className="text-thrivv-gold-500" /><div className="flex-1"><h2 className="font-semibold">Help & support</h2><p className="mt-1 text-sm text-gray-400">Talk to the Thrivv team</p></div><ArrowUpRight size={18} className="text-gray-400 group-hover:text-thrivv-gold-500" /></Link>
     </div>
     <section id="preferences" className="dark-card scroll-mt-24 p-6 sm:p-8 space-y-4"><h2 className="text-xl font-semibold">Preferences</h2><AccountPreferences /></section>
+    <DeleteAccount memberId={user.id} />
     {data.is_admin && <section className="dark-card p-6 sm:p-8"><WorkspaceLink className="text-thrivv-gold-500 underline" href="/admin/gyms">Switch to Platform Admin</WorkspaceLink></section>}
   </main>;
 }
