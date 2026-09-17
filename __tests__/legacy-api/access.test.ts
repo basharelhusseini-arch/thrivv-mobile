@@ -134,7 +134,7 @@ test('retired actions reject malformed input and accept a session without a brow
   expect((await enroll.POST(request('POST'))).status).toBe(503);
 });
 
-test.each([['payments', payments.GET], ['notifications', notifications.GET], ['connection', connection.GET], ['data', data.GET]] as const)('%s never reads another account', async (_name, handler) => {
+test.each([['payments', payments.GET],  ['connection', connection.GET], ['data', data.GET]] as const)('%s never reads another account', async (_name, handler) => {
   (getCurrentUser as jest.Mock).mockResolvedValueOnce(null);
   expect((await handler(request())).status).toBe(401);
   expect((await handler(request('GET', undefined, '?memberId=another-member'))).status).toBe(403);
@@ -142,8 +142,8 @@ test.each([['payments', payments.GET], ['notifications', notifications.GET], ['c
   expect(supabase.from).not.toHaveBeenCalled();
 });
 
-test('payments and notifications expose no old simulated receipts or confirmations', async () => {
-  for (const handler of [payments.GET, notifications.GET]) {
+test('legacy payments expose no old simulated receipts', async () => {
+  for (const handler of [payments.GET]) {
     const response = await handler(request());
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([]);

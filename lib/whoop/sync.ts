@@ -47,7 +47,7 @@ export async function importWorkouts(userId: string, accessToken: string) {
     const recovery = recoveryForDay(sleeps, recoveries, date, context.timezone);
     await saveDay(context, date, { ...bestDailyWorkout(daily), recovery: recovery.value, sleepId: recovery.sleepId });
   }
-  const { error: syncError } = await supabase.from('whoop_connections').update({ last_sync_at: new Date().toISOString(), next_sync_at: new Date(Date.now() + 3600000).toISOString() }).eq('id', userId);
+  const { error: syncError } = await supabase.from('whoop_connections').update({ sync_attempts: 0, last_sync_error: null, last_sync_at: new Date().toISOString(), next_sync_at: new Date(Date.now() + 3600000).toISOString() }).eq('id', userId);
   if (syncError) throw new Error('Failed to record completed sync');
   return { imported: records.length, workoutRewardsEnabled: false };
 }

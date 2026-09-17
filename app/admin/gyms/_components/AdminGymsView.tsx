@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import WorkspaceLink from '@/components/WorkspaceLink';
 import { useEffect, useState } from 'react';
+import SyncOperations from '@/components/SyncOperations';
 import AdminRewards from '@/components/AdminRewards';
 import GymJoinCode from '@/components/GymJoinCode';
 import SupportInbox, { readJson, useAction, inputClass, buttonClass, Pager } from '@/components/SupportInbox';
@@ -36,13 +37,13 @@ export default function AdminGymsView() {
   return <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-7 min-w-0">
     <header className="glass-card p-6 sm:p-10 space-y-4"><p className="text-xs uppercase tracking-[0.28em] text-thrivv-gold-500">Thrivv / Platform administration</p><h1 className="text-3xl sm:text-5xl font-semibold tracking-tighter">Your gyms. One workspace.</h1><p className="text-thrivv-text-secondary">Manage gym access, assist members and review changes.</p><WorkspaceLink className="text-sm text-thrivv-gold-500 underline" href="/member/dashboard">Open member dashboard</WorkspaceLink></header>
     <nav aria-label="Administration sections" className="flex flex-wrap gap-2">{tabs.map(t => <button aria-current={tab === t ? 'page' : undefined} key={t} onClick={() => setTab(t)} className={tab === t ? buttonClass : 'btn-ghost px-4 py-3 text-sm'}>{t}</button>)}</nav>
-    {tab === 'Overview' && <Overview />}{tab === 'Gyms' && <Gyms />}{tab === 'Access requests' && <AccessRequests />}{tab === 'Members' && <Members />}{tab === 'Support' && <SupportInbox admin />}{tab === 'Rewards' && <AdminRewards />}{tab === 'Audit history' && <Audit />}
+    {tab === 'Overview' && <Overview openRewards={() => setTab('Rewards')} />}{tab === 'Gyms' && <Gyms />}{tab === 'Access requests' && <AccessRequests />}{tab === 'Members' && <Members />}{tab === 'Support' && <SupportInbox admin />}{tab === 'Rewards' && <AdminRewards />}{tab === 'Audit history' && <Audit />}
   </main>;
 }
-function Overview() {
+function Overview({ openRewards }: { openRewards: () => void }) {
   const state = useData('/api/admin/overview'); const d = state.data;
   const names: Record<string,string> = { gyms: 'Gyms', members: 'Registered accounts', gym_members: 'Gym members', active_members: 'Active gym members · 7 days', connected: 'WHOOP connections', stale_syncs: 'Stale or missing syncs', failed_support_syncs: 'Failed support retries · 7 days', pending_requests: 'Pending owner requests', open_tickets: 'Open support tickets' };
-  return <section className="space-y-5"><LoadState state={state} />{d && <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{Object.entries(names).map(([key, name]) => <div key={key} className="premium-card p-6"><p className="text-sm text-gray-400">{name}</p><p className="mt-3 text-4xl text-thrivv-gold-500">{d[key]}</p></div>)}</div><p className="text-sm text-gray-400">{d.activityDefinition}</p><p className="text-sm text-gray-400">{d.syncDefinition}</p><div className="premium-card p-6"><h2 className="font-semibold">Reward accounting · Unavailable</h2><p>{d.rewards.reason} Points adjustments remain disabled.</p></div></>}</section>;
+  return <section className="space-y-5"><LoadState state={state} />{d && <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{Object.entries(names).map(([key, name]) => <div key={key} className="premium-card p-6"><p className="text-sm text-gray-400">{name}</p><p className="mt-3 text-4xl text-thrivv-gold-500">{d[key]}</p></div>)}</div><p className="text-sm text-gray-400">{d.activityDefinition}</p><p className="text-sm text-gray-400">{d.syncDefinition}</p><SyncOperations /><div className="premium-card p-6"><h2 className="font-semibold">Reward operations</h2><p className="mt-2 text-sm text-gray-400">Manage partner code inventory, record merchant-confirmed use, and resolve failed redemptions with an audited replacement or refund.</p><button className={`${buttonClass} mt-4`} onClick={openRewards}>Open reward operations</button></div></>}</section>;
 }
 function GymForm({ gym, done }: { gym?: any; done: () => Promise<void> }) {
   const [name, setName] = useState(gym?.name || ''); const [email, setEmail] = useState(gym?.owner_email || ''); const [timezone, setTimezone] = useState(gym?.timezone || 'UTC');

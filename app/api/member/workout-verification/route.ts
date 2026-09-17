@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) { return handled(async () => {
   if (manual) {
     const { data, error } = await supabase.rpc('thrivv_verify_manual_workout', { p_user: user.id, p_gym: context.gymId,
       p_operator: verified.operatorId, p_issued: verified.issuedAt, p_expires: verified.expiresAt, p_request: b.requestId });
-    if (error) throw new HttpError(409, 'Scan not accepted. Log today’s workout, check your gym membership and scan its current QR. Manual rewards require no WHOOP connection or workout for today.');
+    if (error) throw new HttpError(409, 'Scan not accepted. Log today’s workout, check your gym membership and scan its current QR.');
     return json(data);
   }
   const { data, error } = await supabase.rpc('thrivv_verify_gym_workout', { p_user: user.id, p_workout: b.workoutId, p_gym: context.gymId,

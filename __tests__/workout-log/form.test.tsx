@@ -116,7 +116,7 @@ test('saves the member-bound movements once, refreshes history, and clears only 
   expect(url).toBe('/api/workouts/log');
   expect(request.method).toBe('POST');
   expect(JSON.parse(request.body)).toEqual({
-    expectedUserId: 'member-a', name: 'Upper body', date: '2026-09-16', exercises: [
+    requestId: expect.any(String), expectedUserId: 'member-a', name: 'Upper body', date: '2026-09-16', exercises: [
       { exerciseId: knownExercise.id, name: knownExercise.name, sets: 3, reps: 8 },
       { name: 'Band pull-apart', sets: 2, reps: 12 },
     ],

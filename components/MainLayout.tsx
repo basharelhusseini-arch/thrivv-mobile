@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar, { isGymPortalPath } from './Sidebar';
 import BackgroundLayers from './BackgroundLayers';
+import NativeReminderSync from '@/components/NativeReminderSync';
 import { ClientSessionProvider, useClientSession } from '@/lib/client-session';
 import { portalLoginUrl } from '@/lib/gym-routing';
 import type { ServerSessionIdentity } from '@/lib/server-session-identity';
@@ -52,5 +53,5 @@ export default function MainLayout({ children, serverIdentity }: { children: Rea
   if (!isPublic && !recoveryChecked) return <SessionLoading />;
   if (isPublic) return <div className="min-h-screen bg-thrivv-bg-dark">{children}</div>;
   if (serverIdentity.status === 'unavailable') return <div role="alert" className="min-h-screen bg-thrivv-bg-darker p-8 text-white flex flex-col items-center justify-center gap-4"><p>Unable to verify this workspace. Please retry.</p><button onClick={() => window.location.reload()} className="btn-primary px-6 py-3">Try again</button></div>;
-  return <ClientSessionProvider route={pathname} serverUserId={serverIdentity.status === 'authenticated' ? serverIdentity.userId : null}><AuthenticatedLayout pathname={pathname}>{children}</AuthenticatedLayout></ClientSessionProvider>;
+  return <ClientSessionProvider route={pathname} serverUserId={serverIdentity.status === 'authenticated' ? serverIdentity.userId : null}><NativeReminderSync /><AuthenticatedLayout pathname={pathname}>{children}</AuthenticatedLayout></ClientSessionProvider>;
 }

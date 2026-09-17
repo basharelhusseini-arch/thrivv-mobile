@@ -40,3 +40,7 @@ test('unauthenticated reward reads do not reach the database', async () => {
   (requireAuth as jest.Mock).mockRejectedValue(new Error('Unauthorized'));
   expect((await GET()).status).toBe(401); expect(supabase.from).not.toHaveBeenCalled();
 });
+test('a scoring outage does not hide the balance, catalog or previously issued vouchers',async()=>{
+ (gymRewardStatus as jest.Mock).mockRejectedValue(new Error('WHOOP score unavailable'));
+ const response=await GET();const data=await response.json();expect(response.status).toBe(200);expect(data.points).toBe(240);expect(data.redemptions).toEqual([savedReceipt]);expect(data.daily).toBeNull();expect(data.dailyWarning).toContain('wallet');expect(data.offers).toHaveLength(1);
+});

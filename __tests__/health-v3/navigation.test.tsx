@@ -8,7 +8,7 @@ test('member sidebar renders the current destinations in order; removed links re
   const html = renderToStaticMarkup(<Sidebar />);
   const desktop = html.slice(html.indexOf('<nav'),html.indexOf('</nav>'));
   const links = [...desktop.matchAll(/href="([^"]+)"/g)].map(m=>m[1]);
-  expect(links).toEqual(['/member/dashboard','/member/workouts','/member/scan-workout','/member/rewards','/member/health','/member/nutrition','/member/bookings','/member/wearables','/member/account']);
+  expect(links).toEqual(['/member/dashboard','/member/workouts','/member/scan-workout','/member/rewards','/member/health','/member/nutrition','/member/notifications','/member/wearables','/member/account']);
   expect(desktop).toContain('Wearable');
   expect(existsSync('app/member/wearables/page.tsx')).toBe(true);
   expect(html).toContain('/member/account/support');

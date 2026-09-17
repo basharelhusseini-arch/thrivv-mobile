@@ -6,8 +6,8 @@ import { exercisesDatabase } from '@/lib/exercises';
 import type { LoggedWorkout } from '@/lib/manual-workouts';
 import WorkoutCoachingTips from '@/components/WorkoutCoachingTips';
 
-type MovementDraft = { key: number; name: string; sets: string; reps: string };
-type WorkoutDraft = { name: string; date: string; exercises: MovementDraft[] };
+type MovementDraft = { key: number; name: string; sets: string; reps: string; setDetails?: { reps: string; weightKg: string }[] };
+type WorkoutDraft = { requestId?: string; name: string; date: string; exercises: MovementDraft[] };
 
 function today() {
   const date = new Date();
@@ -25,8 +25,9 @@ function restoreDraft(value: string | null): WorkoutDraft | null {
       !Array.isArray(draft.exercises) || !draft.exercises.length || draft.exercises.length > 30 ||
       !draft.exercises.every((row: MovementDraft) => row && typeof row.name === 'string' &&
         typeof row.sets === 'string' && typeof row.reps === 'string')) return null;
-  return { name: draft.name.slice(0, 80), date: draft.date, exercises: draft.exercises.map((row: MovementDraft, key: number) => ({
+  return { requestId: typeof draft.requestId === 'string' ? draft.requestId : undefined, name: draft.name.slice(0, 80), date: draft.date, exercises: draft.exercises.map((row: MovementDraft, key: number) => ({
     key, name: row.name.slice(0, 100), sets: row.sets, reps: row.reps,
+    ...(Array.isArray(row.setDetails) && row.setDetails.length <= 100 && row.setDetails.every(s => typeof s?.reps === 'string' && typeof s?.weightKg === 'string') ? {setDetails: row.setDetails} : {}),
   })) };
 }
 
@@ -47,7 +48,7 @@ export default function WorkoutLogForm({ memberId, onSaved }: { memberId: string
   useEffect(() => {
     let restored: WorkoutDraft | null = null;
     try { restored = restoreDraft(localStorage.getItem(storageKey)); } catch { /* Storage can be unavailable. */ }
-    setDraft(restored || { name: '', date: today(), exercises: [{ key: 0, name: '', sets: '', reps: '' }] });
+    setDraft(restored ? {...restored, requestId: restored.requestId && /^[a-f0-9-]{36}$/i.test(restored.requestId) ? restored.requestId : crypto.randomUUID()} : { requestId: crypto.randomUUID(), name: '', date: today(), exercises: [{ key: 0, name: '', sets: '', reps: '' }] });
     nextKey.current = restored?.exercises.length || 1;
     setDirty(!!restored);
     setReady(true);
@@ -97,11 +98,12 @@ export default function WorkoutLogForm({ memberId, onSaved }: { memberId: string
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
         body: JSON.stringify({
-          expectedUserId: memberId,
+          expectedUserId: memberId, requestId: draft.requestId,
           name: draft.name.trim(), date: draft.date,
           exercises: draft.exercises.map(row => ({
             name: row.name.trim(), exerciseId: findExercise(row.name)?.id,
             sets: Number(row.sets), reps: Number(row.reps),
+            ...(row.setDetails && {setDetails: row.setDetails.map(set => ({reps: Number(set.reps), weightKg: set.weightKg.trim() === '' ? null : Number(set.weightKg)}))}),
           })),
         }),
       });
@@ -157,13 +159,15 @@ export default function WorkoutLogForm({ memberId, onSaved }: { memberId: string
                 </label>
                 <label className="min-w-0 space-y-2 text-sm text-thrivv-text-secondary">
                   <span className="block">Sets</span>
-                  <input type="number" inputMode="numeric" min={1} max={100} step={1} className={inputClass} value={row.sets} onChange={event => updateMovement(row.key, { sets: event.target.value })} required />
+                  <input type="number" inputMode="numeric" min={1} max={100} step={1} className={inputClass} value={row.sets} onChange={event => updateMovement(row.key, { sets: event.target.value, ...(row.setDetails ? {setDetails: Array.from({length: Math.min(100, Math.max(0, Number(event.target.value) || 0))}, (_,i) => row.setDetails?.[i] || {reps: row.reps, weightKg: ''})} : {}) })} required />
                 </label>
                 <label className="min-w-0 space-y-2 text-sm text-thrivv-text-secondary">
                   <span className="block">Reps per set</span>
                   <input type="number" inputMode="numeric" min={1} max={1000} step={1} className={inputClass} value={row.reps} onChange={event => updateMovement(row.key, { reps: event.target.value })} required />
                 </label>
               </div>
+              <button type="button" className="mt-4 text-sm text-thrivv-gold-400 underline" disabled={!Number.isInteger(Number(row.sets)) || Number(row.sets)<1 || Number(row.sets)>100} onClick={() => updateMovement(row.key, {setDetails: row.setDetails ? undefined : Array.from({length: Number(row.sets)}, () => ({reps: row.reps, weightKg: ''}))})}>{row.setDetails ? 'Use simple sets and reps' : 'Add weights / customize each set'}</button>
+              {row.setDetails && <div className="mt-3 space-y-2">{row.setDetails.map((set, setIndex) => <div key={setIndex} className="grid grid-cols-[40px_1fr_1fr] items-end gap-2"><span className="pb-3 text-xs">Set {setIndex+1}</span><label className="text-xs">Reps<input type="number" min={1} max={1000} required value={set.reps} className={inputClass} onChange={e => updateMovement(row.key,{setDetails:row.setDetails!.map((s,i)=>i===setIndex?{...s,reps:e.target.value}:s)})} /></label><label className="text-xs">Weight (kg)<input type="number" min={0} max={1500} step="0.1" placeholder="Optional" value={set.weightKg} className={inputClass} onChange={e => updateMovement(row.key,{setDetails:row.setDetails!.map((s,i)=>i===setIndex?{...s,weightKg:e.target.value}:s)})} /></label></div>)}</div>}
               {row.name.trim() && <WorkoutCoachingTips exerciseId={findExercise(row.name)?.id} />}
             </section>
           ))}

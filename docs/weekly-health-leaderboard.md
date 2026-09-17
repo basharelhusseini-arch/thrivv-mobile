@@ -1,3 +1,5 @@
+> Historical design. The proposed unified attendance and mixed points model is documented in [pilot/audit-and-release.md](pilot/audit-and-release.md).
+
 # Weekly health leaderboard
 
 ## Behavior

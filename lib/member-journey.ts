@@ -3,6 +3,7 @@ export type WorkoutVerification = {
   canScan: boolean; verified: boolean; scanUntil: string; status: string; workout_score?: number | null;
 };
 export type VerificationStatus = {
+  whoopConnected?: boolean;
   mode?: 'manual' | 'whoop' | 'whoop_setup';
   gymId: string | null; date: string; timezone: string; verificationEnabled: boolean; rewardsEnabled: boolean;
   score: number | null; estimatedPoints: number | null; creditedPoints: number; rewardStatus: string;

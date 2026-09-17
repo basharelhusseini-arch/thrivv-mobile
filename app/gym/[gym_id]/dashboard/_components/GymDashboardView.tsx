@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import GymPilotAnalytics from '@/components/GymPilotAnalytics';
 import GymWorkspace from '../../_components/GymWorkspace';
 import GymHeader from './GymHeader';
 import Week4RetentionCard from './Week4RetentionCard';
@@ -49,6 +50,7 @@ export type GymAnalytics = {
 export default function GymDashboardView({ data }: { data: GymAnalytics }) {
   return <GymWorkspace gym={data.gym} current="dashboard" title="Your gym, at a glance" description="Follow your community’s workout consistency and reward activity in one place.">
     <GymHeader data={data} />
+    <GymPilotAnalytics gymId={data.gym.id} />
     <div className="grid gap-5 md:grid-cols-2">
       <Link href={`/gym/${data.gym.id}/members`} className="group dark-card p-6 space-y-3 transition-colors hover:border-thrivv-gold-500/30">
         <p className="text-xs uppercase tracking-widest text-thrivv-gold-500">Your community</p>

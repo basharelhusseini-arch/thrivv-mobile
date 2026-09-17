@@ -13,7 +13,7 @@ export async function GET() {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     // These account-scoped reads are independent; avoid serial database round trips.
     const [daily, balance, history, redemptions, offers, transactions] = await Promise.all([
-      gymRewardStatus(user.id),
+      gymRewardStatus(user.id).catch(() => null),
       supabase.from('users').select('reward_points').eq('id', user.id).single(),
       supabase.from('reward_history').select('date, health_score, points_earned').eq('user_id', user.id)
         .gte('date', thirtyDaysAgo.toISOString().split('T')[0]).order('date', { ascending: false }).limit(30),
@@ -29,8 +29,8 @@ export async function GET() {
     const points = Number(balance.data.reward_points) || 0;
     const tier = getRewardTier(points);
     return NextResponse.json({
-      daily, points,
-      offers: daily.redemptionEnabled ? offers.data || [] : [],
+      daily, points, dailyWarning: daily ? null : "Today’s earning status is temporarily unavailable. Your wallet and vouchers are still accessible.",
+      offers: daily && !daily.redemptionEnabled ? [] : offers.data || [],
       redemptions: redemptions.data || [],
       transactions: transactions.data || [],
       tier: tier.tier, nextTier: tier.nextTier, pointsToNext: tier.pointsToNext, tierColor: tier.color,
