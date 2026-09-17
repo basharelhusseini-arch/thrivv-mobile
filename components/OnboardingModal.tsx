@@ -290,7 +290,7 @@ export default function OnboardingModal({ isOpen, onComplete, userId }: Onboardi
                     ))}
                   </select>
                   <p className="text-xs text-thrivv-text-muted mt-2">
-                    You can connect it later in Settings
+                    Join your gym, scan and earn points. Connect WHOOP later in Wearable.
                   </p>
                 </div>
               )}

@@ -8,11 +8,11 @@ let values:Record<string,unknown>;
 const saved={...process.env};
 beforeEach(()=>{jest.useFakeTimers().setSystemTime(new Date('2026-09-13T12:00:00Z'));
  (scoreContext as jest.Mock).mockResolvedValue({gymId:'gym',today:'2026-09-13',timezone:'UTC',membershipStart:'2026-09-01'});(readScore as jest.Mock).mockResolvedValue({score:43.5,subtotal:43.5,complete:true});
- values={gym_reward_config:{singleton:true,verification_enabled:true,rewards_enabled:true,effective_date:'2026-09-13',points_per_health_point:2,max_daily_points:100},whoop_workouts:[w],gym_workout_verifications:[],daily_reward_entitlements:[]};
+ values={gym_reward_config:{singleton:true,verification_enabled:true,rewards_enabled:true,effective_date:'2026-09-13',points_per_health_point:2,max_daily_points:100,manual_rewards_enabled:true,manual_effective_at:'2026-09-13T00:00:00Z'},whoop_workouts:[w],gym_workout_verifications:[],daily_reward_entitlements:[]};
  (supabase.from as jest.Mock).mockImplementation(table=>{const chain:any={};for(const m of ['select','eq','single','maybeSingle','is','gte','order','limit'])chain[m]=()=>chain;chain.then=(resolve:any)=>Promise.resolve({data:values[table],error:null}).then(resolve);return chain;});
 });
 afterEach(()=>jest.useRealTimers());afterAll(()=>{process.env=saved;});
-test('an imported ended workout offers scanning without claiming points credited',async()=>{const s=await gymRewardStatus('member');expect(s.workouts[0]).toMatchObject({canScan:true,verified:false});expect(s.creditedPoints).toBe(0);expect(s.estimatedPoints).toBe(87);});
+test('an imported ended workout offers scanning without claiming points credited',async()=>{const s=await gymRewardStatus('member');expect(s.workouts[0]).toMatchObject({canScan:true,verified:false});expect(s.creditedPoints).toBe(0);expect(s.estimatedPoints).toBe(40);});
 test('equivalent timestamp representations remain verified; altered timestamps require review',async()=>{
  values.gym_workout_verifications=[{workout_id:'w',gym_id:'gym',start_at:'2026-09-13T11:00:00.000Z',end_at:'2026-09-13T11:30:00.000Z'}];
  expect((await gymRewardStatus('member')).workouts[0]).toMatchObject({canScan:false,verified:true});
@@ -26,7 +26,7 @@ test('manual rewards are separate from WHOOP conversion and capped at 50',async(
  Object.assign(values.gym_reward_config as object,{rewards_enabled:false,manual_rewards_enabled:true,manual_effective_at:'2026-09-13T00:00:00Z'});
  const s=await gymRewardStatus('member'); expect(s.manual).toMatchObject({eligible:true,canScan:true,estimatedPoints:50});expect(s.estimatedPoints).toBe(50);expect(s.rewardsEnabled).toBe(true);
  values.whoop_connections={whoop_connected_at:'2026-09-12T00:00:00Z'};
- const connected=await gymRewardStatus('member');expect(connected.manual.canScan).toBe(false);expect(connected.rewardsEnabled).toBe(false);expect(connected.estimatedPoints).toBeNull();
+ const connected=await gymRewardStatus('member');expect(connected.manual.canScan).toBe(true);expect(connected.rewardsEnabled).toBe(true);expect(connected.estimatedPoints).toBe(50);
 });
 test('manual scan requires a checkin and membership; read errors fail closed',async()=>{
  values.whoop_workouts=[];values.daily_checkins={did_workout:false};
@@ -40,22 +40,22 @@ test('verified WHOOP workouts explain disabled reward conversion without invitin
   (values.gym_reward_config as {rewards_enabled:boolean}).rewards_enabled = false;
   values.gym_workout_verifications = [{ workout_id:'w', gym_id:'gym', start_at:w.start_at, end_at:w.end_at }];
   const result = await gymRewardStatus('member');
-  expect(result.workouts[0]).toMatchObject({ verified:true, canScan:false, status:'Gym verified — WHOOP rewards not activated' });
+  expect(result.workouts[0]).toMatchObject({ verified:true, canScan:false, status:'Performance verified — scan today’s attendance QR to earn points' });
   expect(result.creditedPoints).toBe(0);
 });
 
-test('connecting WHOOP overrides a saved no-wearable preference without opening manual rewards', async () => {
+test('connecting WHOOP preserves the shared attendance reward path', async () => {
   values.user_health_profile = { has_wearable: false, wearable_type: null };
   values.whoop_connections = { whoop_connected_at: '2026-09-13T10:00:00Z' };
   values.whoop_workouts = [];
   const result = await gymRewardStatus('member');
-  expect(result.mode).toBe('whoop'); expect(result.manual.eligible).toBe(false);
+  expect(result.mode).toBe('manual'); expect(result.manual.eligible).toBe(true);
 });
-test('a WHOOP preference shows setup until connection; today’s imported workout still locks the reward source', async () => {
+test('WHOOP preferences and imported workouts never block attendance rewards', async () => {
   values.user_health_profile = { has_wearable: true, wearable_type: 'whoop' };
   values.whoop_connections = null; values.whoop_workouts = [];
-  expect((await gymRewardStatus('member')).mode).toBe('whoop_setup');
+  expect((await gymRewardStatus('member')).mode).toBe('manual');
   values.whoop_workouts = [w];
   const result = await gymRewardStatus('member');
-  expect(result.mode).toBe('whoop'); expect(result.manual.eligible).toBe(false);
+  expect(result.mode).toBe('manual'); expect(result.manual.eligible).toBe(true);
 });

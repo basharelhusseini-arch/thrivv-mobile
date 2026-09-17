@@ -23,7 +23,7 @@ test.each(['dashboard','members','activity','invite','qr'])('gym subpage %s pres
 });
 test('member navigation surfaces the four core actions and keeps supporting pages on desktop',()=>{
  const html=render('/member/dashboard');
- for(const route of ['dashboard','workouts','scan-workout','rewards','nutrition','bookings','health','account'])expect(html).toContain(`href="/member/${route}"`);
+ for(const route of ['dashboard','workouts','scan-workout','rewards','nutrition','notifications','health','account'])expect(html).toContain(`href="/member/${route}"`);
  const mobile=html.slice(html.indexOf('<nav data-app-navigation'));
  for(const route of ['dashboard','workouts','scan-workout','rewards'])expect(mobile).toContain(`href="/member/${route}"`);
  expect(mobile).not.toContain('href="/member/nutrition"');expect(mobile).toContain('More');

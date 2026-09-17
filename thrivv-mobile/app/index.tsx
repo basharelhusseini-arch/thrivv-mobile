@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { appUrl, navigationTarget, startsWhoop, THRIVV_URL } from '../lib/navigation';
 
+import {Notifications,parseReminderMessage,updateDeviceReminders} from '../lib/reminders';
+
 export default function App() {
   const webView = useRef<WebView>(null);
   const whoopActive = useRef(false);
@@ -28,6 +30,19 @@ export default function App() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', back);
     return () => subscription.remove();
   }, [back]);
+
+  useEffect(() => {
+    let active=true;
+    const openReminder=() => {
+      if(!active)return;
+      whoopActive.current=false; currentUrl.current='https://thrivv.dev/member/notifications';
+      setSource(currentUrl.current);setInstance(value=>value+1);
+      void Notifications.clearLastNotificationResponseAsync().catch(()=>{});
+    };
+    const subscription=Notifications.addNotificationResponseReceivedListener(openReminder);
+    void Notifications.getLastNotificationResponseAsync().then(response=>{if(response)openReminder();}).catch(()=>{});
+    return ()=>{active=false;subscription.remove();};
+  }, []);
 
   function restart(url: string) {
     setError(false);
@@ -80,7 +95,16 @@ export default function App() {
           key={instance}
           ref={webView}
           source={{ uri: source }}
-          applicationNameForUserAgent="ThrivvApp/1.0"
+          applicationNameForUserAgent="ThrivvApp/1.1"
+          onMessage={({nativeEvent}) => {
+            const message=parseReminderMessage(nativeEvent.data,nativeEvent.url,currentUrl.current);
+            if(!message)return;
+            void updateDeviceReminders(message).then(granted=>{
+              if(message.requestPermission && appUrl(currentUrl.current))webView.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('thrivv:native-reminders',{detail:{granted:${granted}}}));true;`);
+            }).catch(()=>{
+              if(message.requestPermission && appUrl(currentUrl.current))webView.current?.injectJavaScript("window.dispatchEvent(new CustomEvent('thrivv:native-reminders',{detail:{granted:false}}));true;");
+            });
+          }}
           style={styles.webView}
           containerStyle={styles.webView}
           // All schemes reach our policy so WebView cannot auto-open an unsafe
@@ -104,6 +128,8 @@ export default function App() {
           }}
           onNavigationStateChange={state => {
             currentUrl.current = state.url;
+            const path=appUrl(state.url)?.pathname;
+            if(path==='/mobile' || path==='/member/login')void updateDeviceReminders({type:'thrivv.reminders',scheduled:[],requestPermission:false}).catch(()=>{});
             setCanGoBack(state.canGoBack);
             setWelcome(appUrl(state.url)?.pathname === '/mobile');
             if (appUrl(state.url)) setProviderHost('');

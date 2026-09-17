@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, ArrowLeftRight, Calendar, Dumbbell, Heart, LayoutDashboard, LogOut, MoreHorizontal, QrCode, Trophy, User, Users, UserPlus, UtensilsCrossed, X } from 'lucide-react';
+import { Activity, ArrowLeftRight, Bell, Dumbbell, Heart, LayoutDashboard, LogOut, MoreHorizontal, QrCode, Trophy, User, Users, UserPlus, UtensilsCrossed, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { logoutClient } from '@/lib/client-session';
 import { portalLoginUrl } from '@/lib/gym-routing';
@@ -18,7 +18,7 @@ const memberNavigation: NavItem[] = [
   { label: 'Rewards', href: '/member/rewards', icon: Trophy },
   { label: 'Health', href: '/member/health', icon: Activity },
   { label: 'Nutrition', href: '/member/nutrition', icon: UtensilsCrossed },
-  { label: 'Bookings', href: '/member/bookings', icon: Calendar },
+  { label: 'Reminders', href: '/member/notifications', icon: Bell },
   { label: 'Wearables', href: '/member/wearables', icon: Activity },
   { label: 'Account', href: '/member/account', icon: User },
 ];

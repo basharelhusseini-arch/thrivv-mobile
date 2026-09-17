@@ -1,3 +1,4 @@
+import { recordProductionError } from '@/lib/error-reporting';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -30,5 +31,5 @@ export async function memberBody(request: NextRequest, userId: string) {
 }
 export async function memberResult(fn: () => Promise<unknown>, status = 200) {
   try { return NextResponse.json(await fn(), { status, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } }); }
-  catch (error) { return NextResponse.json({ error: error instanceof MemberResourceError ? error.message : 'Unable to complete this request.' }, { status: error instanceof MemberResourceError ? error.status : 503, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } }); }
+  catch (error) { if(!(error instanceof MemberResourceError)||error.status>=500) await recordProductionError('server','/api/member',error); return NextResponse.json({ error: error instanceof MemberResourceError ? error.message : 'Unable to complete this request.' }, { status: error instanceof MemberResourceError ? error.status : 503, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } }); }
 }

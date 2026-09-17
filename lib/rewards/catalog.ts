@@ -7,6 +7,7 @@ export type RewardCategory = keyof typeof REWARD_TIERS;
 export type RewardOffer = {
   id: string; name: string; points: number; partner_name: string; category: RewardCategory | null;
   discount_percent: number | null; terms: string; instructions: string; website_url: string | null;
+  gym_id?: string | null; location_label?: string; lowStock?: boolean;
   expires_at: string | null; available?: boolean; active?: boolean; remaining?: number;
 };
 export type RewardReceipt = {

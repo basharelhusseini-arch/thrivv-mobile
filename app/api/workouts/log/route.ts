@@ -1,3 +1,5 @@
+import {recordProductionError} from '@/lib/error-reporting';
+import { uuid } from '@/lib/admin/http';
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
@@ -8,7 +10,10 @@ export const dynamic = 'force-dynamic';
 
 const headers = { 'Cache-Control': 'no-store' };
 const columns = 'id,member_id,name,date,exercises,completed_at';
-const failure = (error: string, status: number) => NextResponse.json({ error }, { status, headers });
+const failure = async (error: string, status: number) => {
+  if(status>=500) await recordProductionError('server','/api/workouts/log',new Error());
+  return NextResponse.json({ error }, { status, headers });
+};
 
 function crossOrigin(request: NextRequest): boolean {
   const origin = request.headers.get('origin');
@@ -26,11 +31,13 @@ export async function GET(request: NextRequest) {
       || (memberId !== null && memberId !== user.id)) {
       return failure('Your account changed. Refresh before continuing.', 403);
     }
+    const offset = Number(request.nextUrl.searchParams.get('offset') || 0);
+    if (!Number.isInteger(offset) || offset < 0 || offset > 1000000) return failure('Invalid page.', 400);
     const { data, error } = await supabase.from('workouts').select(columns)
       .eq('member_id', user.id).is('workout_plan_id', null).eq('status', 'completed')
-      .order('date', { ascending: false }).order('completed_at', { ascending: false });
+      .order('date', { ascending: false }).order('completed_at', { ascending: false }).order('id').range(offset, offset + 49);
     if (error) return failure('Your workout history could not be loaded. Please retry.', 503);
-    return NextResponse.json({ workouts: (data || []).map(loggedWorkoutView) }, { headers });
+    return NextResponse.json({ workouts: (data || []).map(loggedWorkoutView), hasMore: data?.length === 50 }, { headers });
   } catch {
     return failure('Your workout history could not be loaded. Please retry.', 503);
   }
@@ -57,7 +64,10 @@ export async function POST(request: NextRequest) {
     try { workout = parseManualWorkoutInput(body); }
     catch (error) { return failure(error instanceof Error ? error.message : 'Invalid workout.', 400); }
 
+    const requestId = (body as Record<string, unknown>).requestId;
+    if (requestId !== undefined && !uuid(requestId)) return failure('Invalid save reference.', 400);
     const { data, error } = await supabase.from('workouts').insert({
+      ...(requestId && {log_request_id: requestId}),
       id: randomUUID(),
       member_id: user.id,
       workout_plan_id: null,
@@ -67,6 +77,13 @@ export async function POST(request: NextRequest) {
       status: 'completed',
       completed_at: new Date().toISOString(),
     }).select(columns).single();
+    if (error?.code === '23505' && requestId) {
+      const prior = await supabase.from('workouts').select(columns).eq('member_id',user.id).eq('log_request_id',requestId).single();
+      if (prior.data && !prior.error) {
+        if (JSON.stringify(parseManualWorkoutInput(prior.data)) !== JSON.stringify(workout)) return failure('This workout was already saved. Open your workout history to review it.',409);
+        return NextResponse.json({workout:loggedWorkoutView(prior.data)},{headers});
+      }
+    }
     if (error || !data) return failure('Your workout could not be saved. Please retry.', 503);
     return NextResponse.json({ workout: loggedWorkoutView(data) }, { status: 201, headers });
   } catch {

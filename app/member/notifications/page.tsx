@@ -1,155 +1,20 @@
 'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Bell, Mail, Calendar, DollarSign, User, CheckCircle } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
-import { useClientSession } from '@/lib/client-session';
-
-interface Notification {
-  id: string;
-  memberId: string;
-  type: 'class_reminder' | 'class_cancelled' | 'payment_receipt' | 'membership_expiring' | 'welcome';
-  subject: string;
-  body: string;
-  sent: boolean;
-  sentAt?: string;
-  createdAt: string;
-}
-
-export default function MemberNotificationsPage() {
-  const router = useRouter();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const session = useClientSession();
-  const [error, setError] = useState('');
-  const [retry, setRetry] = useState(0);
-
-  useEffect(() => {
-    if (session.status === 'unauthenticated') router.replace('/member/login');
-  }, [session.status, router]);
-
-  useEffect(() => {
-    setNotifications([]);
-    if (!session.user?.id) return;
-    const controller = new AbortController();
-    setLoading(true);
-    setError('');
-    void (async () => {
-      try {
-        const response = await fetch('/api/member/notifications', { cache: 'no-store', signal: controller.signal });
-        const data = await response.json();
-        if (!response.ok || !Array.isArray(data)) throw new Error(data.error || 'Your notifications could not be loaded.');
-        setNotifications(data);
-      } catch (cause) {
-        if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Your notifications could not be loaded.');
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    })();
-    return () => controller.abort();
-  }, [session.user?.id, retry]);
-
-  const getNotificationIcon = (type: Notification['type']) => {
-    switch (type) {
-      case 'class_reminder':
-      case 'class_cancelled':
-        return <Calendar className="w-4 h-4 text-thrivv-gold-500" />;
-      case 'payment_receipt':
-        return <DollarSign className="w-4 h-4 text-thrivv-neon-green" />;
-      case 'membership_expiring':
-        return <User className="w-4 h-4 text-thrivv-gold-400" />;
-      default:
-        return <Mail className="w-4 h-4 text-thrivv-text-secondary" />;
-    }
-  };
-
-  if (session.status === 'error') {
-    return <div role="alert" className="premium-card p-6 space-y-3"><p>We couldn&apos;t check your session.</p><button onClick={() => session.refresh()} className="btn-ghost px-4 py-2">Try again</button></div>;
-  }
-  if (session.status === 'unauthenticated') return null;
-  if (loading || session.status === 'loading') {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
-            <Bell className="w-5 h-5 text-thrivv-gold-500" />
-          </div>
-          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
-            Loading notifications
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-10">
-      <PageHeader
-        eyebrow="Inbox"
-        title="Notifications"
-        subtitle="Class reminders, payment receipts, and updates from your gym."
-
-      />
-
-      <main className="max-w-4xl">
-        <div className="premium-card overflow-hidden">
-          <div className="p-6">
-            {error ? (
-              <div role="alert" className="space-y-3 py-6 text-sm text-thrivv-text-secondary"><p>{error}</p><button onClick={() => setRetry(value => value + 1)} className="btn-ghost px-4 py-2">Try again</button></div>
-            ) : notifications.length === 0 ? (
-              <div className="text-center py-14">
-                <div className="w-14 h-14 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/20 mx-auto mb-4 flex items-center justify-center">
-                  <Bell className="w-6 h-6 text-thrivv-gold-500" />
-                </div>
-                <p className="text-thrivv-text-primary text-base font-medium mb-1">
-                  No notifications
-                </p>
-                <p className="text-thrivv-text-muted text-sm">
-                  You&apos;re all caught up.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className="rounded-xl bg-thrivv-bg-card/50 border border-thrivv-gold-500/10 p-4 hover:border-thrivv-gold-500/30 transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="icon-badge w-9 h-9 inline-flex items-center justify-center shrink-0">
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="text-sm font-semibold text-thrivv-text-primary">
-                              {notification.subject}
-                            </h3>
-                            <p className="mt-1 text-sm text-thrivv-text-secondary leading-relaxed">
-                              {notification.body}
-                            </p>
-                            <p className="mt-2 text-[11px] text-thrivv-text-muted">
-                              {new Date(notification.createdAt).toLocaleString()}
-                            </p>
-                          </div>
-                          {notification.sent && (
-                            <span className="inline-flex items-center gap-1 text-[11px] text-thrivv-neon-green bg-thrivv-neon-green/10 border border-thrivv-neon-green/20 px-2 py-0.5 rounded-md shrink-0">
-                              <CheckCircle className="w-3 h-3" />
-                              Sent
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
+import {useEffect,useState} from 'react';
+import Link from 'next/link';
+import {useClientSession} from '@/lib/client-session';
+import {sendNativeReminders,type ScheduledReminder} from '@/lib/native-reminders';
+type Preferences={available_rewards:boolean;voucher_expiry:boolean;weekly_target:number};
+type Data={preferences:Preferences;reminders:{id:string;title:string;body:string;href:string}[];scheduled:ScheduledReminder[]};
+export default function ReminderPage(){const {user}=useClientSession();return user?<Reminders key={user.id} userId={user.id}/>:<p>Loading reminders…</p>;}
+function Reminders({userId}:{userId:string}){
+ const [data,setData]=useState<Data|null>(null);const [prefs,setPrefs]=useState<Preferences>({available_rewards:false,voucher_expiry:false,weekly_target:0});const [error,setError]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);const [revision,setRevision]=useState(0);
+ useEffect(()=>{const c=new AbortController();fetch(`/api/member/notifications?memberId=${userId}`,{cache:'no-store',signal:c.signal}).then(async r=>{if(!r.ok)throw new Error('Unable to load reminders.');return r.json();}).then(d=>{setData(d);setPrefs(d.preferences);setError('');}).catch(e=>{if(!c.signal.aborted)setError(e.message);});return()=>c.abort();},[userId,revision]);
+ useEffect(()=>{const listener=(e:Event)=>{const detail=(e as CustomEvent).detail;setMessage(detail?.granted?'Device reminders updated.':'Device notifications are off. Enable them in your device settings to receive reminders.');};window.addEventListener('thrivv:native-reminders',listener);return()=>window.removeEventListener('thrivv:native-reminders',listener);},[]);
+ async function save(){setBusy(true);setError('');try{const r=await fetch('/api/member/notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...prefs,expectedUserId:userId,requestId:crypto.randomUUID()}),signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error('Preferences were not saved. Please retry.');setMessage('Reminder preferences saved.');setRevision(v=>v+1);window.dispatchEvent(new Event('thrivv:reminders-changed'));}catch(e){setError(e instanceof Error?e.message:'Unable to save.');}finally{setBusy(false);}}
+ return <div className="mx-auto max-w-2xl space-y-6"><h1 className="text-3xl font-semibold">Useful reminders</h1><p className="text-sm text-thrivv-text-secondary">Choose what helps. All reminders start off. You can change them any time.</p>{error && <p role="alert">{error} <button className="underline" onClick={()=>setRevision(v=>v+1)}>Retry</button></p>}
+ <form className="premium-card space-y-5 p-6" onSubmit={e=>{e.preventDefault();void save();}}><fieldset disabled={!data || busy} className="space-y-5"><label className="flex gap-3"><input type="checkbox" checked={prefs.available_rewards} onChange={e=>setPrefs({...prefs,available_rewards:e.target.checked})}/>Show rewards I can redeem</label><label className="flex gap-3"><input type="checkbox" checked={prefs.voucher_expiry} onChange={e=>setPrefs({...prefs,voucher_expiry:e.target.checked})}/>Remind me before a saved voucher expires</label><label className="block">My weekly attendance target<select value={prefs.weekly_target} onChange={e=>setPrefs({...prefs,weekly_target:Number(e.target.value)})} className="mt-2 block w-full rounded-lg border border-white/15 bg-black/20 p-3">{[0,1,2,3,4,5,6,7].map(n=><option key={n} value={n}>{n?`${n} visit days`:'Off'}</option>)}</select></label><button className="btn-primary px-5 py-3">{busy?'Saving…':'Save preferences'}</button></fieldset></form>
+ {message && <p role="status" className="text-sm text-thrivv-gold-400">{message}</p>}
+ <section className="space-y-3"><h2 className="font-semibold">For you</h2>{data?.reminders.map(r=><Link key={r.id} href={r.href} className="block rounded-xl border border-white/10 p-4"><h3>{r.title}</h3><p className="mt-1 text-sm text-thrivv-text-secondary">{r.body}</p></Link>)}{data && !data.reminders.length && <p className="text-sm text-thrivv-text-muted">Nothing needs your attention right now.</p>}</section>
+ <div className="rounded-xl border border-white/10 p-5"><button disabled={!data || busy} className="text-sm text-thrivv-gold-400 underline" onClick={()=>{if(!sendNativeReminders(data?.scheduled||[],true))setMessage('Device reminders are available in the updated Thrivv app. Your reminders are available here in the meantime.');}}>Enable reminders on this device</button><p className="mt-3 text-xs text-thrivv-text-muted">The updated app schedules one voucher reminder 24 hours before expiry and, if needed, one Saturday check-in for your weekly target. It refreshes the next seven days when opened. Available rewards appear here. Device delivery depends on your notification settings.</p></div>
+ </div>;
 }

@@ -42,23 +42,23 @@ export default function WearableSetup({ userId }: { userId: string }) {
       if (!mounted.current) return;
       dialog.current?.close(); setState('complete');
       window.dispatchEvent(new Event('thrivv:workouts-synced'));
-      if (choice === 'whoop') window.location.assign('/member/wearables');
+      window.location.assign('/member/dashboard');
     } catch (e) { if (mounted.current) { setError(e instanceof Error ? e.message : 'Unable to save.'); setState('ready'); } }
   }
   if (state === 'loading' || state === 'complete') return null;
   if (state === 'error') return <p role="alert" className="mb-6 rounded-xl border border-thrivv-gold-500/20 p-4 text-sm text-thrivv-text-secondary">Wearable setup is temporarily unavailable. <button onClick={() => setRetry(value => value + 1)} className="text-thrivv-gold-500 underline">Retry setup</button></p>;
   const choices: { value: Choice; title: string; description: string; icon: typeof Watch }[] = [
-    { value: 'whoop', title: 'I use WHOOP', description: 'Connect your workouts, then verify them at your gym.', icon: Activity },
+    { value: 'whoop', title: 'I use WHOOP', description: 'Scan at your gym to earn points. Connect WHOOP whenever you want.', icon: Activity },
     { value: 'none', title: 'No wearable', description: 'Verify your workout by scanning your gym’s QR.', icon: QrCode },
     { value: 'other', title: 'Another wearable', description: 'Apple Watch, Garmin or another device.', icon: Watch },
   ];
   return <dialog ref={dialog} onCancel={event => event.preventDefault()} aria-labelledby="wearable-setup-title" className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-3xl border border-thrivv-gold-500/25 bg-[#0D0F14] p-6 text-white shadow-2xl backdrop:bg-black/80 sm:p-8">
-    <div className="text-center"><Logo size="md" /><h2 id="wearable-setup-title" className="mt-6 text-2xl font-semibold">How do you track your workouts?</h2><p className="mt-3 text-sm text-thrivv-text-secondary">Make Thrivv yours. You can connect a wearable later.</p></div>
+    <div className="text-center"><Logo size="md" /><h2 id="wearable-setup-title" className="mt-6 text-2xl font-semibold">How do you track your workouts?</h2><p className="mt-3 text-sm text-thrivv-text-secondary">Join your gym → scan its QR after training → earn points. WHOOP is optional.</p></div>
     <fieldset disabled={state === 'saving'} className="mt-7 space-y-3"><legend className="sr-only">Your wearable</legend>{choices.map(({ value, title, description, icon: Icon }) => <label key={value} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 ${choice === value ? 'border-thrivv-gold-500 bg-thrivv-gold-500/10' : 'border-white/10'}`}>
       <input type="radio" name="wearable" value={value} checked={choice === value} onChange={() => setChoice(value)} className="h-4 w-4 shrink-0" /><Icon size={20} className="shrink-0 text-thrivv-gold-500" /><span><span className="block text-sm font-semibold">{title}</span><span className="mt-1 block text-xs leading-relaxed text-thrivv-text-secondary">{description}</span></span>
     </label>)}</fieldset>
     {choice === 'other' && <p className="mt-4 text-sm leading-relaxed text-thrivv-text-secondary">Only WHOOP connects today. Use gym QR verification for now; other wearable integrations are coming later.</p>}
     {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
-    <button disabled={!choice || state === 'saving'} onClick={() => void save()} className="btn-primary mt-6 min-h-[52px] w-full px-6 py-3 disabled:opacity-50">{state === 'saving' ? 'Saving…' : choice === 'whoop' ? 'Continue to WHOOP' : 'Continue'}</button>
+    <button disabled={!choice || state === 'saving'} onClick={() => void save()} className="btn-primary mt-6 min-h-[52px] w-full px-6 py-3 disabled:opacity-50">{state === 'saving' ? 'Saving…' : 'Continue to Thrivv'}</button>
   </dialog>;
 }

@@ -3,7 +3,11 @@
   "crons": [
     {
       "path": "/api/internal/whoop/process",
-      "schedule": "0 2 * * *"
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/internal/operations",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

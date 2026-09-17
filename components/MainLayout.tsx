@@ -4,10 +4,12 @@ import { ReactNode, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar, { isGymPortalPath } from './Sidebar';
 import BackgroundLayers from './BackgroundLayers';
+import NativeReminderSync from '@/components/NativeReminderSync';
 import { ClientSessionProvider, useClientSession } from '@/lib/client-session';
 import { portalLoginUrl } from '@/lib/gym-routing';
 import type { ServerSessionIdentity } from '@/lib/server-session-identity';
 import { isNativeApp } from '@/lib/mobile-app';
+import WorkoutUploadStatus from './WorkoutUploadStatus';
 import WearableSetup from './WearableSetup';
 
 function SessionLoading() {
@@ -25,7 +27,7 @@ function AuthenticatedLayout({ children, pathname }: { children: ReactNode; path
   return <div key={user.id} data-gym-portal={isGymPortal ? 'true' : undefined} className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-x-hidden">
     <BackgroundLayers />
     <Sidebar memberData={{ id: user.id, name: `${user.firstName} ${user.lastName}`.trim(), email: user.email }} isPlatformAdmin={isPlatformAdmin} />
-    <main id="main-content" className="relative z-10 lg:ml-60 px-4 sm:px-7 lg:px-10 pt-6 pb-28 lg:py-8">{!isGymPortal && <WearableSetup key={user.id} userId={user.id} />}{children}</main>
+    <main id="main-content" className="relative z-10 lg:ml-60 px-4 sm:px-7 lg:px-10 pt-6 pb-28 lg:py-8">{!isGymPortal && <WearableSetup key={user.id} userId={user.id} />}{!isGymPortal && <WorkoutUploadStatus key={user.id} memberId={user.id} />}{children}</main>
   </div>;
 }
 
@@ -52,5 +54,5 @@ export default function MainLayout({ children, serverIdentity }: { children: Rea
   if (!isPublic && !recoveryChecked) return <SessionLoading />;
   if (isPublic) return <div className="min-h-screen bg-thrivv-bg-dark">{children}</div>;
   if (serverIdentity.status === 'unavailable') return <div role="alert" className="min-h-screen bg-thrivv-bg-darker p-8 text-white flex flex-col items-center justify-center gap-4"><p>Unable to verify this workspace. Please retry.</p><button onClick={() => window.location.reload()} className="btn-primary px-6 py-3">Try again</button></div>;
-  return <ClientSessionProvider route={pathname} serverUserId={serverIdentity.status === 'authenticated' ? serverIdentity.userId : null}><AuthenticatedLayout pathname={pathname}>{children}</AuthenticatedLayout></ClientSessionProvider>;
+  return <ClientSessionProvider route={pathname} serverUserId={serverIdentity.status === 'authenticated' ? serverIdentity.userId : null}><NativeReminderSync /><AuthenticatedLayout pathname={pathname}>{children}</AuthenticatedLayout></ClientSessionProvider>;
 }

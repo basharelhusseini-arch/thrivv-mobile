@@ -65,7 +65,7 @@ export type WhoopStatusSnapshot = {
 
 export async function fetchWhoopStatus(): Promise<WhoopStatusSnapshot | null> {
   try {
-    const res = await fetch('/api/whoop/status', { cache: 'no-store' });
+    const res = await fetch('/api/whoop/status', { cache: 'no-store', signal: AbortSignal.timeout(10000) });
     if (!res.ok) return null;
     return (await res.json()) as WhoopStatusSnapshot;
   } catch {
@@ -106,7 +106,7 @@ export async function ensureWhoopAutoSync(opts?: {
     const qs = opts?.date ? `?date=${encodeURIComponent(opts.date)}` : '';
     const res = await fetch(`/api/whoop/sync${qs}`, {
       method: 'POST',
-      cache: 'no-store',
+      cache: 'no-store', signal: AbortSignal.timeout(60000),
     });
     if (res.ok) window.dispatchEvent(new Event('thrivv:workouts-synced'));
     if (res.ok && opts?.onSynced) {

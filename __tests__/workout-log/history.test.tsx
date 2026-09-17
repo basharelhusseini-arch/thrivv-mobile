@@ -1,8 +1,10 @@
+jest.mock('@/lib/use-workout-progress',()=>({useWorkoutProgress:()=>({progress:[],error:''})}));
 import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import LoggedWorkoutHistory from '@/components/LoggedWorkoutHistory';
 
 (global as any).React = React;
+jest.mock('next/navigation', () => ({useRouter: () => ({push: jest.fn()})}));
 jest.mock('@/components/WorkoutCoachingTips', () => ({
   __esModule: true,
   default: ({ exerciseId }: { exerciseId?: string }) => <p>{exerciseId ? `Coaching tips: ${exerciseId}` : 'General coaching tips'}</p>,
@@ -38,7 +40,7 @@ afterEach(() => {
 test('loads logged workouts with dates, sets, reps and coaching tips for every movement', async () => {
   global.fetch = jest.fn().mockResolvedValue(response([workout]));
   await act(async () => { renderer = TestRenderer.create(<LoggedWorkoutHistory memberId="member-a" />); });
-  expect(global.fetch).toHaveBeenCalledWith('/api/workouts/log?expectedUserId=member-a', expect.objectContaining({ cache: 'no-store', signal: expect.any(AbortSignal) }));
+  expect(global.fetch).toHaveBeenCalledWith('/api/workouts/log?expectedUserId=member-a&offset=0', expect.objectContaining({ cache: 'no-store', signal: expect.any(AbortSignal) }));
   expect(text()).toContain('Upper body session');
   expect(renderer!.root.findByType('time').props.dateTime).toBe('2026-09-16');
   expect(renderer!.root.findAllByType('details')).toHaveLength(1);

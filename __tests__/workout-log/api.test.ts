@@ -18,7 +18,7 @@ function request(method = 'GET', body?: unknown, query = '', headers: Record<str
 }
 function result(data: unknown, error: unknown = null) {
   const chain: any = {};
-  for (const method of ['select', 'eq', 'is', 'order', 'insert']) chain[method] = jest.fn(() => chain);
+  for (const method of ['select', 'eq', 'is', 'order', 'insert', 'range']) chain[method] = jest.fn(() => chain);
   chain.single = jest.fn(async () => ({ data, error }));
   chain.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error }).then(resolve);
   return chain;
@@ -47,8 +47,8 @@ test('history is owner-scoped, standalone, completed and newest first', async ()
   expect(query.eq).toHaveBeenCalledWith('member_id', 'owner');
   expect(query.eq).toHaveBeenCalledWith('status', 'completed');
   expect(query.is).toHaveBeenCalledWith('workout_plan_id', null);
-  expect(query.order.mock.calls).toEqual([['date', { ascending: false }], ['completed_at', { ascending: false }]]);
-  expect(await response.json()).toEqual({ workouts: [{ id: 'log-1', memberId: 'owner', ...payload(), status: 'completed', completedAt: row().completed_at }] });
+  expect(query.order.mock.calls).toEqual([['date', { ascending: false }], ['completed_at', { ascending: false }], ['id']]);
+  expect(await response.json()).toEqual({ hasMore: false, workouts: [{ id: 'log-1', memberId: 'owner', ...payload(), status: 'completed', completedAt: row().completed_at }] });
 });
 
 test.each(['?expectedUserId=victim', '?memberId=victim'])('rejects foreign account requests %s', async query => {
@@ -107,7 +107,7 @@ test('rejects malformed and oversized payloads', async () => {
 
 test('returns an empty history instead of an error when there are no logs', async () => {
   from.mockReturnValue(result(null));
-  expect(await (await GET(request())).json()).toEqual({ workouts: [] });
+  expect(await (await GET(request())).json()).toEqual({ workouts: [], hasMore: false });
 });
 
 test('database failures are not reported as saved or exposed to the caller', async () => {
@@ -116,4 +116,14 @@ test('database failures are not reported as saved or exposed to the caller', asy
   expect(response.status).toBe(503);
   expect(JSON.stringify(await response.json())).not.toContain('sensitive');
   expect((await GET(request())).status).toBe(503);
+});
+test('retries use the same owner-scoped save reference without creating another workout',async()=>{
+ const id='11111111-1111-4111-8111-111111111111';
+ const duplicate=result(null,{code:'23505'});const original=result(row());from.mockReturnValueOnce(duplicate).mockReturnValueOnce(original);
+ const response=await POST(request('POST',{...payload(),requestId:id}));expect(response.status).toBe(200);expect(original.eq).toHaveBeenCalledWith('member_id','owner');expect(original.eq).toHaveBeenCalledWith('log_request_id',id);
+});
+test('save retries compare JSONB content rather than object key order',async()=>{
+ const id='11111111-1111-4111-8111-111111111111';
+ from.mockReturnValueOnce(result(null,{code:'23505'})).mockReturnValueOnce(result({...row(),exercises:[{reps:12,sets:3,name:'Custom movement'}]}));
+ expect((await POST(request('POST',{...payload(),requestId:id}))).status).toBe(200);
 });

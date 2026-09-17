@@ -8,7 +8,7 @@ test('weekly leaderboard is scoped to the authenticated member and never cached'
  (requireAuth as jest.Mock).mockResolvedValue({ id: 'member' });
  (supabase.rpc as jest.Mock).mockResolvedValue({ data: { period: 'week', leaderboard: [] }, error: null });
  const res=await GET();expect(res.status).toBe(200);expect(res.headers.get('Cache-Control')).toBe('no-store');
- expect(supabase.rpc).toHaveBeenCalledWith('thrivv_weekly_health_leaderboard',{p_user:'member'});
+ expect(supabase.rpc).toHaveBeenCalledWith('thrivv_weekly_points_leaderboard',{p_user:'member'});
 });
 test('unauthenticated users cannot query the leaderboard', async () => {
  (requireAuth as jest.Mock).mockRejectedValue(new Error('Unauthorized'));expect((await GET()).status).toBe(401);expect(supabase.rpc).not.toHaveBeenCalled();

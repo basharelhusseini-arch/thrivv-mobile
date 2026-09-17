@@ -1,5 +1,7 @@
 'use client';
 
+import { sendNativeReminders } from '@/lib/native-reminders';
+
 import { createContext, createElement, ReactNode, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 export const LOGOUT_EVENT = 'thrivv:logged-out';
@@ -144,6 +146,7 @@ export async function logoutClient(): Promise<void> {
 
 /** Also used after server-confirmed account deletion; no second logout request. */
 export function clearClientAccountData(): void {
+  sendNativeReminders([]);
   // Stop any /me response still in flight before announcing successful logout.
   invalidateClientSession();
   // Storage may be unavailable in private browsing; server logout still succeeds.
