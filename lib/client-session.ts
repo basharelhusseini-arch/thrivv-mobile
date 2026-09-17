@@ -139,6 +139,11 @@ export function useClientSession() {
 export async function logoutClient(): Promise<void> {
   const response = await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error('Sign out failed. Please retry.');
+  clearClientAccountData();
+}
+
+/** Also used after server-confirmed account deletion; no second logout request. */
+export function clearClientAccountData(): void {
   // Stop any /me response still in flight before announcing successful logout.
   invalidateClientSession();
   // Storage may be unavailable in private browsing; server logout still succeeds.
