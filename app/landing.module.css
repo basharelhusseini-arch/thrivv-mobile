@@ -1221,6 +1221,8 @@
     font-size:9px;
   }
   .footer>div {
+    flex-wrap:wrap;
+    gap:14px;
     width:100%;
     justify-content:space-between;
     font-size:10px;
