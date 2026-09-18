@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowRight, ArrowUpRight, Check, CheckCircle2, Dumbbell, Gift, Layers3, Pause, Play, QrCode, Sparkles, Trophy, Users, Watch, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUpRight, Check, CheckCircle2, Coffee, Dumbbell, Flame, Gift, Layers3, Pause, Play, QrCode, Sparkles, Trophy, Users, Utensils, Watch, X } from 'lucide-react';
 import Logo from '@/components/Logo';
 import styles from './landing.module.css';
 
 const journey = [
   { number: '01', title: 'Show up.', text: 'Join your gym on Thrivv, train, then scan its QR code.', icon: QrCode },
   { number: '02', title: 'Earn points.', text: 'Your verified gym visit earns points. Build on it with daily habits.', icon: Sparkles },
-  { number: '03', title: 'Get rewarded.', text: 'Use your points for available offers from partner brands and your gym.', icon: Gift },
+  { number: '03', title: 'Get rewarded.', text: 'Turn your points into real discounts from your favorite brands. Browse available partner offers in the app.', icon: Gift },
 ];
 const previews = [
   { title: 'Your effort. Verified.', label: 'GYM CHECK-IN', value: 'You showed up.', detail: 'One scan after your session.', icon: QrCode },
@@ -22,6 +22,7 @@ export default function LandingPage() {
   const dialog = useRef<HTMLDialogElement>(null);
   const [step, setStep] = useState(1);
   const [paused, setPaused] = useState(false);
+  const [extra, setExtra] = useState<'workouts' | 'food'>('workouts');
   const preview = previews[step];
   const PreviewIcon = preview.icon;
 
@@ -45,7 +46,7 @@ export default function LandingPage() {
       <header className={styles.header}>
         <div className={styles.nav}>
           <Logo size="md" linkTo="/" />
-          <nav className={styles.navLinks} aria-label="Website sections"><a href="#how-it-works">How it works</a><a href="#for-gyms">For gyms</a></nav>
+          <nav className={styles.navLinks} aria-label="Website sections"><a href="#how-it-works">How it works</a><a href="#rewards">Rewards</a><a href="#extras">The extras</a><a href="#for-gyms">For gyms</a></nav>
           <div className={styles.navActions}><Link href="/member/login" className={styles.signIn}>Sign in</Link><button className={styles.smallButton} onClick={openDemo}>Book a demo <ArrowUpRight size={15} /></button></div>
         </div>
       </header>
@@ -55,13 +56,13 @@ export default function LandingPage() {
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}><span className={styles.liveDot} /> YOUR EFFORT GOES FURTHER</p>
             <h1 id="hero-title">Show up.<br />Feel good.<br /><span>Get rewarded.</span></h1>
-            <p className={styles.intro}>Thrivv turns gym visits into points you can spend on real rewards. More reasons to train. More reasons to come back.</p>
+            <p className={styles.intro}>Train. Scan. Earn points. Real discounts from your favorite brands. That’s Thrivv.</p>
             <div className={styles.heroActions}><button className={styles.primary} onClick={openDemo}>Book a demo <ArrowUpRight size={19} /></button><a href="#how-it-works" className={styles.textLink}>See how it works <ArrowDown size={16} /></a></div>
             <p className={styles.heroNote}><Check size={14} /> No wearable needed <span /> Connect WHOOP anytime</p>
           </div>
 
           <div className={styles.productScene} aria-label="Interactive example of the Thrivv experience">
-            <div className={styles.orbit} aria-hidden="true" /><div className={styles.orbitTwo} aria-hidden="true" />
+            <div className={styles.energyHalo} aria-hidden="true" /><div className={styles.orbit} aria-hidden="true" /><div className={styles.orbitTwo} aria-hidden="true" />
             <div className={styles.backPanel} aria-hidden="true" />
             <div className={styles.productCard}>
               <div className={styles.cardTop}><Logo size="sm" /><span><span className={styles.liveDot} /> YOUR DAILY MOMENTUM</span></div>
@@ -87,6 +88,58 @@ export default function LandingPage() {
           <div data-reveal className={styles.sectionHeading}><p className={styles.eyebrow}>LESS FRICTION. MORE MOMENTUM.</p><h2 id="how-title">Your workout.<br /><span>With a little extra.</span></h2><p>No complicated setup. Just three simple steps.</p></div>
           <div className={styles.steps}>{journey.map(({number,title,text,icon:Icon}, i) => <article key={number} data-reveal style={{transitionDelay:`${i * 100}ms`}}><div className={styles.stepTop}><span>{number}</span><Icon size={26} strokeWidth={1.3} /></div><h3>{title}</h3><p>{text}</p>{i < 2 && <ArrowRight className={styles.stepArrow} size={19} aria-hidden="true" />}</article>)}</div>
           <div data-reveal className={styles.wearableNote}><Watch size={19} /><p><strong>Your gym visit is enough.</strong> WHOOP is optional. Connect it for workout and recovery insights whenever you’re ready.</p></div>
+        </section>
+
+        <section id="rewards" className={styles.rewardsSection} aria-labelledby="rewards-title">
+          <div data-reveal className={styles.rewardHeading}>
+            <p className={styles.eyebrow}>EFFORT IN. MORE OUT.</p>
+            <h2 id="rewards-title">Real discounts.<br /><span>Your favorite brands.</span></h2>
+            <p>Your post-workout coffee. Your next protein order. A class you’ve been meaning to try. Make showing up go further.</p>
+          </div>
+          <div className={styles.rewardDeck}>
+            {[
+              { icon: Coffee, category: 'RESTAURANTS & CAFÉS', title: 'Your next refuel.', discount: '10%', points: '400' },
+              { icon: Flame, category: 'SUPPLEMENTS', title: 'Fuel the next rep.', discount: '10%', points: '600' },
+              { icon: Dumbbell, category: 'GYM CLASSES', title: 'Try something new.', discount: '15%', points: '800' },
+            ].map(({icon:Icon,category,title,discount,points}, i) => <article data-reveal key={category} className={styles.rewardTicket} style={{transitionDelay:`${i * 100}ms`}}>
+              <div className={styles.ticketTop}><Icon size={24} strokeWidth={1.4} /><span>THRIVV / REWARDS</span><ArrowUpRight size={17} /></div>
+              <p className={styles.ticketCategory}>{category}</p><h3>{title}</h3>
+              <div className={styles.ticketValue}>{discount}<span>OFF</span></div>
+              <div className={styles.ticketBottom}><span>{points} POINTS</span><span>EXAMPLE OFFER</span></div>
+            </article>)}
+          </div>
+          <p className={styles.offerNote}>Illustrative offers. Participating brands, availability and terms are shown in Rewards.</p>
+        </section>
+
+        <section id="extras" className={styles.extrasSection} aria-labelledby="extras-title">
+          <div data-reveal className={styles.extrasCopy}>
+            <p className={styles.eyebrow}><span className={styles.plus}>+</span> ALSO IN YOUR CORNER</p>
+            <h2 id="extras-title">The rewards are<br />just the start.</h2>
+            <p>Track your workouts. Keep an eye on your food. Build the habits that make you feel good. All alongside your rewards.</p>
+            <div className={styles.extraControls} role="group" aria-label="Explore included tracking features">
+              <button aria-pressed={extra === 'workouts'} onClick={() => setExtra('workouts')}><Dumbbell size={19} /><span><strong>Workout tracking</strong><small>Sets, reps, weights and personal bests</small></span><ArrowUpRight size={17} /></button>
+              <button aria-pressed={extra === 'food'} onClick={() => setExtra('food')}><Utensils size={19} /><span><strong>Food tracking</strong><small>Meals, calories, macros and recipes</small></span><ArrowUpRight size={17} /></button>
+            </div>
+            <p className={styles.extrasNote}><Check size={15} /> Daily habits and optional WHOOP insights, too.</p>
+          </div>
+          <div data-reveal className={styles.trackingScene}>
+            <div className={styles.trackingPanel} key={extra}>
+              <div className={styles.trackingHeader}><span>{extra === 'workouts' ? 'TRAIN / 01' : 'FUEL / 02'}</span><span>EXAMPLE DAY</span></div>
+              {extra === 'workouts' ? <>
+                <h3>Your next rep.<br /><span>Your next best.</span></h3><p className={styles.trackingSub}>Upper body · 3 exercises</p>
+                <div className={styles.exerciseRow}><span>01</span><strong>Bench press<small>3 sets × 8 reps</small></strong><b>60 <small>kg</small></b></div>
+                <div className={styles.exerciseRow}><span>02</span><strong>Lat pulldown<small>3 sets × 10 reps</small></strong><b>45 <small>kg</small></b></div>
+                <div className={styles.exerciseRow}><span>03</span><strong>Shoulder press<small>3 sets × 10 reps</small></strong><b>20 <small>kg</small></b></div>
+                <div className={styles.trackingBottom}><Trophy size={17} /><span>See your progress, session after session.</span></div>
+              </> : <>
+                <h3>A little more<br /><span>food for thought.</span></h3><p className={styles.trackingSub}>Your daily nutrition, at a glance</p>
+                <div className={styles.calorieValue}>1,840 <span>kcal logged</span></div>
+                <div className={styles.macroBars}>{[{name:'Protein',value:'125 g',width:'70%'},{name:'Carbs',value:'210 g',width:'90%'},{name:'Fat',value:'56 g',width:'45%'}].map(macro => <div key={macro.name}><p><span>{macro.name}</span><strong>{macro.value}</strong></p><div><span style={{width:macro.width}} /></div></div>)}</div>
+                <div className={styles.trackingBottom}><Utensils size={17} /><span>Log meals. Explore recipes. Find your rhythm.</span></div>
+              </>}
+            </div>
+            <span className={styles.trackingBadge}><Sparkles size={16} /> MORE THAN POINTS</span>
+          </div>
         </section>
 
         <section id="for-gyms" className={styles.gymSection} aria-labelledby="gym-title">

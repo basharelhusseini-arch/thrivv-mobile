@@ -1280,6 +1280,126 @@
     font-size:34px;
   }
 }
+/* Light, depth and product-led storytelling. */
+.landing { background:#070909; }
+.grid { background-size:64px 64px; }
+.aura { background:radial-gradient(ellipse,#b99b4938,transparent 62%); }
+.header { background:#070909b8; }
+.navLinks { gap:22px; margin-right:12px; }
+.hero h1>span {
+  background:linear-gradient(105deg,#fff4cc 0%,#d8bd7d 45%,#a18342 65%,#fff0c2 100%);
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.energyHalo {
+  position:absolute;
+  width:520px;
+  height:520px;
+  border-radius:50%;
+  border:1px solid #efd69260;
+  box-shadow:0 0 50px #d8bd7d20,inset 0 0 55px #d8bd7d18,0 0 0 28px #d8bd7d04,0 0 0 29px #d8bd7d10;
+  background:conic-gradient(from 40deg,transparent 50%,#d8bd7d22 73%,transparent 88%);
+  transform:rotateX(25deg) rotateY(-25deg);
+  animation:haloBreathe 8s ease-in-out infinite alternate;
+  pointer-events:none;
+}
+.productCard { background:linear-gradient(135deg,#292b23ee,#101412fa 65%); backdrop-filter:blur(24px); }
+.backPanel { border-color:#e8cb824a; background:linear-gradient(140deg,#d8bd7d26,#ffffff02); }
+.primary { box-shadow:0 0 28px #d8bd7d18,inset 0 1px #fff7; }
+.rewardsSection,.extrasSection { position:relative; max-width:1320px; margin:auto; padding:110px 48px; }
+.rewardsSection { border-top:1px solid #d8bd7d1c; }
+.rewardHeading { max-width:720px; margin:0 auto 65px; text-align:center; }
+.rewardHeading .eyebrow { justify-content:center; }
+.rewardHeading h2,.extrasCopy h2 { font-size:clamp(38px,4.6vw,64px); line-height:1.08; letter-spacing:-.055em; font-weight:500; margin:20px 0; }
+.rewardHeading h2 span { color:var(--gold); }
+.rewardHeading>p:last-child { max-width:500px; margin:auto; font-size:16px; line-height:1.8; color:var(--muted); }
+.rewardDeck { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; perspective:1400px; padding:20px 0; }
+.rewardTicket { position:relative; padding:30px 28px 0; border:1px solid #d8bd7d40; border-radius:16px; background:radial-gradient(ellipse at 100% 0%,#d8bd7d24,transparent 65%),linear-gradient(135deg,#20241e,#111512); box-shadow:0 30px 50px #0005; overflow:hidden; transition:transform .4s,border-color .4s,box-shadow .4s; }
+.rewardTicket:first-child { rotate:-4deg; translate:0 16px; }
+.rewardTicket:last-child { rotate:4deg; translate:0 16px; }
+.rewardTicket:nth-child(2) { background:radial-gradient(ellipse at 0% 0%,#e9cb7350,transparent 70%),linear-gradient(140deg,#3b3622,#171b14); z-index:1; }
+.rewardTicket:hover { transform:translateY(-12px); border-color:#e8cb8288; box-shadow:0 35px 60px #0008,0 0 35px #d8bd7d15; }
+.rewardTicket:after { content:''; position:absolute; inset:0; background:linear-gradient(115deg,transparent 30%,#fff5 50%,transparent 70%); transform:translateX(-150%); animation:ticketSheen 10s ease-in-out infinite; pointer-events:none; }
+.rewardTicket:nth-child(2):after { animation-delay:1s; }
+.rewardTicket:nth-child(3):after { animation-delay:2s; }
+.ticketTop { display:flex; align-items:center; gap:12px; color:var(--gold); }
+.ticketTop span { font-size:8px; letter-spacing:.12em; flex:1; }
+.ticketCategory { font-size:9px; letter-spacing:.14em; color:#b4b8a9; margin:38px 0 10px; }
+.rewardTicket h3 { font-size:24px; letter-spacing:-.04em; font-weight:500; }
+.ticketValue { display:flex; align-items:baseline; gap:12px; font-size:88px; line-height:1.4; letter-spacing:-.08em; color:#f1e0b1; }
+.ticketValue span { font-size:12px; letter-spacing:.15em; }
+.ticketBottom { display:flex; justify-content:space-between; gap:10px; border-top:1px dashed #d8bd7d50; padding:23px 0; font-size:9px; letter-spacing:.06em; color:#bfc4b5; }
+.offerNote { text-align:center; font-size:11px; color:#989e94; line-height:1.6; margin:42px 0 0; }
+.extrasSection { display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:100px; border-top:1px solid #ffffff0e; }
+.extrasCopy>p:not(.eyebrow) { color:var(--muted); line-height:1.8; font-size:15px; }
+.plus { display:grid; place-items:center; width:23px; height:23px; border:1px solid #d8bd7d50; border-radius:50%; font-size:17px; }
+.extraControls { display:grid; gap:10px; margin:28px 0 22px; }
+.extraControls button { display:flex; align-items:center; text-align:left; gap:16px; padding:18px; border:1px solid #ffffff15; border-radius:10px; background:#ffffff03; color:#a1a89c; transition:background .25s,border-color .25s; }
+.extraControls button[aria-pressed=true] { border-color:#d8bd7d70; background:#d8bd7d0d; color:#f1e0b1; }
+.extraControls button:hover { background:#d8bd7d15; }
+.extraControls button>span { flex:1; }
+.extraControls strong { display:block; font-size:14px; font-weight:500; }
+.extraControls small { display:block; font-size:11px; color:#a1a89c; margin-top:6px; }
+.extrasCopy .extrasNote { display:flex; gap:9px; align-items:center; font-size:11px!important; }
+.extrasNote svg { flex-shrink:0; color:var(--gold); }
+.trackingScene { position:relative; min-width:0; padding:20px 0; }
+.trackingScene:before { content:''; position:absolute; inset:0 10px; border:1px solid #d8bd7d35; border-radius:18px; transform:rotate(5deg); background:#d8bd7d06; }
+.trackingPanel { position:relative; padding:30px; background:linear-gradient(140deg,#242a24,#111813); border:1px solid #d8bd7d45; border-radius:16px; box-shadow:0 30px 70px #0007; min-height:440px; animation:enter .4s ease both; }
+.trackingHeader { display:flex; justify-content:space-between; color:#babda9; font:9px monospace; letter-spacing:.12em; }
+.trackingPanel h3 { font-size:32px; letter-spacing:-.045em; line-height:1.2; margin:28px 0 12px; font-weight:500; }
+.trackingPanel h3 span { color:#d8bd7d; }
+.trackingSub { font-size:11px; color:#a4aa9f; margin-bottom:20px; }
+.exerciseRow { display:flex; align-items:center; gap:15px; padding:16px 0; border-top:1px solid #ffffff10; }
+.exerciseRow>span { color:#88917e; font:10px monospace; }
+.exerciseRow>strong { flex:1; font-size:13px; font-weight:500; }
+.exerciseRow strong small { display:block; margin-top:5px; font-size:10px; color:#9fa793; }
+.exerciseRow b { font-size:22px; font-weight:400; }
+.exerciseRow b small { font-size:10px; color:#b8bdaf; }
+.trackingBottom { display:flex; gap:10px; align-items:center; padding-top:20px; border-top:1px solid #ffffff14; font-size:10px; color:#c8cbbd; }
+.trackingBottom svg { flex-shrink:0; color:var(--gold); }
+.trackingBadge { position:absolute; right:-18px; bottom:0; display:flex; align-items:center; gap:8px; padding:14px 18px; font:9px monospace; letter-spacing:.08em; color:#e9d49e; background:#22271f; border:1px solid #d8bd7d50; border-radius:8px; box-shadow:0 15px 30px #0005; }
+.calorieValue { font-size:46px; letter-spacing:-.05em; color:#f1e0b1; margin:18px 0; }
+.calorieValue span { font-size:11px; letter-spacing:0; color:#a8b29e; }
+.macroBars { display:grid; gap:14px; margin-bottom:22px; }
+.macroBars p { display:flex; justify-content:space-between; font-size:10px; color:#b7bead; margin-bottom:7px; }
+.macroBars strong { font-weight:400; }
+.macroBars>div>div { height:4px; border-radius:3px; background:#ffffff10; overflow:hidden; }
+.macroBars>div>div>span { display:block; height:100%; background:linear-gradient(90deg,#9b8351,#eddaa1); }
+@keyframes haloBreathe { to { opacity:.55; transform:rotateX(15deg) rotateY(-15deg) scale(1.06); } }
+@keyframes ticketSheen { 0%,75% { transform:translateX(-150%); } 100% { transform:translateX(150%); } }
+@media(max-width:1050px) {
+  .navLinks { gap:16px; margin-right:0; }
+  .navLinks a { font-size:11px; }
+  .rewardsSection,.extrasSection { padding:80px 30px; }
+  .extrasSection { gap:45px; }
+  .rewardTicket { padding:22px 20px 0; }
+  .ticketValue { font-size:72px; }
+  .rewardTicket h3 { font-size:20px; }
+  .ticketTop span { font-size:7px; }
+}
+@media(max-width:760px) {
+  .navLinks { display:none; }
+  .energyHalo { width:390px; height:390px; }
+  .rewardsSection,.extrasSection { padding:70px 24px; }
+  .rewardHeading { text-align:left; margin-bottom:32px; }
+  .rewardHeading .eyebrow { justify-content:flex-start; }
+  .rewardHeading>p:last-child { font-size:14px; margin:0; }
+  .rewardDeck { grid-template-columns:1fr; gap:18px; padding:0; }
+  .rewardTicket:first-child,.rewardTicket:last-child { rotate:0deg; translate:0 0; }
+  .rewardTicket { padding:24px 24px 0; }
+  .ticketCategory { margin-top:22px; }
+  .rewardTicket h3 { font-size:25px; }
+  .ticketValue { font-size:80px; line-height:1.2; margin:12px 0; }
+  .ticketTop span { font-size:9px; }
+  .offerNote { text-align:left; margin-top:22px; }
+  .extrasSection { grid-template-columns:1fr; gap:30px; }
+  .trackingScene { max-width:460px; width:100%; margin:auto; }
+  .trackingBadge { right:-8px; }
+  .trackingPanel { padding:24px; }
+  .extraControls button { padding:14px; gap:10px; }
+  .extraControls small { font-size:10px; }
+}
+
 @media(prefers-reduced-motion:reduce) {
   .landing *,.landing *:before,.landing *:after {
     animation:none!important;
