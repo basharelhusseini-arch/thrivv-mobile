@@ -50,10 +50,13 @@ test('admin, single, multiple and no-gym accounts have distinct destinations', (
   expect(gymDestination(false, [{id:'a'},{id:'b'}])).toBeNull();
   expect(gymDestination(false, [])).toBeNull();
 });
-test('both homepage gym CTAs now point at the portal', () => {
+test('homepage separates demo requests from the existing gym portal', () => {
   const page = readFileSync('app/page.tsx', 'utf8');
-  expect(page.match(/href="\/gym"/g)?.length).toBeGreaterThanOrEqual(2);
-  expect(page).not.toMatch(/mailto:bashar@thrivv.dev/);
+  expect(page).toContain('href="/gym">Gym portal</Link>');
+  expect(page).toContain('Book a demo');
+  expect(page).toContain('onClick={openDemo}');
+  expect(page).toContain('Request a demo by email');
+  expect(page).toContain('mailto:bashar@thrivv.dev?subject=');
 });
 
 test('workspace switches keep explicit production hosts and local preview paths', () => {
