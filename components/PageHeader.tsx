@@ -1,4 +1,5 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
 
 import type { ReactNode } from 'react';
 
@@ -6,7 +7,7 @@ import type { ReactNode } from 'react';
  * Premium page header used across authenticated app pages.
  * Mirrors the landing page section header pattern: small uppercase
  * eyebrow chip, balanced title with optional gradient gold accent,
- * subtitle text, and an optional right-side action slot.
+ * subtitle text, and an optional end-side action slot.
  *
  * Pass either `title` (string) or `titleNode` (ReactNode for gradient parts).
  * Wraps content in `animate-fade-in-up` for a subtle entrance.
@@ -28,6 +29,7 @@ export default function PageHeader({
   align?: 'left' | 'center';
   className?: string;
 }) {
+  const { t } = useTranslation();
   const isCenter = align === 'center';
   return (
     <header
@@ -45,15 +47,15 @@ export default function PageHeader({
             <span
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-5`}
             >
-              {eyebrow}
+              {t(eyebrow)}
             </span>
           ) : null}
           <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-[3.5rem] font-semibold tracking-tighter leading-[1.02]">
-            {titleNode ?? title}
+            {titleNode ?? (title ? t(title) : title)}
           </h1>
           {subtitle ? (
             <p className="mt-4 text-thrivv-text-secondary text-base sm:text-lg leading-relaxed max-w-2xl">
-              {subtitle}
+              {typeof subtitle === 'string' ? t(subtitle) : subtitle}
             </p>
           ) : null}
         </div>

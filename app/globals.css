@@ -496,3 +496,26 @@ html[data-native-app="true"] .pb-safe { padding-bottom: 8px; }
 .journey-quests{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:25px}.journey-mission,.journey-ticket{position:relative;min-width:0;padding:20px;border-radius:21px;background:#1e1b28}.journey-mission{border:1px solid #c1a6fd20}.journey-ticket{background:linear-gradient(135deg,#25291f,#18221f);border:1px solid #bfd79628;border-left:2px dashed #bbcd8655}.journey-ticket::after{content:'';position:absolute;top:14px;right:14px;width:26px;height:26px;border:1px dashed #adc5844d;border-radius:50%;pointer-events:none}
 @media(max-width:640px){.journey-world{padding:20px 16px;border-radius:24px}.journey-world-header>span{font-size:8px}.journey-adventure{grid-template-columns:1fr;gap:22px}.journey-identity{display:grid;grid-template-columns:112px minmax(0,1fr);column-gap:20px;text-align:left;padding:4px 0}.journey-orbit{width:108px;height:108px}.journey-orbit-core strong{font-size:32px}.journey-orbit-core>svg{width:22px;height:22px}.journey-identity-copy{margin:0}.journey-level-name{font-size:29px}.journey-caption{margin:0;font-size:11px}.journey-next{grid-column:1/-1;max-width:none;margin-top:24px}.journey-quests{grid-template-columns:1fr}.journey-map-panel{padding:18px 16px 10px}.journey-boost{margin-bottom:25px}}
 @media(prefers-reduced-motion:reduce){.journey-node{transition:none}.journey-node:hover{transform:none}}
+
+/* Locale controls and bidirectional member layouts. */
+.language-switch{display:inline-flex;align-items:center;gap:3px;border:1px solid #d8bd7d40;border-radius:999px;padding:4px;background:#14171e;color:#e8e8e8;direction:ltr}
+.language-switch button{min-height:38px;padding:6px 14px;border-radius:999px;font-size:13px;line-height:1.5}
+.language-switch button[aria-pressed=true]{background:#d8bd7d;color:#17150f}
+.language-switch button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.language-public{position:relative;z-index:20;display:flex;justify-content:flex-end;padding:12px 20px;background:#0d0f14}
+html[lang=ar] body{font-family:Tahoma,'Arial',sans-serif}
+html[lang=ar] :is(h1,h2,h3,p,span,button,label,summary){letter-spacing:normal}
+html[lang=ar] :is(button,label,p){line-height:1.7}
+html[dir=rtl] .member-header-art{right:auto;left:-25px}
+html[dir=rtl] .member-header-footer span+span::before{margin-right:0;margin-left:20px}
+html[dir=rtl] .journey-identity{text-align:center}
+html[dir=rtl] .journey-map::before{border-left:2px dashed #c5bdd22e;border-right:0;border-radius:36px 0 0 36px}
+html[dir=rtl] .journey-ticket{border-left:1px solid #bfd79628;border-right:2px dashed #bbcd8655}
+html[dir=rtl] .journey-ticket::after{right:auto;left:14px}
+html[dir=rtl] :is(.lucide-arrow-left,.lucide-arrow-right,.lucide-arrow-up-right,.lucide-chevron-left,.lucide-chevron-right){transform:scaleX(-1)}
+html[dir=rtl] :is(input[type=email],input[type=password],input[type=tel],code){direction:ltr;unicode-bidi:isolate}
+html[lang=ar] .journey-you{font-size:10px}
+@media(max-width:640px){html[dir=rtl] .journey-identity{text-align:start}}
+/* Auth fields retain Latin entry while their leading icon follows the RTL form. */
+html[dir=rtl] input[dir=ltr].ps-11{padding-left:1.25rem;padding-right:2.75rem}
+html[dir=rtl] input[dir=ltr].ps-12{padding-left:1.25rem;padding-right:3rem}

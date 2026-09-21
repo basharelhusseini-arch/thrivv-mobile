@@ -4,6 +4,7 @@ import MobileWelcome from '@/app/mobile/page';
 import { getServerSessionIdentity } from '@/lib/server-session-identity';
 import { redirect } from 'next/navigation';
 (global as any).React = React;
+jest.mock('next/headers', () => ({ cookies: async () => ({ get: () => undefined }) }));
 jest.mock('@/lib/server-session-identity', () => ({ getServerSessionIdentity: jest.fn() }));
 jest.mock('next/navigation', () => ({ redirect: jest.fn(() => { throw new Error('redirect'); }) }));
 test('signed-out app entrance shows one sign-in action without marketing or gym CTAs', async () => {

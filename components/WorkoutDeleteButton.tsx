@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export default function WorkoutDeleteButton({ kind, id, memberId, name, onDeleted }: Props) {
+  const { t, locale } = useTranslation();
   const dialog = useRef<HTMLDialogElement>(null);
   const request = useRef<AbortController | null>(null);
   const requestTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,26 +87,26 @@ export default function WorkoutDeleteButton({ kind, id, memberId, name, onDelete
   };
 
   return <>
-    <button type="button" title={`Delete ${label}`} aria-label={`Delete ${label}: ${name}`} aria-haspopup="dialog" onClick={() => { setError(''); setOpen(true); }}
+    <button type="button" title={t("Delete {0}", { 0: t(label) })} aria-label={t("Delete {0}: {1}", { 0: t(label), 1: name })} aria-haspopup="dialog" onClick={() => { setError(''); setOpen(true); }}
       className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-lg border border-red-500/20 p-2 text-red-400 transition-colors hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400">
       <Trash2 size={18} aria-hidden="true" />
     </button>
     <dialog ref={dialog} aria-labelledby={titleId} aria-describedby={descriptionId} aria-busy={deleting}
       onCancel={event => { event.preventDefault(); close(); }}
       className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-lg border border-white/15 bg-thrivv-bg-dark p-6 text-white shadow-2xl backdrop:bg-black/75">
-      <h2 id={titleId} className="text-lg font-semibold">Delete {label}?</h2>
+      <h2 id={titleId} className="text-lg font-semibold">{t("Delete")} {label}?</h2>
       <p className="mt-3 break-words text-sm font-medium">{name}</p>
       <p id={descriptionId} className="mt-2 text-sm leading-6 text-thrivv-text-secondary">
         {kind === 'plan'
-          ? 'This permanently deletes the training plan and all sessions included in it. Workouts logged separately and reward records will not be changed.'
-          : 'This permanently removes the workout from your history. Gym verification, points and reward records will not be changed.'}
+          ? t("This permanently deletes the training plan and all sessions included in it. Workouts logged separately and reward records will not be changed.")
+          : t("This permanently removes the workout from your history. Gym verification, points and reward records will not be changed.")}
       </p>
-      {error && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="mt-4 text-sm text-red-300">{t(error)}</p>}
       <div className="mt-6 flex flex-wrap justify-end gap-3">
-        <button type="button" autoFocus disabled={deleting} onClick={close} className="min-h-11 rounded-lg border border-white/20 px-4 py-2 text-sm font-medium disabled:opacity-50">Cancel</button>
+        <button type="button" autoFocus disabled={deleting} onClick={close} className="min-h-11 rounded-lg border border-white/20 px-4 py-2 text-sm font-medium disabled:opacity-50">{t("Cancel")}</button>
         <button type="button" disabled={deleting} onClick={() => void remove()} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:cursor-wait disabled:opacity-60">
           {deleting && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
-          {deleting ? 'Deleting...' : `Delete ${label}`}
+          {deleting ? t("Deleting...") : t("Delete {0}", { 0: t(label) })}
         </button>
       </div>
     </dialog>

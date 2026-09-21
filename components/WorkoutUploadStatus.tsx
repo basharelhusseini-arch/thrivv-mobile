@@ -1,7 +1,10 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 import {useEffect, useState} from 'react';
 import {discardQueuedWorkout, flushWorkoutQueue, queuedWorkouts, type QueuedWorkout} from '@/lib/workout-upload-queue';
 export default function WorkoutUploadStatus({memberId}:{memberId:string}) {
+  const { t, locale } = useTranslation();
   const [rows,setRows]=useState<QueuedWorkout[]>([]);
   const [notice,setNotice]=useState('');
   useEffect(()=>{
@@ -24,9 +27,9 @@ export default function WorkoutUploadStatus({memberId}:{memberId:string}) {
     return ()=>{controller.abort();clearInterval(timer);window.removeEventListener('online',wake);window.removeEventListener('thrivv:upload-queue',wake);window.removeEventListener('storage',wake);};
   },[memberId]);
   if(!rows.length&&!notice) return null;
-  return <aside className="mb-5 rounded-xl border border-white/10 p-4 text-sm" aria-label="Workout sync status">
-    <p role="status">{rows.length?`${rows.length} workouts saved on this device · waiting to sync`:notice}</p>
-    {rows.map(row=><div key={row.payload.requestId} className="mt-2"><span>{row.payload.name} · {row.error || 'Will upload while Thrivv is open and connected.'}</span>{row.error&&<button className="ml-3 underline" onClick={()=>{if(window.confirm('Remove this upload from this device? Check your saved history first.')) discardQueuedWorkout(memberId,row.payload.requestId);}}>Remove from queue</button>}</div>)}
-    {rows.length>0&&<button className="mt-2 underline" onClick={()=>window.dispatchEvent(new Event('thrivv:upload-queue'))}>Retry sync</button>}
+  return <aside className="mb-5 rounded-xl border border-white/10 p-4 text-sm" aria-label={t("Workout sync status")}>
+    <p role="status">{rows.length?t("{0} workouts saved on this device · waiting to sync", { 0: rows.length }):notice}</p>
+    {rows.map(row=><div key={row.payload.requestId} className="mt-2"><span>{row.payload.name} · {row.error || t("Will upload while Thrivv is open and connected.")}</span>{row.error&&<button className="ms-3 underline" onClick={()=>{if(window.confirm('Remove this upload from this device? Check your saved history first.')) discardQueuedWorkout(memberId,row.payload.requestId);}}>{t("Remove from queue")}</button>}</div>)}
+    {rows.length>0&&<button className="mt-2 underline" onClick={()=>window.dispatchEvent(new Event('thrivv:upload-queue'))}>{t("Retry sync")}</button>}
   </aside>;
 }

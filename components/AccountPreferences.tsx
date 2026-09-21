@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 /**
  * USER SETTINGS PAGE
@@ -14,6 +16,7 @@ import { HealthGoal, WearableType } from '@/types';
 import { useClientSession } from '@/lib/client-session';
 
 export default function AccountPreferences() {
+  const { t, locale } = useTranslation();
   const session = useClientSession();
   const [feedback, setFeedback] = useState('');
   const [loadError, setLoadError] = useState(false);
@@ -81,7 +84,7 @@ export default function AccountPreferences() {
     }
   };
 
-  if (session.status === 'error') return <p role="alert">Preferences unavailable. <button className="underline" onClick={() => session.refresh()}>Retry</button></p>;
+  if (session.status === 'error') return <p role="alert">{t("Preferences unavailable.")} <button className="underline" onClick={() => session.refresh()}>{t("Retry")}</button></p>;
 
   if (loading) {
     return (
@@ -90,9 +93,7 @@ export default function AccountPreferences() {
           <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
             <Settings className="w-5 h-5 text-thrivv-gold-500" />
           </div>
-          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
-            Loading settings
-          </span>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">{t("Loading settings")}</span>
         </div>
       </div>
     );
@@ -100,35 +101,31 @@ export default function AccountPreferences() {
 
   return (
     <div className="space-y-4">
-      {feedback && <p role="status" className="text-sm text-thrivv-gold-400">{feedback} {loadError && userId && <button className="underline" onClick={() => fetchProfile(userId)}>Retry</button>}</p>}
+      {feedback && <p role="status" className="text-sm text-thrivv-gold-400">{t(feedback)} {loadError && userId && <button className="underline" onClick={() => fetchProfile(userId)}>{t("Retry")}</button>}</p>}
       <div className="space-y-4">
         {/* Goal Settings */}
         <div className="rounded-xl border border-white/10 p-4">
           <h2 className="text-lg font-semibold text-thrivv-text-primary flex items-center gap-2 mb-4">
-            <Target className="w-5 h-5 text-thrivv-gold-500" />
-            Health Goal
-          </h2>
+            <Target className="w-5 h-5 text-thrivv-gold-500" />{t("Health Goal")}</h2>
 
           <select
-            aria-label="Health goal"
+            aria-label={t("Health goal")}
             value={goal}
             onChange={(e) => setGoal(e.target.value as HealthGoal)}
             className="input-premium w-full"
           >
-            <option value="fat_loss">Fat Loss</option>
-            <option value="muscle_gain">Muscle Gain</option>
-            <option value="performance">Performance</option>
-            <option value="maintenance">Maintenance</option>
-            <option value="general">General Health</option>
+            <option value="fat_loss">{t("Fat Loss")}</option>
+            <option value="muscle_gain">{t("Muscle Gain")}</option>
+            <option value="performance">{t("Performance")}</option>
+            <option value="maintenance">{t("Maintenance")}</option>
+            <option value="general">{t("General Health")}</option>
           </select>
         </div>
 
         {/* Wearable Settings */}
         <div className="rounded-xl border border-white/10 p-4">
           <h2 className="text-lg font-semibold text-thrivv-text-primary flex items-center gap-2 mb-4">
-            <Activity className="w-5 h-5 text-thrivv-gold-500" />
-            Device preference
-          </h2>
+            <Activity className="w-5 h-5 text-thrivv-gold-500" />{t("Device preference")}</h2>
 
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -139,36 +136,30 @@ export default function AccountPreferences() {
                 onChange={(e) => setHasWearable(e.target.checked)}
                 className="w-4 h-4"
               />
-              <label htmlFor="has-wearable" className="text-sm text-thrivv-text-primary">
-                I own a fitness wearable
-              </label>
+              <label htmlFor="has-wearable" className="text-sm text-thrivv-text-primary">{t("I own a fitness wearable")}</label>
             </div>
 
             {hasWearable && (
               <div className="animate-slide-up">
-                <label className="block text-sm font-medium text-thrivv-text-primary mb-2">
-                  Device type
-                </label>
+                <label className="block text-sm font-medium text-thrivv-text-primary mb-2">{t("Device type")}</label>
                 <select
-                  aria-label="Device type"
+                  aria-label={t("Device type")}
                   value={wearableType || ''}
                   onChange={(e) => setWearableType((e.target.value as WearableType) || null)}
                   className="input-premium w-full"
                 >
-                  <option value="">Select device</option>
+                  <option value="">{t("Select device")}</option>
                   <option value="whoop">WHOOP</option>
                   <option value="garmin">Garmin</option>
                   <option value="apple_watch">Apple Watch</option>
                   <option value="fitbit">Fitbit</option>
                   <option value="oura">Oura Ring</option>
-                  <option value="other">Other</option>
+                  <option value="other">{t("Other")}</option>
                 </select>
               </div>
             )}
 
-            <p className="text-xs text-thrivv-text-muted">
-              This preference does not connect a device or change workout verification. Manage your actual connection in Wearables.
-            </p>
+            <p className="text-xs text-thrivv-text-muted">{t("This preference does not connect a device or change workout verification. Manage your actual connection in Wearables.")}</p>
           </div>
         </div>
 
@@ -179,7 +170,7 @@ export default function AccountPreferences() {
             disabled={saving || loadError}
             className="btn-primary px-8 py-3"
           >
-            {saving ? 'Saving...' : 'Save preferences'}
+            {saving ? t("Saving...") : t("Save preferences")}
           </button>
         </div>
       </div>

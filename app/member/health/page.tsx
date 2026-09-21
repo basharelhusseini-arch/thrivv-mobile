@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -32,6 +34,7 @@ interface HealthSummary {
 }
 
 export default function MemberHealthPage() {
+  const { t, locale } = useTranslation();
   const router = useRouter();
   const [healthData, setHealthData] = useState<HealthSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +89,7 @@ export default function MemberHealthPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Activity className="w-12 h-12 text-thrivv-gold-500 mx-auto mb-4 animate-pulse" />
-          <p className="text-thrivv-text-secondary">Loading health statistics...</p>
+          <p className="text-thrivv-text-secondary">{t("Loading health statistics...")}</p>
         </div>
       </div>
     );
@@ -103,9 +106,9 @@ export default function MemberHealthPage() {
     <div className="member-future space-y-8" data-section="health">
       <PageHeader
         section="health"
-        eyebrow="Your data"
-        title="See the bigger picture."
-        subtitle="Track your overall health and the components feeding your gym leaderboard rank."
+        eyebrow={t("Your data")}
+        title={t("See the bigger picture.")}
+        subtitle={t("Track your overall health and the components feeding your gym leaderboard rank.")}
         action={
           streak > 0 ? (
             <div className="bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 rounded-xl px-6 py-3">
@@ -125,10 +128,8 @@ export default function MemberHealthPage() {
       {/* Error Warning (if any) */}
       {error && (
         <div className="bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 rounded-lg p-4">
-          <p className="text-sm text-thrivv-gold-400">
-            We couldn&apos;t load your health history. Please retry to see your latest scores.
-          </p>
-          <button onClick={() => void fetchHealthData()} className="mt-2 text-sm text-thrivv-gold-400 underline">Retry</button>
+          <p className="text-sm text-thrivv-gold-400">{t("We couldn&apos;t load your health history. Please retry to see your latest scores.")}</p>
+          <button onClick={() => void fetchHealthData()} className="mt-2 text-sm text-thrivv-gold-400 underline">{t("Retry")}</button>
         </div>
       )}
 
@@ -137,7 +138,7 @@ export default function MemberHealthPage() {
         <div className="p-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-semibold text-thrivv-text-secondary mb-2">Your Health Score</h2>
+              <h2 className="text-lg font-semibold text-thrivv-text-secondary mb-2">{t("Your Health Score")}</h2>
               <div className="flex items-baseline space-x-3">
                 <span className={`text-6xl font-bold ${getScoreColor(score ?? 0)}`}>
                   {score ?? "—"}
@@ -145,8 +146,7 @@ export default function MemberHealthPage() {
                 <span className="text-2xl text-thrivv-text-muted">/ 110</span>
               </div>
               {healthData?.updatedAt && (
-                <p className="text-xs text-thrivv-text-muted mt-2">
-                  Last updated: {new Date(healthData.updatedAt).toLocaleDateString()}
+                <p className="text-xs text-thrivv-text-muted mt-2">{t("Last updated:")}{new Date(healthData.updatedAt).toLocaleDateString(locale)}
                 </p>
               )}
             </div>
@@ -159,45 +159,45 @@ export default function MemberHealthPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
             <div className="glass-effect rounded-lg p-4 card-hover">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-thrivv-text-secondary">Training</span>
+                <span className="text-sm text-thrivv-text-secondary">{t("Training")}</span>
                 <Zap className="w-4 h-4 text-thrivv-gold-500" />
               </div>
               <p className="text-2xl font-bold text-thrivv-text-primary">{components.training ?? "—"}</p>
-              <p className="text-xs text-thrivv-text-muted mt-1">of 80 points</p>
+              <p className="text-xs text-thrivv-text-muted mt-1">{t("of 80 points")}</p>
             </div>
 
             <div className="glass-effect rounded-lg p-4 card-hover">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-thrivv-text-secondary">Recovery</span>
+                <span className="text-sm text-thrivv-text-secondary">{t("Recovery")}</span>
                 <Moon className="w-4 h-4 text-blue-400" />
               </div>
               <p className="text-2xl font-bold text-thrivv-text-primary">{components.sleep ?? "—"}</p>
-              <p className="text-xs text-thrivv-text-muted mt-1">of 20 points</p>
+              <p className="text-xs text-thrivv-text-muted mt-1">{t("of 20 points")}</p>
             </div>
 
             <div className="glass-effect rounded-lg p-4 card-hover">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-thrivv-text-secondary">Habits</span>
+                <span className="text-sm text-thrivv-text-secondary">{t("Habits")}</span>
                 <Target className="w-4 h-4 text-thrivv-gold-400" />
               </div>
               <p className="text-2xl font-bold text-thrivv-text-primary">{components.habits}</p>
-              <p className="text-xs text-thrivv-text-muted mt-1">of 10 points</p>
+              <p className="text-xs text-thrivv-text-muted mt-1">{t("of 10 points")}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <p className="text-sm text-thrivv-text-muted">{healthData?.complete ? 'Complete Health Score.' : 'Provisional — awaiting verified WHOOP inputs.'} Sleep component — based on WHOOP Recovery, the selected proxy rather than a direct measurement of sleep quality.</p>
-      <Link href="/member/checkin" className="inline-block text-sm text-thrivv-gold-500">Update today’s habits →</Link>
+      <p className="text-sm text-thrivv-text-muted">{healthData?.complete ? t("Complete Health Score.") : t("Provisional — awaiting verified WHOOP inputs.")} {t("Sleep component — based on WHOOP Recovery, the selected proxy rather than a direct measurement of sleep quality.")}</p>
+      <Link href="/member/checkin" className="inline-block text-sm text-thrivv-gold-500">{t("Update today’s habits →")}</Link>
       {Boolean(healthData?.workouts?.length) && <div className="premium-card p-6">
-        <h2 className="text-lg font-semibold text-thrivv-text-primary">Recent WHOOP workouts</h2>
-        <p className="text-sm text-thrivv-text-muted mt-2">Your highest eligible workout each day supplies Training points. Additional workouts do not stack. Up to 100 recent workouts shown.</p>
+        <h2 className="text-lg font-semibold text-thrivv-text-primary">{t("Recent WHOOP workouts")}</h2>
+        <p className="text-sm text-thrivv-text-muted mt-2">{t("Your highest eligible workout each day supplies Training points. Additional workouts do not stack. Up to 100 recent workouts shown.")}</p>
         <div className="divide-y divide-thrivv-gold-500/10 mt-4">{healthData!.workouts.map(workout => <div key={workout.id} className="py-4 text-sm">
-          <div className="flex justify-between gap-4"><span className="text-thrivv-text-primary capitalize">{workout.workout_breakdown?.label ?? workout.sport_name ?? 'Other'}</span>
-            <span className="text-thrivv-gold-500">{workout.score_input_valid && workout.workout_score !== null ? `${workout.workout_score.toFixed(1)}/100` : 'Pending score'}</span></div>
-          <p className="text-thrivv-text-muted">{new Date(workout.start_at).toLocaleString(undefined, { timeZone: healthData!.timezone })} · {(workout.duration_ms / 60000).toFixed(1)} elapsed minutes</p>
-          <p className="text-thrivv-text-muted">Strain: {workout.strain ?? 'Unavailable'}/21 · Calories: {workout.kilojoule === null ? 'Unavailable' : `${(workout.kilojoule / 4.184).toFixed(0)} kcal`} · WHOOP status: {workout.score_state}</p>
-          <p className="text-xs text-thrivv-text-muted">{[0,1,2,3,4,5].map(zone => `Zone ${zone}: ${workout.zone_durations_ms?.[zone] == null ? 'Unavailable' : `${(workout.zone_durations_ms[zone]! / 60000).toFixed(1)} min`}`).join(' · ')}</p>
+          <div className="flex justify-between gap-4"><span className="text-thrivv-text-primary capitalize">{workout.workout_breakdown?.label ?? workout.sport_name ?? t("Other")}</span>
+            <span className="text-thrivv-gold-500">{workout.score_input_valid && workout.workout_score !== null ? `${workout.workout_score.toFixed(1)}/100` : t("Pending score")}</span></div>
+          <p className="text-thrivv-text-muted">{new Date(workout.start_at).toLocaleString(undefined, { timeZone: healthData!.timezone })} · {(workout.duration_ms / 60000).toFixed(1)} {t("elapsed minutes")}</p>
+          <p className="text-thrivv-text-muted">{t("Strain:")} {workout.strain ?? t("Unavailable")}{t("/21 · Calories:")} {workout.kilojoule === null ? t("Unavailable") : t("{0} kcal", { 0: (workout.kilojoule / 4.184).toFixed(0) })} {t("· WHOOP status:")} {workout.score_state}</p>
+          <p className="text-xs text-thrivv-text-muted">{[0,1,2,3,4,5].map(zone => t("Zone {0}: {1}", { 0: zone, 1: workout.zone_durations_ms?.[zone] == null ? 'Unavailable' : `${(workout.zone_durations_ms[zone]! / 60000).toFixed(1)} min` })).join(' · ')}</p>
           {workout.score_input_valid && workout.workout_breakdown && <p className="text-xs text-thrivv-text-muted mt-1">{['Strain', 'Duration', 'Zones', 'Calories'].map((label, i) => `${label}: ${workout.workout_breakdown!.breakdown[i].toFixed(1)}`).join(' · ')}</p>}
         </div>)}</div>
       </div>}
@@ -206,9 +206,7 @@ export default function MemberHealthPage() {
         <div className="premium-card">
           <div className="px-6 py-4 border-b border-thrivv-gold-500/20">
             <h2 className="text-lg font-semibold text-thrivv-text-primary flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-thrivv-gold-500" />
-              7-Day Trend
-            </h2>
+              <TrendingUp className="w-5 h-5 me-2 text-thrivv-gold-500" />{t("7-Day Trend")}</h2>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-7 gap-2">
@@ -224,12 +222,11 @@ export default function MemberHealthPage() {
                   </div>
                   <div className="mt-2 space-y-1">
                     <div className="text-xs text-thrivv-text-muted flex items-center justify-center">
-                      <Zap className="w-3 h-3 mr-1 text-thrivv-gold-500" />
+                      <Zap className="w-3 h-3 me-1 text-thrivv-gold-500" />
                       {day.training_score}
                     </div>
                     <div className="text-xs text-thrivv-text-muted flex items-center justify-center">
-                      <UtensilsCrossed className="w-3 h-3 mr-1 text-thrivv-neon-green" />
-                      Recovery {day.sleep_score} · Habits {day.habit_score}
+                      <UtensilsCrossed className="w-3 h-3 me-1 text-thrivv-neon-green" />{t("Recovery")}{day.sleep_score} {t("· Habits")} {day.habit_score}
                     </div>
                   </div>
                 </div>
@@ -244,9 +241,7 @@ export default function MemberHealthPage() {
         <div className="premium-card">
           <div className="px-6 py-4 border-b border-thrivv-gold-500/20">
             <h2 className="text-lg font-semibold text-thrivv-text-primary flex items-center">
-              <Sparkles className="w-5 h-5 mr-2 text-thrivv-gold-500" />
-              Health Insights · Rule-based
-            </h2>
+              <Sparkles className="w-5 h-5 me-2 text-thrivv-gold-500" />{t("Health Insights · Rule-based")}</h2>
           </div>
           <div className="p-6 space-y-3">
             {insights.length > 0 ? (
@@ -264,19 +259,17 @@ export default function MemberHealthPage() {
             ) : (
               <div className="text-center py-8">
                 <Sparkles className="w-12 h-12 text-thrivv-text-muted mx-auto mb-4" />
-                <p className="text-thrivv-text-secondary text-sm">
-                  Complete check-ins to unlock personalized insights
-                </p>
+                <p className="text-thrivv-text-secondary text-sm">{t("Complete check-ins to unlock personalized insights")}</p>
               </div>
             )}
           </div>
         </div>
 
         <div className="premium-card p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-white">Understand your score</h2>
-          <p className="text-sm leading-relaxed text-thrivv-text-secondary">Training contributes up to 80, WHOOP Recovery up to 20, and habits up to 10. Complete daily Health Scores add to your gym’s weekly ranking.</p>
-          <p className="text-sm leading-relaxed text-thrivv-text-secondary">Your Health Score is separate from your spendable reward balance. Members without WHOOP can earn manual workout rewards without a complete Health Score.</p>
-          <Link href="/member/whoop" className="inline-flex items-center gap-2 text-sm text-thrivv-gold-400">Manage WHOOP <ArrowRight size={14} /></Link>
+          <h2 className="text-lg font-semibold text-white">{t("Understand your score")}</h2>
+          <p className="text-sm leading-relaxed text-thrivv-text-secondary">{t("Training contributes up to 80, WHOOP Recovery up to 20, and habits up to 10. Your gym’s weekly ranking uses earned reward points.")}</p>
+          <p className="text-sm leading-relaxed text-thrivv-text-secondary">{t("Your Health Score is separate from your spendable reward balance. Members without WHOOP can earn manual workout rewards without a complete Health Score.")}</p>
+          <Link href="/member/whoop" className="inline-flex items-center gap-2 text-sm text-thrivv-gold-400">{t("Manage WHOOP")} <ArrowRight size={14} /></Link>
         </div>
       </div>
 

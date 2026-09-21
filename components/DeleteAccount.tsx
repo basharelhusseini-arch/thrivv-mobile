@@ -1,9 +1,12 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 import { FormEvent, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { clearClientAccountData } from '@/lib/client-session';
 
 export default function DeleteAccount({ memberId }: { memberId: string }) {
+  const { t, locale } = useTranslation();
   const dialog = useRef<HTMLDialogElement>(null);
   const busy = useRef(false);
   const title = useId();
@@ -35,24 +38,24 @@ export default function DeleteAccount({ memberId }: { memberId: string }) {
     } finally { busy.current = false; setPending(false); setPassword(''); }
   };
   return <section className="dark-card p-6 sm:p-8 space-y-4">
-    <h2 className="text-xl font-semibold">Delete account</h2>
-    <p className="text-sm text-gray-400">Permanently remove your Thrivv account and personal data.</p>
-    <button type="button" aria-haspopup="dialog" onClick={() => { reset(); dialog.current?.showModal(); }} className="min-h-11 rounded-xl border border-red-400/40 px-4 py-3 text-red-300 hover:bg-red-500/10">Delete my account</button>
+    <h2 className="text-xl font-semibold">{t("Delete account")}</h2>
+    <p className="text-sm text-gray-400">{t("Permanently remove your Thrivv account and personal data.")}</p>
+    <button type="button" aria-haspopup="dialog" onClick={() => { reset(); dialog.current?.showModal(); }} className="min-h-11 rounded-xl border border-red-400/40 px-4 py-3 text-red-300 hover:bg-red-500/10">{t("Delete my account")}</button>
     <dialog ref={dialog} aria-labelledby={title} aria-describedby={description} aria-busy={pending}
       onCancel={event => { event.preventDefault(); close(); }}
       className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-xl border border-white/15 bg-thrivv-bg-dark p-6 text-white backdrop:bg-black/75">
-      <h2 id={title} className="text-xl font-semibold">Permanently delete your account?</h2>
-      <p id={description} className="mt-3 text-sm leading-6 text-gray-300">This removes your profile, workouts, plans, nutrition logs, habits, health data, points and reward history. WHOOP syncing stops and you lose any gym staff access. This cannot be undone. Your gym membership or WHOOP subscription is not cancelled.</p>
+      <h2 id={title} className="text-xl font-semibold">{t("Permanently delete your account?")}</h2>
+      <p id={description} className="mt-3 text-sm leading-6 text-gray-300">{t("This removes your profile, workouts, plans, nutrition logs, habits, health data, points and reward history. WHOOP syncing stops and you lose any gym staff access. This cannot be undone. Your gym membership or WHOOP subscription is not cancelled.")}</p>
       <form onSubmit={remove} className="mt-5 space-y-4">
-        <label className="block text-sm">Current password<input autoFocus required type="password" autoComplete="current-password" maxLength={4096} value={password} onChange={e => setPassword(e.target.value)} disabled={pending} className="mt-2 block w-full rounded-lg border border-white/20 bg-black/20 p-3" /></label>
-        <Link href="/member/forgot-password" className="inline-block text-sm underline">Forgot password?</Link>
-        <label className="block text-sm">Type DELETE to confirm<input required autoComplete="off" spellCheck={false} value={confirmation} onChange={e => setConfirmation(e.target.value)} disabled={pending} className="mt-2 block w-full rounded-lg border border-white/20 bg-black/20 p-3" /></label>
-        {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+        <label className="block text-sm">{t("Current password")}<input autoFocus required type="password" dir="ltr" autoComplete="current-password" maxLength={4096} value={password} onChange={e => setPassword(e.target.value)} disabled={pending} className="mt-2 block w-full rounded-lg border border-white/20 bg-black/20 p-3" /></label>
+        <Link href="/member/forgot-password" className="inline-block text-sm underline">{t("Forgot password?")}</Link>
+        <label className="block text-sm">{t("Type DELETE to confirm")}<input required autoComplete="off" spellCheck={false} value={confirmation} onChange={e => setConfirmation(e.target.value)} disabled={pending} className="mt-2 block w-full rounded-lg border border-white/20 bg-black/20 p-3" /></label>
+        {error && <p role="alert" className="text-sm text-red-300">{t(error)}</p>}
         <div className="flex flex-wrap gap-3">
-          <button type="button" disabled={pending} onClick={close} className="min-h-11 rounded-lg border border-white/20 px-4 py-3 disabled:opacity-50">Keep my account</button>
-          <button type="submit" disabled={pending || confirmation !== 'DELETE' || !password} className="min-h-11 rounded-lg bg-red-700 px-4 py-3 font-semibold disabled:opacity-50">{pending ? 'Deleting…' : 'Delete permanently'}</button>
+          <button type="button" disabled={pending} onClick={close} className="min-h-11 rounded-lg border border-white/20 px-4 py-3 disabled:opacity-50">{t("Keep my account")}</button>
+          <button type="submit" disabled={pending || confirmation !== 'DELETE' || !password} className="min-h-11 rounded-lg bg-red-700 px-4 py-3 font-semibold disabled:opacity-50">{pending ? t("Deleting…") : t("Delete permanently")}</button>
         </div>
-        <p role="status" className="text-sm text-gray-400">{pending ? 'Deleting your account. Please keep this page open.' : ''}</p>
+        <p role="status" className="text-sm text-gray-400">{pending ? t("Deleting your account. Please keep this page open.") : ''}</p>
       </form>
     </dialog>
   </section>;

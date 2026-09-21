@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,6 +12,7 @@ import Reveal from '@/components/Reveal';
 import { PRIVACY_POLICY_VERSION } from '@/lib/privacy-policy';
 
 export default function MemberSignupPage() {
+  const { t, locale } = useTranslation();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -116,47 +119,37 @@ export default function MemberSignupPage() {
             href="/"
             className="inline-flex items-center gap-1.5 text-sm text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to home
-          </Link>
+            <ArrowLeft className="w-3.5 h-3.5" />{t("Back to home")}</Link>
         </nav>
 
         <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
           <div className="w-full max-w-md">
             <Reveal>
               <div className="text-center mb-10">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
-                  Get started
-                </span>
-                <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold tracking-tighter leading-[1.02]">
-                  Start your{' '}
-                  <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-                    journey
-                  </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">{t("Get started")}</span>
+                <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold tracking-tighter leading-[1.02]">{t("Start your")}{' '}
+                  <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">{t("journey")}</span>
                   .
                 </h1>
-                <p className="mt-4 text-thrivv-text-secondary text-base lg:text-lg">
-                  Create your account, log your first check-in, and climb your
-                  gym&apos;s leaderboard.
-                </p>
+                <p className="mt-4 text-thrivv-text-secondary text-base lg:text-lg">{t("Create your account, log your first check-in, and climb your gym&apos;s leaderboard.")}</p>
               </div>
             </Reveal>
 
             <Reveal delay={120}>
               <div className="relative glass-card overflow-hidden p-7 lg:p-8 shadow-[0_40px_140px_-30px_rgba(216, 189, 125,0.18)]">
                 <div
-                  className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
+                  className="absolute top-0 start-8 end-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
                   aria-hidden
                 />
                 <div
-                  className="absolute -top-32 -right-24 w-72 h-72 bg-thrivv-gold-500/12 rounded-full blur-3xl pointer-events-none"
+                  className="absolute -top-32 -end-24 w-72 h-72 bg-thrivv-gold-500/12 rounded-full blur-3xl pointer-events-none"
                   aria-hidden
                 />
 
                 <form onSubmit={handleSubmit} className="space-y-4 relative">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="relative">
-                      <User className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <User className="w-4 h-4 text-thrivv-text-muted absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                       <input
                         id="firstName"
                         name="firstName"
@@ -165,8 +158,8 @@ export default function MemberSignupPage() {
                         onChange={handleChange}
                         required
                         autoComplete="given-name"
-                        className="input-premium w-full pl-11 pr-4 py-4 text-base"
-                        placeholder="First name"
+                        className="input-premium w-full ps-11 pe-4 py-4 text-base"
+                        placeholder={t("First name")}
                       />
                     </div>
                     <input
@@ -178,68 +171,68 @@ export default function MemberSignupPage() {
                       required
                       autoComplete="family-name"
                       className="input-premium w-full px-4 py-4 text-base"
-                      placeholder="Last name"
+                      placeholder={t("Last name")}
                     />
                   </div>
 
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Mail className="w-4 h-4 text-thrivv-text-muted absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="email"
                       name="email"
-                      type="email"
+                      type="email" dir="ltr"
                       value={formData.email}
                       onChange={handleChange}
                       required
                       autoComplete="email"
-                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
-                      placeholder="Email address"
+                      className="input-premium w-full ps-11 pe-5 py-4 text-base"
+                      placeholder={t("Email address")}
                     />
                   </div>
 
                   <div className="relative">
-                    <Phone className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Phone className="w-4 h-4 text-thrivv-text-muted absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="phone"
                       name="phone"
-                      type="tel"
+                      type="tel" dir="ltr"
                       value={formData.phone}
                       onChange={handleChange}
                       required
                       autoComplete="tel"
-                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
-                      placeholder="Phone number"
+                      className="input-premium w-full ps-11 pe-5 py-4 text-base"
+                      placeholder={t("Phone number")}
                     />
                   </div>
 
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="password"
                       name="password"
-                      type="password"
+                      type="password" dir="ltr"
                       value={formData.password}
                       onChange={handleChange}
                       required
                       autoComplete="new-password"
                       minLength={6}
-                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
-                      placeholder="Password (6+ characters)"
+                      className="input-premium w-full ps-11 pe-5 py-4 text-base"
+                      placeholder={t("Password (6+ characters)")}
                     />
                   </div>
 
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="confirmPassword"
                       name="confirmPassword"
-                      type="password"
+                      type="password" dir="ltr"
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
                       autoComplete="new-password"
-                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
-                      placeholder="Confirm password"
+                      className="input-premium w-full ps-11 pe-5 py-4 text-base"
+                      placeholder={t("Confirm password")}
                     />
                   </div>
 
@@ -256,26 +249,21 @@ export default function MemberSignupPage() {
                       className="mt-1 h-4 w-4 shrink-0 accent-thrivv-gold-500"
                     />
                     <div className="min-w-0 text-sm text-thrivv-text-secondary">
-                      <label htmlFor="acceptedPrivacyPolicy">
-                        I have read and agree to the{' '}
+                      <label htmlFor="acceptedPrivacyPolicy">{t("I have read and agree to the")}{' '}
                         <Link
                           href="/privacy"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-thrivv-gold-500 hover:text-thrivv-gold-400 underline underline-offset-4"
-                        >
-                          Privacy Policy
-                          <span className="sr-only"> (opens in a new tab)</span>
+                        >{t("Privacy Policy")}<span className="sr-only"> {t("(opens in a new tab)")}</span>
                         </Link>.
                       </label>
-                      <p id="privacy-policy-scope" className="mt-1 text-xs text-thrivv-text-muted">
-                        This does not opt you into marketing or connect wearable accounts.
-                      </p>
+                      <p id="privacy-policy-scope" className="mt-1 text-xs text-thrivv-text-muted">{t("This does not opt you into marketing or connect wearable accounts.")}</p>
                     </div>
                   </div>
 
                   {error && (
-                    <div role="alert" className="error-badge px-4 py-3 text-sm">{error}</div>
+                    <div role="alert" className="error-badge px-4 py-3 text-sm">{t(error)}</div>
                   )}
 
                   {success && (
@@ -292,30 +280,23 @@ export default function MemberSignupPage() {
                     {loading ? (
                       'Creating account...'
                     ) : (
-                      <>
-                        Create Account
-                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                      <>{t("Create Account")}<ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                       </>
                     )}
                   </button>
                 </form>
 
-                <div className="mt-7 text-center text-sm text-thrivv-text-secondary">
-                  Already have an account?{' '}
+                <div className="mt-7 text-center text-sm text-thrivv-text-secondary">{t("Already have an account?")}{' '}
                   <Link
                     href="/member/login"
                     className="text-thrivv-gold-500 hover:text-thrivv-gold-400 font-medium transition-colors"
-                  >
-                    Sign in
-                  </Link>
+                  >{t("Sign in")}</Link>
                 </div>
               </div>
             </Reveal>
 
             <Reveal delay={200}>
-              <p className="mt-8 text-center text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
-                Free for gym members · No credit card
-              </p>
+              <p className="mt-8 text-center text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">{t("Free for gym members · No credit card")}</p>
             </Reveal>
           </div>
         </div>
