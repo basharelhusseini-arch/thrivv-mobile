@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,6 +13,7 @@ import { getTodayLog, removeMealFromToday, computeTotals, getRecipeFromMeal, get
 import { useClientSession } from '@/lib/client-session';
 
 export default function MemberNutritionPage() {
+  const { t, locale } = useTranslation();
   const session = useClientSession();
   const memberId = session.user?.id;
   const [error, setError] = useState('');
@@ -56,7 +59,7 @@ export default function MemberNutritionPage() {
     finally { setRemoving(null); }
   };
 
-  if (session.status === 'error') return <div role="alert" className="premium-card p-6">Your session could not be checked. <button className="underline" onClick={() => session.refresh()}>Retry</button></div>;
+  if (session.status === 'error') return <div role="alert" className="premium-card p-6">{t("Your session could not be checked.")} <button className="underline" onClick={() => session.refresh()}>{t("Retry")}</button></div>;
 
   if (loading || session.status === 'loading') {
     return (
@@ -65,9 +68,7 @@ export default function MemberNutritionPage() {
           <div className="w-12 h-12 rounded-2xl bg-thrivv-gold-500/10 border border-thrivv-gold-500/30 flex items-center justify-center animate-pulse">
             <UtensilsCrossed className="w-5 h-5 text-thrivv-gold-500" />
           </div>
-          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">
-            Loading nutrition
-          </span>
+          <span className="text-xs uppercase tracking-[0.25em] text-thrivv-text-muted">{t("Loading nutrition")}</span>
         </div>
       </div>
     );
@@ -80,24 +81,22 @@ export default function MemberNutritionPage() {
     <div className="member-future space-y-6" data-section="nutrition">
       <PageHeader
         section="nutrition"
-        eyebrow="Fuel"
-        title="Fuel your next move."
-        subtitle="Your meals, macros and recipes, together in one place. Nutrition tracking is separate from your Health Score."
+        eyebrow={t("Fuel")}
+        title={t("Fuel your next move.")}
+        subtitle={t("Your meals, macros and recipes, together in one place. Nutrition tracking is separate from your Health Score.")}
       />
 
       <main className="space-y-6">
-        {error && <div role="alert" className="rounded-xl border border-red-500/30 p-4 text-sm text-red-300">{error} <button className="underline" onClick={() => setRefreshKey(key => key + 1)}>Retry</button></div>}
+        {error && <div role="alert" className="rounded-xl border border-red-500/30 p-4 text-sm text-red-300">{t(error)} <button className="underline" onClick={() => setRefreshKey(key => key + 1)}>{t("Retry")}</button></div>}
         {/* Today's Logged Meals */}
         <div className="premium-card p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <h2 className="text-2xl font-semibold text-thrivv-text-primary">Today’s food log</h2>
+            <h2 className="text-2xl font-semibold text-thrivv-text-primary">{t("Today’s food log")}</h2>
             <Link
               href="/member/recipes"
               className="btn-ghost px-4 py-2 text-sm flex items-center gap-2"
             >
-              <ChefHat className="w-4 h-4" />
-              Add food
-            </Link>
+              <ChefHat className="w-4 h-4" />{t("Add food")}</Link>
           </div>
 
           {todayLog && todayLog.meals.length > 0 ? (
@@ -132,29 +131,29 @@ export default function MemberNutritionPage() {
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                           <div>
-                            <span className="text-thrivv-text-muted">Calories:</span>
-                            <span className="ml-2 text-thrivv-gold-500 font-semibold">{mealCalories}</span>
+                            <span className="text-thrivv-text-muted">{t("Calories:")}</span>
+                            <span className="ms-2 text-thrivv-gold-500 font-semibold">{mealCalories}</span>
                           </div>
                           <div>
-                            <span className="text-thrivv-text-muted">Protein:</span>
-                            <span className="ml-2 text-thrivv-text-primary font-semibold">{mealProtein}g</span>
+                            <span className="text-thrivv-text-muted">{t("Protein:")}</span>
+                            <span className="ms-2 text-thrivv-text-primary font-semibold">{mealProtein}{t("g")}</span>
                           </div>
                           <div>
-                            <span className="text-thrivv-text-muted">Carbs:</span>
-                            <span className="ml-2 text-thrivv-text-primary font-semibold">{mealCarbs}g</span>
+                            <span className="text-thrivv-text-muted">{t("Carbs:")}</span>
+                            <span className="ms-2 text-thrivv-text-primary font-semibold">{mealCarbs}{t("g")}</span>
                           </div>
                           <div>
-                            <span className="text-thrivv-text-muted">Fat:</span>
-                            <span className="ml-2 text-thrivv-text-primary font-semibold">{mealFat}g</span>
+                            <span className="text-thrivv-text-muted">{t("Fat:")}</span>
+                            <span className="ms-2 text-thrivv-text-primary font-semibold">{mealFat}{t("g")}</span>
                           </div>
                         </div>
                       </div>
                       <button
                         onClick={() => handleRemoveMeal(meal.id || meal.recipeId)}
                         disabled={removing !== null}
-                        aria-label={`Remove ${recipe.name}`}
-                        className="ml-4 p-2 text-thrivv-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                        title="Remove meal"
+                        aria-label={t("Remove {0}", { 0: recipe.name })}
+                        className="ms-4 p-2 text-thrivv-text-muted hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        title={t("Remove meal")}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -166,23 +165,23 @@ export default function MemberNutritionPage() {
               {/* Totals Summary */}
               {todayTotals && (
                 <div className="p-6 bg-gradient-to-br from-thrivv-gold-500/10 to-thrivv-gold-500/10 border border-thrivv-gold-500/30 rounded-xl mt-6">
-                  <h3 className="text-lg font-semibold text-thrivv-text-primary mb-4">Daily totals</h3>
+                  <h3 className="text-lg font-semibold text-thrivv-text-primary mb-4">{t("Daily totals")}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center">
-                      <p className="text-sm text-thrivv-text-muted mb-1">Total Calories</p>
+                      <p className="text-sm text-thrivv-text-muted mb-1">{t("Total Calories")}</p>
                       <p className="text-2xl font-semibold text-thrivv-gold-500">{todayTotals.calories}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-thrivv-text-muted mb-1">Protein</p>
-                      <p className="text-2xl font-semibold text-thrivv-text-primary">{todayTotals.protein_g}g</p>
+                      <p className="text-sm text-thrivv-text-muted mb-1">{t("Protein")}</p>
+                      <p className="text-2xl font-semibold text-thrivv-text-primary">{todayTotals.protein_g}{t("g")}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-thrivv-text-muted mb-1">Carbs</p>
-                      <p className="text-2xl font-semibold text-thrivv-text-primary">{todayTotals.carbs_g}g</p>
+                      <p className="text-sm text-thrivv-text-muted mb-1">{t("Carbs")}</p>
+                      <p className="text-2xl font-semibold text-thrivv-text-primary">{todayTotals.carbs_g}{t("g")}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-thrivv-text-muted mb-1">Fat</p>
-                      <p className="text-2xl font-semibold text-thrivv-text-primary">{todayTotals.fat_g}g</p>
+                      <p className="text-sm text-thrivv-text-muted mb-1">{t("Fat")}</p>
+                      <p className="text-2xl font-semibold text-thrivv-text-primary">{todayTotals.fat_g}{t("g")}</p>
                     </div>
                   </div>
 
@@ -190,17 +189,15 @@ export default function MemberNutritionPage() {
                   {activePlan && (
                     <div className="mt-6 pt-6 border-t border-thrivv-gold-500/20">
                       <div className="flex items-center justify-between text-sm mb-3">
-                        <span className="text-thrivv-text-secondary">Target from active plan:</span>
+                        <span className="text-thrivv-text-secondary">{t("Target from active plan:")}</span>
                         <Link
                           href={`/nutrition/${activePlan.id}`}
                           className="text-thrivv-gold-500 hover:text-thrivv-gold-400 transition-colors"
-                        >
-                          View Plan →
-                        </Link>
+                        >{t("View Plan →")}</Link>
                       </div>
                       <div className="grid grid-cols-4 gap-3 text-xs">
                         <div className="text-center">
-                          <p className="text-thrivv-text-muted mb-1">Target</p>
+                          <p className="text-thrivv-text-muted mb-1">{t("Target")}</p>
                           <p className="text-thrivv-text-primary font-medium">{activePlan.macroTargets.calories}</p>
                           <p className={`mt-1 ${
                             Math.abs(todayTotals.calories - activePlan.macroTargets.calories) <= activePlan.macroTargets.calories * 0.1
@@ -212,40 +209,37 @@ export default function MemberNutritionPage() {
                           </p>
                         </div>
                         <div className="text-center">
-                          <p className="text-thrivv-text-muted mb-1">Target</p>
-                          <p className="text-thrivv-text-primary font-medium">{Math.round(activePlan.macroTargets.protein || 0)}g</p>
+                          <p className="text-thrivv-text-muted mb-1">{t("Target")}</p>
+                          <p className="text-thrivv-text-primary font-medium">{Math.round(activePlan.macroTargets.protein || 0)}{t("g")}</p>
                           <p className={`mt-1 ${
                             Math.abs(todayTotals.protein_g - Math.round(activePlan.macroTargets.protein || 0)) <= (activePlan.macroTargets.protein || 1) * 0.15
                               ? 'text-thrivv-neon-green'
                               : 'text-thrivv-gold-500'
                           }`}>
                             {todayTotals.protein_g > (activePlan.macroTargets.protein || 0) ? '+' : ''}
-                            {Math.round(todayTotals.protein_g - (activePlan.macroTargets.protein || 0))}g
-                          </p>
+                            {Math.round(todayTotals.protein_g - (activePlan.macroTargets.protein || 0))}{t("g")}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-thrivv-text-muted mb-1">Target</p>
-                          <p className="text-thrivv-text-primary font-medium">{Math.round(activePlan.macroTargets.carbohydrates || 0)}g</p>
+                          <p className="text-thrivv-text-muted mb-1">{t("Target")}</p>
+                          <p className="text-thrivv-text-primary font-medium">{Math.round(activePlan.macroTargets.carbohydrates || 0)}{t("g")}</p>
                           <p className={`mt-1 ${
                             Math.abs(todayTotals.carbs_g - Math.round(activePlan.macroTargets.carbohydrates || 0)) <= (activePlan.macroTargets.carbohydrates || 1) * 0.15
                               ? 'text-thrivv-neon-green'
                               : 'text-thrivv-gold-500'
                           }`}>
                             {todayTotals.carbs_g > (activePlan.macroTargets.carbohydrates || 0) ? '+' : ''}
-                            {Math.round(todayTotals.carbs_g - (activePlan.macroTargets.carbohydrates || 0))}g
-                          </p>
+                            {Math.round(todayTotals.carbs_g - (activePlan.macroTargets.carbohydrates || 0))}{t("g")}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-thrivv-text-muted mb-1">Target</p>
-                          <p className="text-thrivv-text-primary font-medium">{Math.round(activePlan.macroTargets.fats || 0)}g</p>
+                          <p className="text-thrivv-text-muted mb-1">{t("Target")}</p>
+                          <p className="text-thrivv-text-primary font-medium">{Math.round(activePlan.macroTargets.fats || 0)}{t("g")}</p>
                           <p className={`mt-1 ${
                             Math.abs(todayTotals.fat_g - Math.round(activePlan.macroTargets.fats || 0)) <= (activePlan.macroTargets.fats || 1) * 0.15
                               ? 'text-thrivv-neon-green'
                               : 'text-thrivv-gold-500'
                           }`}>
                             {todayTotals.fat_g > (activePlan.macroTargets.fats || 0) ? '+' : ''}
-                            {Math.round(todayTotals.fat_g - (activePlan.macroTargets.fats || 0))}g
-                          </p>
+                            {Math.round(todayTotals.fat_g - (activePlan.macroTargets.fats || 0))}{t("g")}</p>
                         </div>
                       </div>
                     </div>
@@ -253,34 +247,30 @@ export default function MemberNutritionPage() {
                 </div>
               )}
             </div>
-          ) : !todayLog ? <p className="py-6 text-sm text-thrivv-text-secondary">Your food log is unavailable. Retry above to load it.</p> : (
+          ) : !todayLog ? <p className="py-6 text-sm text-thrivv-text-secondary">{t("Your food log is unavailable. Retry above to load it.")}</p> : (
             <div className="text-center py-8">
               <div className="icon-badge w-20 h-20 mx-auto mb-4">
                 <UtensilsCrossed className="w-10 h-10 text-thrivv-gold-500" />
               </div>
-              <h3 className="text-lg font-semibold text-thrivv-text-primary mb-2">No meals logged today</h3>
-              <p className="text-thrivv-text-secondary mb-6">Start tracking your nutrition by adding recipes</p>
+              <h3 className="text-lg font-semibold text-thrivv-text-primary mb-2">{t("No meals logged today")}</h3>
+              <p className="text-thrivv-text-secondary mb-6">{t("Start tracking your nutrition by adding recipes")}</p>
               <Link
                 href="/member/recipes"
                 className="inline-flex items-center btn-primary px-6 py-3"
               >
-                <ChefHat className="w-5 h-5 mr-2" />
-                Browse Recipes
-              </Link>
+                <ChefHat className="w-5 h-5 me-2" />{t("Browse Recipes")}</Link>
             </div>
           )}
         </div>
 
         {/* Nutrition Plans Section */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-semibold text-thrivv-text-primary">My Nutrition Plans</h2>
+          <h2 className="text-2xl font-semibold text-thrivv-text-primary">{t("My Nutrition Plans")}</h2>
           <Link
             href="/nutrition/new"
             className="flex items-center btn-primary px-6 py-3"
           >
-            <Plus className="w-5 h-5 mr-2" />
-            Generate New Plan
-          </Link>
+            <Plus className="w-5 h-5 me-2" />{t("Generate New Plan")}</Link>
         </div>
 
         {plans.length === 0 ? (
@@ -288,15 +278,13 @@ export default function MemberNutritionPage() {
             <div className="icon-badge w-20 h-20 mx-auto mb-6">
               <Target className="w-10 h-10 text-thrivv-gold-500" />
             </div>
-            <h3 className="text-2xl font-semibold text-thrivv-text-primary mb-2">No nutrition plans yet</h3>
-            <p className="text-thrivv-text-secondary mb-8">Generate a personalized AI-powered meal plan</p>
+            <h3 className="text-2xl font-semibold text-thrivv-text-primary mb-2">{t("No nutrition plans yet")}</h3>
+            <p className="text-thrivv-text-secondary mb-8">{t("Generate a personalized AI-powered meal plan")}</p>
             <Link
               href="/nutrition/new"
               className="inline-flex items-center btn-primary px-6 py-3"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              Generate Your First Plan
-            </Link>
+              <Plus className="w-5 h-5 me-2" />{t("Generate Your First Plan")}</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -320,22 +308,18 @@ export default function MemberNutritionPage() {
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center text-sm text-thrivv-text-secondary">
-                    <Target className="w-4 h-4 mr-2 text-thrivv-gold-500" />
+                    <Target className="w-4 h-4 me-2 text-thrivv-gold-500" />
                     <span className="capitalize">{plan.goal.replace('_', ' ')}</span>
                   </div>
                   <div className="flex items-center text-sm text-thrivv-text-secondary">
-                    <TrendingUp className="w-4 h-4 mr-2 text-thrivv-gold-500" />
-                    {plan.macroTargets.calories} calories/day
-                  </div>
+                    <TrendingUp className="w-4 h-4 me-2 text-thrivv-gold-500" />
+                    {plan.macroTargets.calories}{t("calories/day")}</div>
                   <div className="flex items-center text-sm text-thrivv-text-secondary">
-                    <Calendar className="w-4 h-4 mr-2 text-thrivv-gold-500" />
-                    {plan.duration} days
-                  </div>
+                    <Calendar className="w-4 h-4 me-2 text-thrivv-gold-500" />
+                    {plan.duration}{t("days")}</div>
                 </div>
 
-                <div className="flex items-center text-thrivv-gold-500 text-sm font-medium group-hover:translate-x-1 transition-transform">
-                  View Details →
-                </div>
+                <div className="flex items-center text-thrivv-gold-500 text-sm font-medium group-hover:translate-x-1 transition-transform">{t("View Details →")}</div>
               </Link>
             ))}
           </div>

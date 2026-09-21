@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 import { useEffect, useRef, useState } from 'react';
 export async function readJson(url: string, init?: RequestInit) {
   const response = await fetch(url, { ...init, cache: 'no-store' });
@@ -26,9 +28,11 @@ export function useAction() {
 export const inputClass = 'input-premium w-full min-w-0 px-3 py-3 text-sm';
 export const buttonClass = 'btn-primary px-4 py-3 text-sm disabled:opacity-50';
 export function Pager({ offset, total, setOffset }: { offset: number; total: number; setOffset: (n: number) => void }) {
-  return <div className="flex flex-wrap items-center gap-4 text-sm"><button type="button" disabled={!offset} className="underline disabled:opacity-40" onClick={() => setOffset(Math.max(0, offset - 50))}>Previous</button><span>{total ? offset + 1 : 0}–{Math.min(offset + 50, total)} of {total}</span><button type="button" disabled={offset + 50 >= total} className="underline disabled:opacity-40" onClick={() => setOffset(offset + 50)}>Next</button></div>;
+  const { t, locale } = useTranslation();
+  return <div className="flex flex-wrap items-center gap-4 text-sm"><button type="button" disabled={!offset} className="underline disabled:opacity-40" onClick={() => setOffset(Math.max(0, offset - 50))}>{t("Previous")}</button><span>{total ? offset + 1 : 0}–{Math.min(offset + 50, total)} {t("of")} {total}</span><button type="button" disabled={offset + 50 >= total} className="underline disabled:opacity-40" onClick={() => setOffset(offset + 50)}>{t("Next")}</button></div>;
 }
 export default function SupportInbox({ admin = false }: { admin?: boolean }) {
+  const { t, locale } = useTranslation();
   const [list, setList] = useState<any>(null); const [offset, setOffset] = useState(0); const [id, setId] = useState('');
   const [thread, setThread] = useState<any>(null); const [messageOffset, setMessageOffset] = useState(0);
   const [error, setError] = useState(''); const [subject, setSubject] = useState(''); const [body, setBody] = useState('');
@@ -40,28 +44,28 @@ export default function SupportInbox({ admin = false }: { admin?: boolean }) {
   useEffect(() => { let active = true; setThread(null); setReply(''); if (id) readJson(`/api/support/tickets/${id}?offset=${messageOffset}`).then(d => { if (active) { setThread(d); setStatus(d.ticket.status); } }).catch(e => { if (active) setError(e.message); }); return () => { active = false; }; }, [id, messageOffset]);
   const delivery: Record<string,string> = { pending: 'Email notification pending', sending: 'Email notification in progress', accepted: 'Email accepted by provider; inbox delivery unconfirmed', failed: 'Email notification failed; ticket is saved', unavailable: 'Email notifications not configured; ticket is saved', unknown: 'Email outcome unknown; ticket is saved' };
   return <section className="space-y-6">
-    <h2 className="text-2xl font-semibold">{admin ? 'Support inbox' : 'Help & Support'}</h2>
-    <p className="text-sm text-thrivv-text-secondary">{admin ? 'Private requests from members and gym owners. Reply here to keep the conversation together.' : 'Send Thrivv a message. Your conversation is private to you and platform administrators. Check here for replies. Do not include passwords or access tokens.'}</p>
-    {error && <p role="alert">{error} <button className="underline" onClick={() => { setError(''); reload().catch(e => setError(e.message)); }}>Retry</button></p>}
+    <h2 className="text-2xl font-semibold">{admin ? t("Support inbox") : t("Help & Support")}</h2>
+    <p className="text-sm text-thrivv-text-secondary">{admin ? t("Private requests from members and gym owners. Reply here to keep the conversation together.") : t("Send Thrivv a message. Your conversation is private to you and platform administrators. Check here for replies. Do not include passwords or access tokens.")}</p>
+    {error && <p role="alert">{t(error)} <button className="underline" onClick={() => { setError(''); reload().catch(e => setError(e.message)); }}>{t("Retry")}</button></p>}
     {!admin && <form className="premium-card p-5 space-y-3" onSubmit={e => { e.preventDefault(); action.run('/api/support/tickets', { subject, message: body }, async d => { await reload(); setSubject(''); setBody(''); setId(d.id); }); }}>
-      <label className="block">Subject<input required minLength={3} maxLength={120} disabled={action.busy} className={inputClass} value={subject} onChange={e => setSubject(e.target.value)} /></label>
-      <label className="block">Your message<textarea required maxLength={5000} rows={4} disabled={action.busy} className={inputClass} value={body} onChange={e => setBody(e.target.value)} /></label>
-      <button disabled={action.busy} className={buttonClass}>Send request</button>
+      <label className="block">{t("Subject")}<input required minLength={3} maxLength={120} disabled={action.busy} className={inputClass} value={subject} onChange={e => setSubject(e.target.value)} /></label>
+      <label className="block">{t("Your message")}<textarea required maxLength={5000} rows={4} disabled={action.busy} className={inputClass} value={body} onChange={e => setBody(e.target.value)} /></label>
+      <button disabled={action.busy} className={buttonClass}>{t("Send request")}</button>
     </form>}
     <div className="grid gap-5 lg:grid-cols-2">
-      <div className="premium-card p-5 space-y-4">{!list ? <p>Loading requests…</p> : <><ul className="space-y-3">{list.tickets.map((t: any) => <li key={t.id}><button className="w-full text-left rounded-xl border border-thrivv-gold-500/20 p-3 break-words" onClick={() => { setId(t.id); setMessageOffset(0); }}><strong>{t.subject}</strong><span className="block text-sm text-gray-400">{t.status} · {new Date(t.created_at).toLocaleString()}</span></button></li>)}</ul>{!list.tickets.length && <p>No requests yet.</p>}<Pager offset={offset} total={list.total} setOffset={setOffset} /></>}</div>
-      {id && <div className="premium-card p-5 space-y-4 min-w-0">{!thread ? <p>Loading conversation…</p> : <>
-        <h3 className="text-xl break-words">{thread.ticket.subject}</h3><p className="text-sm">{thread.ticket.status} · {delivery[thread.ticket.email_status]}</p>
-        {admin && <><p className="text-xs break-all text-gray-400">Requester account: {thread.ticket.user_id}</p>{!['accepted','unknown'].includes(thread.ticket.email_status) && <button disabled={action.busy} className="underline text-sm" onClick={() => action.run(`/api/admin/support/${id}/notify`, {}, reload)}>Retry email notification</button>}</>}
-        <ol className="space-y-4">{thread.messages.map((m: any) => <li key={m.id} className="rounded-xl bg-white/5 p-4"><p className="text-xs text-thrivv-gold-500">{m.author_role === 'admin' ? 'Thrivv support' : 'Requester'} · {new Date(m.created_at).toLocaleString()}</p><p className="mt-2 whitespace-pre-wrap break-words">{m.body}</p></li>)}</ol>
+      <div className="premium-card p-5 space-y-4">{!list ? <p>{t("Loading requests…")}</p> : <><ul className="space-y-3">{list.tickets.map((t: any) => <li key={t.id}><button className="w-full text-start rounded-xl border border-thrivv-gold-500/20 p-3 break-words" onClick={() => { setId(t.id); setMessageOffset(0); }}><strong>{t.subject}</strong><span className="block text-sm text-gray-400">{t.status} · {new Date(t.created_at).toLocaleString(locale)}</span></button></li>)}</ul>{!list.tickets.length && <p>{t("No requests yet.")}</p>}<Pager offset={offset} total={list.total} setOffset={setOffset} /></>}</div>
+      {id && <div className="premium-card p-5 space-y-4 min-w-0">{!thread ? <p>{t("Loading conversation…")}</p> : <>
+        <h3 className="text-xl break-words">{thread.ticket.subject}</h3><p className="text-sm">{thread.ticket.status} · {t(delivery[thread.ticket.email_status] || thread.ticket.email_status)}</p>
+        {admin && <><p className="text-xs break-all text-gray-400">{t("Requester account:")} {thread.ticket.user_id}</p>{!['accepted','unknown'].includes(thread.ticket.email_status) && <button disabled={action.busy} className="underline text-sm" onClick={() => action.run(`/api/admin/support/${id}/notify`, {}, reload)}>{t("Retry email notification")}</button>}</>}
+        <ol className="space-y-4">{thread.messages.map((m: any) => <li key={m.id} className="rounded-xl bg-white/5 p-4"><p className="text-xs text-thrivv-gold-500">{m.author_role === 'admin' ? t("Thrivv support") : t("Requester")} · {new Date(m.created_at).toLocaleString(locale)}</p><p className="mt-2 whitespace-pre-wrap break-words">{m.body}</p></li>)}</ol>
         <Pager offset={messageOffset} total={thread.total} setOffset={setMessageOffset} />
         <form className="space-y-3" onSubmit={e => { e.preventDefault(); action.run(`/api/support/tickets/${id}`, { message: reply, ...(admin ? { status } : {}) }, async () => { await reload(); setReply(''); }); }}>
-          <label className="block">Reply<textarea required maxLength={5000} rows={3} disabled={action.busy} value={reply} onChange={e => setReply(e.target.value)} className={inputClass} /></label>
-          {admin && <label className="block">Ticket status<select className={inputClass} value={status} onChange={e => setStatus(e.target.value)}><option value="open">Open</option><option value="resolved">Resolved</option></select></label>}
-          <button disabled={action.busy} className={buttonClass}>Send reply{admin && status === 'resolved' ? ' & resolve' : ''}</button>
+          <label className="block">{t("Reply")}<textarea required maxLength={5000} rows={3} disabled={action.busy} value={reply} onChange={e => setReply(e.target.value)} className={inputClass} /></label>
+          {admin && <label className="block">{t("Ticket status")}<select className={inputClass} value={status} onChange={e => setStatus(e.target.value)}><option value="open">{t("Open")}</option><option value="resolved">{t("Resolved")}</option></select></label>}
+          <button disabled={action.busy} className={buttonClass}>{t("Send reply")}{admin && status === 'resolved' ? t(" & resolve") : ''}</button>
         </form>
       </>}</div>}
     </div>
-    {action.message && <p role="status">{action.message}</p>}
+    {action.message && <p role="status">{t(action.message)}</p>}
   </section>;
 }

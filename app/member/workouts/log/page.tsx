@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -8,13 +10,14 @@ import PageHeader from '@/components/MemberPageHeader';
 import WorkoutLogForm from '@/components/WorkoutLogForm';
 
 export default function LogWorkoutPage() {
+  const { t, locale } = useTranslation();
   const { user } = useClientSession();
   const router = useRouter();
-  if (!user) return <p role="status" className="text-thrivv-text-secondary">Loading workout...</p>;
+  if (!user) return <p role="status" className="text-thrivv-text-secondary">{t("Loading workout...")}</p>;
   return (
     <div className="member-future space-y-6" data-section="workouts">
-      <Link href="/member/workouts" className="inline-flex items-center gap-2 text-sm text-thrivv-text-secondary hover:text-white"><ArrowLeft size={16} />Back to workouts</Link>
-      <PageHeader section="workouts" title="Log your workout." subtitle="Your movements, sets, reps and weights." />
+      <Link href="/member/workouts" className="inline-flex items-center gap-2 text-sm text-thrivv-text-secondary hover:text-white"><ArrowLeft size={16} />{t("Back to workouts")}</Link>
+      <PageHeader section="workouts" title={t("Log your workout.")} subtitle={t("Your movements, sets, reps and weights.")} />
       <div className="mx-auto max-w-3xl">
         <WorkoutLogForm key={user.id} memberId={user.id} onSaved={() => router.push('/member/workouts#workout-log')} />
       </div>

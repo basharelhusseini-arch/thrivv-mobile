@@ -1,4 +1,6 @@
 'use client';
+import { LanguageSwitch, useTranslation } from '@/lib/i18n/client';
+
 
 import { ReactNode, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
@@ -13,25 +15,28 @@ import WorkoutUploadStatus from './WorkoutUploadStatus';
 import WearableSetup from './WearableSetup';
 
 function SessionLoading() {
-  return <div role="status" className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary flex items-center justify-center"><div className="flex flex-col items-center gap-4"><span className="h-10 w-10 rounded-2xl border border-thrivv-gold-500/30 bg-thrivv-gold-500/10 flex items-center justify-center"><span className="h-2 w-2 rounded-full bg-thrivv-gold-500 motion-safe:animate-pulse" /></span><span className="text-xs tracking-widest text-thrivv-text-muted">Opening your workspace…</span></div></div>;
+  const { t, locale } = useTranslation();
+  return <div role="status" className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary flex items-center justify-center"><div className="flex flex-col items-center gap-4"><span className="h-10 w-10 rounded-2xl border border-thrivv-gold-500/30 bg-thrivv-gold-500/10 flex items-center justify-center"><span className="h-2 w-2 rounded-full bg-thrivv-gold-500 motion-safe:animate-pulse" /></span><span className="text-xs tracking-widest text-thrivv-text-muted">{t("Opening your workspace…")}</span></div></div>;
 }
 
 function AuthenticatedLayout({ children, pathname }: { children: ReactNode; pathname: string }) {
+  const { t, locale } = useTranslation();
   const { user, status, error, isPlatformAdmin, refresh } = useClientSession();
   const isGymPortal = isGymPortalPath(pathname);
   useEffect(() => {
     if (status === 'unauthenticated') window.location.replace(!isGymPortal && isNativeApp(navigator.userAgent) ? '/mobile' : portalLoginUrl(window.location.hostname, isGymPortal));
   }, [status, isGymPortal]);
-  if (status === 'error') return <div role="alert" className="min-h-screen bg-thrivv-bg-darker p-8 text-white flex flex-col items-center justify-center gap-4"><p>{error}</p><button onClick={() => void refresh()} className="btn-primary px-6 py-3">Try again</button></div>;
+  if (status === 'error') return <div role="alert" className="min-h-screen bg-thrivv-bg-darker p-8 text-white flex flex-col items-center justify-center gap-4"><p>{t(error)}</p><button onClick={() => void refresh()} className="btn-primary px-6 py-3">{t("Try again")}</button></div>;
   if (!user) return <SessionLoading />;
   return <div key={user.id} data-gym-portal={isGymPortal ? 'true' : undefined} className="min-h-screen bg-thrivv-bg-darker text-thrivv-text-primary relative overflow-x-hidden">
     <BackgroundLayers />
     <Sidebar memberData={{ id: user.id, name: `${user.firstName} ${user.lastName}`.trim(), email: user.email }} isPlatformAdmin={isPlatformAdmin} />
-    <main id="main-content" className="relative z-10 lg:ml-60 px-4 sm:px-7 lg:px-10 pt-6 pb-28 lg:py-8">{!isGymPortal && <WearableSetup key={user.id} userId={user.id} />}{!isGymPortal && <WorkoutUploadStatus key={user.id} memberId={user.id} />}{children}</main>
+    <main id="main-content" className="relative z-10 lg:ms-60 px-4 sm:px-7 lg:px-10 pt-6 pb-28 lg:py-8"><div className="mb-5 flex justify-end"><LanguageSwitch /></div>{!isGymPortal && <WearableSetup key={user.id} userId={user.id} />}{!isGymPortal && <WorkoutUploadStatus key={user.id} memberId={user.id} />}{children}</main>
   </div>;
 }
 
 export default function MainLayout({ children, serverIdentity }: { children: ReactNode; serverIdentity: ServerSessionIdentity }) {
+  const { t, locale } = useTranslation();
   const pathname = usePathname() || '/';
   const [recoveryChecked, setRecoveryChecked] = useState(false);
   const isProtected = isGymPortalPath(pathname) || /^\/(member|members|workouts|nutrition|classes|trainers|memberships|exercises|recipes|habits|health)(\/|$)/.test(pathname);
@@ -52,7 +57,7 @@ export default function MainLayout({ children, serverIdentity }: { children: Rea
   }, [pathname]);
   useEffect(() => { if (isPublic || serverIdentity.status === 'unavailable') delete document.documentElement.dataset.sessionHidden; }, [isPublic, serverIdentity.status]);
   if (!isPublic && !recoveryChecked) return <SessionLoading />;
-  if (isPublic) return <div className="min-h-screen bg-thrivv-bg-dark">{children}</div>;
-  if (serverIdentity.status === 'unavailable') return <div role="alert" className="min-h-screen bg-thrivv-bg-darker p-8 text-white flex flex-col items-center justify-center gap-4"><p>Unable to verify this workspace. Please retry.</p><button onClick={() => window.location.reload()} className="btn-primary px-6 py-3">Try again</button></div>;
+  if (isPublic) return <div className="min-h-screen bg-thrivv-bg-dark">{(pathname.startsWith('/member/') || pathname === '/mobile') && <div className="language-public"><LanguageSwitch /></div>}{children}</div>;
+  if (serverIdentity.status === 'unavailable') return <div role="alert" className="min-h-screen bg-thrivv-bg-darker p-8 text-white flex flex-col items-center justify-center gap-4"><p>{t("Unable to verify this workspace. Please retry.")}</p><button onClick={() => window.location.reload()} className="btn-primary px-6 py-3">{t("Try again")}</button></div>;
   return <ClientSessionProvider route={pathname} serverUserId={serverIdentity.status === 'authenticated' ? serverIdentity.userId : null}><NativeReminderSync /><AuthenticatedLayout pathname={pathname}>{children}</AuthenticatedLayout></ClientSessionProvider>;
 }

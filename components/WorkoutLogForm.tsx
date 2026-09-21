@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Loader2, Plus, Save, Trash2 } from 'lucide-react';
@@ -38,6 +40,7 @@ function restoreDraft(value: string | null): WorkoutDraft | null {
 const inputClass = 'w-full min-w-0 rounded-lg border border-white/15 bg-black/20 px-3 py-3 text-sm text-white outline-none focus:border-thrivv-gold-500 disabled:opacity-60';
 
 export default function WorkoutLogForm({ memberId, onSaved, initialWorkout }: { memberId: string; onSaved: (workout?: LoggedWorkout) => void; initialWorkout?: LoggedWorkout }) {
+  const { t, locale } = useTranslation();
   const [draft, setDraft] = useState<WorkoutDraft>({ name: '', date: '', exercises: [{ key: 0, name: '', sets: '', reps: '' }] });
   const [ready, setReady] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -123,21 +126,21 @@ export default function WorkoutLogForm({ memberId, onSaved, initialWorkout }: { 
     } finally { submitting.current=false;setSaving(false); }
   }
 
-  if (!ready) return <p role="status" className="text-sm text-thrivv-text-secondary">Loading workout...</p>;
+  if (!ready) return <p role="status" className="text-sm text-thrivv-text-secondary">{t("Loading workout...")}</p>;
 
   return (
     <form onSubmit={submit} className="space-y-6">
       <WorkoutRestTimer />
-      {previousError && <p className="text-xs text-thrivv-text-muted">Previous weights are temporarily unavailable.</p>}
+      {previousError && <p className="text-xs text-thrivv-text-muted">{t("Previous weights are temporarily unavailable.")}</p>}
       {syncState && <p role="status" className="text-sm text-thrivv-text-secondary">{syncState}</p>}
       <fieldset disabled={saving || saved} className="min-w-0 space-y-6">
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,200px)]">
           <label className="min-w-0 space-y-2 text-sm text-thrivv-text-secondary">
-            <span className="block">Workout name</span>
-            <input className={inputClass} value={draft.name} onChange={event => update({ name: event.target.value })} placeholder="e.g. Upper body" maxLength={80} required />
+            <span className="block">{t("Workout name")}</span>
+            <input className={inputClass} value={draft.name} onChange={event => update({ name: event.target.value })} placeholder={t("e.g. Upper body")} maxLength={80} required />
           </label>
           <label className="min-w-0 space-y-2 text-sm text-thrivv-text-secondary">
-            <span className="block">Workout date</span>
+            <span className="block">{t("Workout date")}</span>
             <input type="date" className={inputClass} value={draft.date} max={today()} onChange={event => update({ date: event.target.value })} required />
           </label>
         </div>
@@ -145,45 +148,44 @@ export default function WorkoutLogForm({ memberId, onSaved, initialWorkout }: { 
         <datalist id="workout-movements">{exercisesDatabase.map(exercise => <option key={exercise.id} value={exercise.name} />)}</datalist>
         <div className="space-y-4">
           {draft.exercises.map((row, index) => (
-            <section key={row.key} aria-label={`Movement ${index + 1}`} className="rounded-lg border border-white/10 bg-white/[0.025] p-4 sm:p-5">
+            <section key={row.key} aria-label={t("Movement {0}", { 0: index + 1 })} className="rounded-lg border border-white/10 bg-white/[0.025] p-4 sm:p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <h2 className="text-sm font-semibold text-white">Movement {index + 1}</h2>
-                <button type="button" title="Remove movement" aria-label={`Remove movement ${index + 1}`} disabled={draft.exercises.length === 1} onClick={() => update({ exercises: draft.exercises.filter(movement => movement.key !== row.key) })} className="rounded-lg p-2 text-thrivv-text-muted hover:bg-white/5 hover:text-red-300 disabled:opacity-30">
+                <h2 className="text-sm font-semibold text-white">{t("Movement")} {index + 1}</h2>
+                <button type="button" title={t("Remove movement")} aria-label={t("Remove movement {0}", { 0: index + 1 })} disabled={draft.exercises.length === 1} onClick={() => update({ exercises: draft.exercises.filter(movement => movement.key !== row.key) })} className="rounded-lg p-2 text-thrivv-text-muted hover:bg-white/5 hover:text-red-300 disabled:opacity-30">
                   <Trash2 size={17} />
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_90px_110px]">
                 <label className="col-span-2 min-w-0 space-y-2 text-sm text-thrivv-text-secondary sm:col-span-1">
-                  <span className="block">Movement</span>
-                  <input list="workout-movements" autoComplete="off" className={inputClass} value={row.name} onChange={event => updateMovement(row.key, { name: event.target.value })} placeholder="Search or enter a movement" maxLength={100} required />
+                  <span className="block">{t("Movement")}</span>
+                  <input list="workout-movements" autoComplete="off" className={inputClass} value={row.name} onChange={event => updateMovement(row.key, { name: event.target.value })} placeholder={t("Search or enter a movement")} maxLength={100} required />
                 </label>
                 <label className="min-w-0 space-y-2 text-sm text-thrivv-text-secondary">
-                  <span className="block">Sets</span>
+                  <span className="block">{t("Sets")}</span>
                   <input type="number" inputMode="numeric" min={1} max={100} step={1} className={inputClass} value={row.sets} onChange={event => updateMovement(row.key, { sets: event.target.value, ...(row.setDetails ? {setDetails: Array.from({length: Math.min(100, Math.max(0, Number(event.target.value) || 0))}, (_,i) => row.setDetails?.[i] || {reps: row.reps, weightKg: ''})} : {}) })} required />
                 </label>
                 <label className="min-w-0 space-y-2 text-sm text-thrivv-text-secondary">
-                  <span className="block">Reps per set</span>
+                  <span className="block">{t("Reps per set")}</span>
                   <input type="number" inputMode="numeric" min={1} max={1000} step={1} className={inputClass} value={row.reps} onChange={event => updateMovement(row.key, { reps: event.target.value })} required />
                 </label>
               </div>
-              {previous.filter(p=>p.name.trim().toLowerCase()===row.name.trim().toLowerCase()).map(p=><p key={p.name} className="mt-3 text-xs text-thrivv-gold-400">Previous recorded weight: {p.latestKg} kg · {p.date}</p>)}
-              <button type="button" className="mt-4 text-sm text-thrivv-gold-400 underline" disabled={!Number.isInteger(Number(row.sets)) || Number(row.sets)<1 || Number(row.sets)>100} onClick={() => updateMovement(row.key, {setDetails: row.setDetails ? undefined : Array.from({length: Number(row.sets)}, () => ({reps: row.reps, weightKg: ''}))})}>{row.setDetails ? 'Use simple sets and reps' : 'Add weights / customize each set'}</button>
-              {row.setDetails && <div className="mt-3 space-y-2">{row.setDetails.map((set, setIndex) => <div key={setIndex} className="grid grid-cols-[40px_1fr_1fr] items-end gap-2"><span className="pb-3 text-xs">Set {setIndex+1}</span><label className="text-xs">Reps<input type="number" min={1} max={1000} required value={set.reps} className={inputClass} onChange={e => updateMovement(row.key,{setDetails:row.setDetails!.map((s,i)=>i===setIndex?{...s,reps:e.target.value}:s)})} /></label><label className="text-xs">Weight (kg)<input type="number" min={0} max={1500} step="0.1" placeholder="Optional" value={set.weightKg} className={inputClass} onChange={e => updateMovement(row.key,{setDetails:row.setDetails!.map((s,i)=>i===setIndex?{...s,weightKg:e.target.value}:s)})} /></label></div>)}</div>}
+              {previous.filter(p=>p.name.trim().toLowerCase()===row.name.trim().toLowerCase()).map(p=><p key={p.name} className="mt-3 text-xs text-thrivv-gold-400">{t("Previous recorded weight:")} {p.latestKg} {t("kg ·")} {p.date}</p>)}
+              <button type="button" className="mt-4 text-sm text-thrivv-gold-400 underline" disabled={!Number.isInteger(Number(row.sets)) || Number(row.sets)<1 || Number(row.sets)>100} onClick={() => updateMovement(row.key, {setDetails: row.setDetails ? undefined : Array.from({length: Number(row.sets)}, () => ({reps: row.reps, weightKg: ''}))})}>{row.setDetails ? t("Use simple sets and reps") : t("Add weights / customize each set")}</button>
+              {row.setDetails && <div className="mt-3 space-y-2">{row.setDetails.map((set, setIndex) => <div key={setIndex} className="grid grid-cols-[40px_1fr_1fr] items-end gap-2"><span className="pb-3 text-xs">{t("Set")} {setIndex+1}</span><label className="text-xs">{t("Reps")}<input type="number" min={1} max={1000} required value={set.reps} className={inputClass} onChange={e => updateMovement(row.key,{setDetails:row.setDetails!.map((s,i)=>i===setIndex?{...s,reps:e.target.value}:s)})} /></label><label className="text-xs">{t("Weight (kg)")}<input type="number" min={0} max={1500} step="0.1" placeholder={t("Optional")} value={set.weightKg} className={inputClass} onChange={e => updateMovement(row.key,{setDetails:row.setDetails!.map((s,i)=>i===setIndex?{...s,weightKg:e.target.value}:s)})} /></label></div>)}</div>}
               {row.name.trim() && <WorkoutCoachingTips exerciseId={findExercise(row.name)?.id} />}
             </section>
           ))}
         </div>
         <button type="button" disabled={draft.exercises.length >= 30} onClick={() => update({ exercises: [...draft.exercises, { key: nextKey.current++, name: '', sets: '', reps: '' }] })} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-4 py-3 text-sm text-white hover:border-thrivv-gold-500/50 disabled:opacity-40">
-          <Plus size={17} />Add movement
-        </button>
+          <Plus size={17} />{t("Add movement")}</button>
       </fieldset>
-      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
-      {saved && <p role="status" className="text-sm text-emerald-400">Workout saved.</p>}
+      {error && <p role="alert" className="text-sm text-red-300">{t(error)}</p>}
+      {saved && <p role="status" className="text-sm text-emerald-400">{t("Workout saved.")}</p>}
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-5">
-        <p className="text-xs text-thrivv-text-muted">Workout log only. Gym verification and reward points are separate.</p>
+        <p className="text-xs text-thrivv-text-muted">{t("Workout log only. Gym verification and reward points are separate.")}</p>
         <button type="submit" disabled={saving || saved} className="btn-primary inline-flex w-full items-center justify-center gap-2 px-5 py-3 text-sm disabled:opacity-60 sm:w-auto">
           {saving ? <Loader2 size={17} className="animate-spin" /> : <Save size={17} />}
-          {saving ? 'Saving...' : saved ? 'Saved' : 'Save workout'}
+          {saving ? t("Saving...") : saved ? t("Saved") : t("Save workout")}
         </button>
       </div>
     </form>

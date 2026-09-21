@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -8,6 +10,7 @@ import { INVALID_RECOVERY_LINK, parsePasswordRecoveryLink, type PasswordRecovery
 type RecoveryState = 'validating' | 'ready' | 'invalid' | 'validation-error' | 'success';
 
 export default function ResetPasswordPage() {
+  const { t, locale } = useTranslation();
   const [state, setState] = useState<RecoveryState>('validating');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -117,38 +120,38 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <PasswordRecoveryShell title={state === 'success' ? 'Password updated' : 'Reset password'}>
-      {state === 'validating' ? <p role="status" className="text-thrivv-text-secondary">Checking your reset link...</p> : null}
+    <PasswordRecoveryShell title={state === 'success' ? t("Password updated") : t("Reset password")}>
+      {state === 'validating' ? <p role="status" className="text-thrivv-text-secondary">{t("Checking your reset link...")}</p> : null}
       {state === 'invalid' || state === 'validation-error' ? (
         <div className="space-y-5">
-          <p role="alert" className="error-badge px-4 py-3 text-sm">{error}</p>
+          <p role="alert" className="error-badge px-4 py-3 text-sm">{t(error)}</p>
           {state === 'validation-error' ? (
-            <button type="button" onClick={() => setValidationAttempt(attempt => attempt + 1)} className="btn-primary w-full px-5 py-3">Try again</button>
+            <button type="button" onClick={() => setValidationAttempt(attempt => attempt + 1)} className="btn-primary w-full px-5 py-3">{t("Try again")}</button>
           ) : null}
-          <Link href="/member/forgot-password" className="inline-flex justify-center w-full text-thrivv-gold-500 hover:underline">Request a new reset link</Link>
+          <Link href="/member/forgot-password" className="inline-flex justify-center w-full text-thrivv-gold-500 hover:underline">{t("Request a new reset link")}</Link>
         </div>
       ) : null}
       {state === 'success' ? (
         <div className="space-y-5">
-          <p role="status" className="text-thrivv-text-secondary">Your password has been updated. Sign in with your new password.</p>
+          <p role="status" className="text-thrivv-text-secondary">{t("Your password has been updated. Sign in with your new password.")}</p>
           {warning ? <p role="alert" className="text-sm text-thrivv-gold-500">{warning}</p> : null}
-          <Link href="/member/login" className="btn-primary inline-flex justify-center w-full px-5 py-3">Sign in</Link>
+          <Link href="/member/login" className="btn-primary inline-flex justify-center w-full px-5 py-3">{t("Sign in")}</Link>
         </div>
       ) : null}
       {state === 'ready' ? (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="password" className="block text-sm text-thrivv-text-secondary mb-2">New password</label>
-            <input id="password" name="password" type="password" value={password} onChange={event => setPassword(event.target.value)} required minLength={6} maxLength={128} autoComplete="new-password" disabled={saving} aria-describedby="password-requirements" className="input-premium w-full px-4 py-3 text-base" />
-            <p id="password-requirements" className="mt-2 text-sm text-thrivv-text-muted">6 to 128 characters</p>
+            <label htmlFor="password" className="block text-sm text-thrivv-text-secondary mb-2">{t("New password")}</label>
+            <input id="password" name="password" type="password" dir="ltr" value={password} onChange={event => setPassword(event.target.value)} required minLength={6} maxLength={128} autoComplete="new-password" disabled={saving} aria-describedby="password-requirements" className="input-premium w-full px-4 py-3 text-base" />
+            <p id="password-requirements" className="mt-2 text-sm text-thrivv-text-muted">{t("6 to 128 characters")}</p>
           </div>
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm text-thrivv-text-secondary mb-2">Confirm new password</label>
-            <input id="confirmPassword" name="confirmPassword" type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} required minLength={6} maxLength={128} autoComplete="new-password" disabled={saving} className="input-premium w-full px-4 py-3 text-base" />
+            <label htmlFor="confirmPassword" className="block text-sm text-thrivv-text-secondary mb-2">{t("Confirm new password")}</label>
+            <input id="confirmPassword" name="confirmPassword" type="password" dir="ltr" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} required minLength={6} maxLength={128} autoComplete="new-password" disabled={saving} className="input-premium w-full px-4 py-3 text-base" />
           </div>
-          {error ? <p role="alert" className="error-badge px-4 py-3 text-sm">{error}</p> : null}
+          {error ? <p role="alert" className="error-badge px-4 py-3 text-sm">{t(error)}</p> : null}
           <button type="submit" disabled={saving} className="btn-primary w-full px-5 py-3 disabled:opacity-50 disabled:cursor-not-allowed">
-            {saving ? 'Updating password...' : 'Update password'}
+            {saving ? t("Updating password...") : t("Update password")}
           </button>
         </form>
       ) : null}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
+import { LanguageProvider } from '@/lib/i18n/client';
+import { getTranslation } from '@/lib/i18n/server';
 import MainLayout from '@/components/MainLayout';
 import { headers } from 'next/headers';
 import { isNativeApp } from '@/lib/mobile-app';
@@ -88,9 +90,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const { locale } = await getTranslation();
   const serverIdentity = await getServerSessionIdentity();
   return (
-    <html lang="en" data-native-app={isNativeApp((await headers()).get('user-agent')) ? 'true' : undefined}>
+    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} data-native-app={isNativeApp((await headers()).get('user-agent')) ? 'true' : undefined}>
       <head>
         <script
           type="application/ld+json"
@@ -99,9 +102,9 @@ export default async function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <MainLayout serverIdentity={serverIdentity}>
+        <LanguageProvider initialLocale={locale}><MainLayout serverIdentity={serverIdentity}>
           {children}
-        </MainLayout>
+        </MainLayout></LanguageProvider>
       </body>
     </html>
   );

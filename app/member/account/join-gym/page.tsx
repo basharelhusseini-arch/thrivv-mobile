@@ -1,10 +1,13 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import MemberPageHeader from '@/components/MemberPageHeader';
 import { ensureWhoopAutoSync } from '@/lib/whoop/auto-sync';
 export default function JoinGymPage() {
+  const { t, locale } = useTranslation();
   const router = useRouter();
   const [code, setCode] = useState(''); const [error, setError] = useState('');
   const [ready, setReady] = useState(false); const [busy, setBusy] = useState(false);
@@ -30,17 +33,17 @@ export default function JoinGymPage() {
     finally { setBusy(false); }
   }
   return <main className="member-future mx-auto max-w-3xl p-4 sm:p-8 space-y-6">
-    <MemberPageHeader section="account" title="Join your gym" subtitle="Enter the code shared by your gym to join its community." />
+    <MemberPageHeader section="account" title={t("Join your gym")} subtitle={t("Enter the code shared by your gym to join its community.")} />
     <section className="dark-card p-6 sm:p-8 space-y-5">
-      {error && <p role="alert" className="text-red-400">{error}</p>}
-      {!ready && !error && <p role="status">Loading your account…</p>}
-      {gym ? <div role="status" className="space-y-4"><h2 className="text-2xl text-thrivv-gold-500">You’re part of {gym.name}</h2><p>Your gym leaderboard will rank you once today’s health score is complete.</p><Link href="/member/dashboard" className="inline-block rounded-xl bg-thrivv-gold-500 px-6 py-3 text-black font-semibold">Open dashboard</Link></div> : ready && <form onSubmit={join} className="space-y-5">
-        <label htmlFor="gym-code" className="block font-medium">Gym code</label>
-        <input id="gym-code" value={code} onChange={e => setCode(e.target.value)} required maxLength={40} autoComplete="off" autoCapitalize="characters" spellCheck={false} disabled={busy} aria-describedby="gym-code-help" className="w-full rounded-xl border border-yellow-500/30 bg-black/30 px-4 py-4 text-lg tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="XXXX-XXXX-XXXX-XXXX" />
-        <p id="gym-code-help" className="text-sm text-gray-400">Ask your gym for its code. Entering a valid code joins you immediately.</p>
-        <button disabled={busy || !code.trim()} className="rounded-xl bg-thrivv-gold-500 px-6 py-3 text-black font-semibold disabled:opacity-50">{busy ? 'Joining…' : 'Join gym'}</button>
+      {error && <p role="alert" className="text-red-400">{t(error)}</p>}
+      {!ready && !error && <p role="status">{t("Loading your account…")}</p>}
+      {gym ? <div role="status" className="space-y-4"><h2 className="text-2xl text-thrivv-gold-500">{t("You’re part of")} {gym.name}</h2><p>{t("Your gym leaderboard ranks members by reward points earned this week.")}</p><Link href="/member/dashboard" className="inline-block rounded-xl bg-thrivv-gold-500 px-6 py-3 text-black font-semibold">{t("Open dashboard")}</Link></div> : ready && <form onSubmit={join} className="space-y-5">
+        <label htmlFor="gym-code" className="block font-medium">{t("Gym code")}</label>
+        <input id="gym-code" dir="ltr" value={code} onChange={e => setCode(e.target.value)} required maxLength={40} autoComplete="off" autoCapitalize="characters" spellCheck={false} disabled={busy} aria-describedby="gym-code-help" className="w-full rounded-xl border border-yellow-500/30 bg-black/30 px-4 py-4 text-lg tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-yellow-400" placeholder="XXXX-XXXX-XXXX-XXXX" />
+        <p id="gym-code-help" className="text-sm text-gray-400">{t("Ask your gym for its code. Entering a valid code joins you immediately.")}</p>
+        <button disabled={busy || !code.trim()} className="rounded-xl bg-thrivv-gold-500 px-6 py-3 text-black font-semibold disabled:opacity-50">{busy ? t("Joining…") : t("Join gym")}</button>
       </form>}
-      <Link href="/member/account" className="block text-gray-400 underline underline-offset-4">Back to account</Link>
+      <Link href="/member/account" className="block text-gray-400 underline underline-offset-4">{t("Back to account")}</Link>
     </section>
   </main>;
 }

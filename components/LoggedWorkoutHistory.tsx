@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, Dumbbell } from 'lucide-react';
@@ -16,13 +18,14 @@ type HistoryState = {
   error: string;
 };
 
-function formatWorkoutDate(date: string) {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, {
+function formatWorkoutDate(date: string, locale = 'en') {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(locale, {
     day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
   });
 }
 
 export default function LoggedWorkoutHistory({ memberId }: { memberId: string }) {
+  const { t, locale } = useTranslation();
   const router=useRouter();
   const [editing,setEditing]=useState<LoggedWorkout|null>(null);
 
@@ -82,30 +85,30 @@ export default function LoggedWorkoutHistory({ memberId }: { memberId: string })
     } catch {setRepeatError('Unable to prepare the repeated workout. Allow local storage and retry.');}
   }
 
-  return <section id="workout-log" aria-label="Logged workouts" aria-busy={current.loading} className="space-y-4">
+  return <section id="workout-log" aria-label={t("Logged workouts")} aria-busy={current.loading} className="space-y-4">
     <div className="flex items-center gap-2.5">
       <Dumbbell size={18} aria-hidden="true" className="shrink-0 text-thrivv-gold-400" />
-      <h2 ref={heading} tabIndex={-1} className="font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-thrivv-gold-400">Logged workouts</h2>
+      <h2 ref={heading} tabIndex={-1} className="font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-thrivv-gold-400">{t("Logged workouts")}</h2>
     </div>
     <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-      {deletionNotice?.memberId === memberId ? <span key={deletionNotice.count}>Logged workout deleted.</span> : null}
+      {deletionNotice?.memberId === memberId ? <span key={deletionNotice.count}>{t("Logged workout deleted.")}</span> : null}
     </p>
-    {current.loading && !current.workouts.length && <p role="status" className="py-5 text-sm text-thrivv-text-secondary">Loading logged workouts...</p>}
+    {current.loading && !current.workouts.length && <p role="status" className="py-5 text-sm text-thrivv-text-secondary">{t("Loading logged workouts...")}</p>}
     {current.error && <p role="alert" className="text-sm text-amber-200">
       {current.error}{' '}
-      <button type="button" onClick={() => setRevision(value => value + 1)} className="underline underline-offset-4">Retry</button>
+      <button type="button" onClick={() => setRevision(value => value + 1)} className="underline underline-offset-4">{t("Retry")}</button>
     </p>}
-    {!current.loading && !current.error && !current.workouts.length && <p className="py-5 text-sm text-thrivv-text-secondary">No workouts logged yet.</p>}
+    {!current.loading && !current.error && !current.workouts.length && <p className="py-5 text-sm text-thrivv-text-secondary">{t("No workouts logged yet.")}</p>}
     {repeatError && <p role="alert" className="text-sm text-amber-200">{repeatError}</p>}
-    {editing && <section className="rounded-xl border border-thrivv-gold-500/30 p-5"><h3 className="mb-4 font-semibold">Edit saved workout</h3><WorkoutLogForm key={editing.id} memberId={memberId} initialWorkout={editing} onSaved={()=>{setEditing(null);setOffset(0);setRevision(v=>v+1);}} /><button className="mt-3 underline" onClick={()=>setEditing(null)}>Close editor</button></section>}
-    {progressError && <p role="alert">{progressError} <button className="underline" onClick={()=>setRevision(v=>v+1)}>Retry</button></p>}
-    {!!progress.length && <details className="rounded-lg border border-white/10 p-4"><summary className="cursor-pointer text-sm font-medium">Strength progress</summary><p className="my-3 text-xs text-thrivv-text-muted">Heaviest recorded set in your latest workout and best set across your entire saved workout log. Compare similar technique and reps.</p><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr><th>Movement</th><th>Latest</th><th>Best</th></tr></thead><tbody>{progress.map(p=><tr key={p.name} className="border-t border-white/10"><td className="py-3">{p.name}</td><td>{p.latestKg} kg</td><td>{p.bestKg} kg</td></tr>)}</tbody></table></div></details>}
+    {editing && <section className="rounded-xl border border-thrivv-gold-500/30 p-5"><h3 className="mb-4 font-semibold">{t("Edit saved workout")}</h3><WorkoutLogForm key={editing.id} memberId={memberId} initialWorkout={editing} onSaved={()=>{setEditing(null);setOffset(0);setRevision(v=>v+1);}} /><button className="mt-3 underline" onClick={()=>setEditing(null)}>{t("Close editor")}</button></section>}
+    {progressError && <p role="alert">{progressError} <button className="underline" onClick={()=>setRevision(v=>v+1)}>{t("Retry")}</button></p>}
+    {!!progress.length && <details className="rounded-lg border border-white/10 p-4"><summary className="cursor-pointer text-sm font-medium">{t("Strength progress")}</summary><p className="my-3 text-xs text-thrivv-text-muted">{t("Heaviest recorded set in your latest workout and best set across your entire saved workout log. Compare similar technique and reps.")}</p><div className="overflow-x-auto"><table className="w-full text-start text-sm"><thead><tr><th>{t("Movement")}</th><th>{t("Latest")}</th><th>{t("Best")}</th></tr></thead><tbody>{progress.map(p=><tr key={p.name} className="border-t border-white/10"><td className="py-3">{p.name}</td><td>{p.latestKg} {t("kg")}</td><td>{p.bestKg} {t("kg")}</td></tr>)}</tbody></table></div></details>}
     <div className="space-y-3">
       {current.workouts.map(workout => <details key={workout.id} className="group rounded-lg border border-white/10 bg-white/[0.025]">
         <summary className="flex cursor-pointer list-none items-center gap-3 p-4 marker:content-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-thrivv-gold-400 [&::-webkit-details-marker]:hidden">
           <div className="min-w-0 flex-1">
             <h3 className="break-words text-sm font-medium text-white">{workout.name}</h3>
-            <p className="mt-1 text-xs text-thrivv-text-muted"><time dateTime={workout.date}>{formatWorkoutDate(workout.date)}</time>{' / '}{workout.exercises.length} {workout.exercises.length === 1 ? 'movement' : 'movements'}</p>
+            <p className="mt-1 text-xs text-thrivv-text-muted"><time dateTime={workout.date}>{formatWorkoutDate(workout.date, locale)}</time>{' / '}{workout.exercises.length} {workout.exercises.length === 1 ? t("movement") : t("movements")}</p>
           </div>
           <ChevronDown size={18} aria-hidden="true" className="shrink-0 text-thrivv-text-secondary transition-transform group-open:rotate-180" />
         </summary>
@@ -113,15 +116,15 @@ export default function LoggedWorkoutHistory({ memberId }: { memberId: string })
           {workout.exercises.map((exercise, index) => <li key={`${workout.id}-${index}`} className="border-b border-white/10 py-4 last:border-b-0">
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h4 className="min-w-0 max-w-full break-words text-sm font-medium text-white">{exercise.name}</h4>
-              <p className="shrink-0 text-sm text-thrivv-gold-400">{exercise.sets} {exercise.sets === 1 ? 'set' : 'sets'}{exercise.setDetails ? ' · details below' : ` x ${exercise.reps} ${exercise.reps === 1 ? 'rep' : 'reps'}`}</p>
+              <p className="shrink-0 text-sm text-thrivv-gold-400">{exercise.sets} {exercise.sets === 1 ? t("set") : t("sets")}{exercise.setDetails ? t(" · details below") : ` x ${exercise.reps} ${exercise.reps === 1 ? 'rep' : 'reps'}`}</p>
             </div>
-            {exercise.setDetails && <ol className="mt-2 text-xs text-thrivv-text-secondary">{exercise.setDetails.map((s,i)=><li key={i}>Set {i+1}: {s.reps} reps{s.weightKg !== null ? ` × ${s.weightKg} kg` : ' · weight not recorded'}</li>)}</ol>}
+            {exercise.setDetails && <ol className="mt-2 text-xs text-thrivv-text-secondary">{exercise.setDetails.map((s,i)=><li key={i}>{t("Set")} {i+1}: {s.reps} {t("reps")}{s.weightKg !== null ? ` × ${s.weightKg} kg` : t(" · weight not recorded")}</li>)}</ol>}
             <WorkoutCoachingTips exerciseId={exercise.exerciseId} />
           </li>)}
         </ol>
         <div className="flex justify-between border-t border-white/10 px-4 py-3">
-          <button type="button" className="text-sm text-thrivv-gold-400 underline" onClick={()=>repeat(workout)}>Repeat workout</button>
-          <button type="button" className="text-sm text-thrivv-gold-400 underline" onClick={()=>setEditing(workout)}>Edit workout</button>
+          <button type="button" className="text-sm text-thrivv-gold-400 underline" onClick={()=>repeat(workout)}>{t("Repeat workout")}</button>
+          <button type="button" className="text-sm text-thrivv-gold-400 underline" onClick={()=>setEditing(workout)}>{t("Edit workout")}</button>
           <WorkoutDeleteButton kind="workout" id={workout.id} memberId={memberId} name={workout.name}
             onDeleted={() => {
               setState(previous => previous.memberId === memberId
@@ -132,6 +135,6 @@ export default function LoggedWorkoutHistory({ memberId }: { memberId: string })
         </div>
       </details>)}
     </div>
-    {hasMore && <button disabled={current.loading} onClick={()=>setOffset(current.workouts.length)} className="btn-primary px-5 py-3 text-sm">{current.loading ? "Loading…" : "Load older workouts"}</button>}
+    {hasMore && <button disabled={current.loading} onClick={()=>setOffset(current.workouts.length)} className="btn-primary px-5 py-3 text-sm">{current.loading ? t("Loading…") : t("Load older workouts")}</button>}
   </section>;
 }

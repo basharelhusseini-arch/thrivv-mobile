@@ -1,4 +1,6 @@
 'use client';
+import { useTranslation } from '@/lib/i18n/client';
+
 
 import { useEffect, useState } from 'react';
 import { gymReturnPath, isGymLogin, portalLoginUrl } from '@/lib/gym-routing';
@@ -9,6 +11,7 @@ import Logo from '@/components/Logo';
 import Reveal from '@/components/Reveal';
 
 export default function MemberLoginPage() {
+  const { t, locale } = useTranslation();
   const [accountDeleted, setAccountDeleted] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,9 +71,7 @@ export default function MemberLoginPage() {
             href="/"
             className="inline-flex items-center gap-1.5 text-sm text-thrivv-text-muted hover:text-thrivv-gold-500 transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to home
-          </Link>
+            <ArrowLeft className="w-3.5 h-3.5" />{t("Back to home")}</Link>
         </nav>
 
         <div className="flex-1 flex items-center justify-center px-6 py-10 lg:py-16">
@@ -78,17 +79,14 @@ export default function MemberLoginPage() {
             <Reveal>
               <div className="text-center mb-10">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-thrivv-gold-500/20 bg-thrivv-gold-500/5 text-thrivv-gold-500 text-[10px] uppercase tracking-[0.28em] mb-6">
-                  {gymMode ? 'Gym portal sign-in' : 'Member access'}
+                  {gymMode ? t("Gym portal sign-in") : t("Member access")}
                 </span>
-                <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold tracking-tighter leading-[1.02]">
-                  Welcome{' '}
-                  <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">
-                    back
-                  </span>
+                <h1 className="text-balance text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold tracking-tighter leading-[1.02]">{t("Welcome")}{' '}
+                  <span className="bg-gradient-to-r from-thrivv-gold-500 via-thrivv-gold-300 to-thrivv-gold-500 bg-clip-text text-transparent">{t("back")}</span>
                   .
                 </h1>
                 <p className="mt-4 text-thrivv-text-secondary text-base lg:text-lg">
-                  {gymMode ? 'Your members. Your community. Your gym dashboard.' : "Sign in to keep climbing your gym’s leaderboard."}
+                  {gymMode ? t("Your members. Your community. Your gym dashboard.") : t("Sign in to keep climbing your gym’s leaderboard.")}
                 </p>
               </div>
             </Reveal>
@@ -96,52 +94,50 @@ export default function MemberLoginPage() {
             <Reveal delay={120}>
               <div className="relative glass-card overflow-hidden p-7 lg:p-8 shadow-[0_40px_140px_-30px_rgba(216, 189, 125,0.18)]">
                 <div
-                  className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
+                  className="absolute top-0 start-8 end-8 h-px bg-gradient-to-r from-transparent via-thrivv-gold-500/50 to-transparent"
                   aria-hidden
                 />
                 <div
-                  className="absolute -top-32 -right-24 w-72 h-72 bg-thrivv-gold-500/12 rounded-full blur-3xl pointer-events-none"
+                  className="absolute -top-32 -end-24 w-72 h-72 bg-thrivv-gold-500/12 rounded-full blur-3xl pointer-events-none"
                   aria-hidden
                 />
 
                 <form onSubmit={handleSubmit} className="space-y-4 relative">
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Mail className="w-4 h-4 text-thrivv-text-muted absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="email"
-                      type="email"
+                      type="email" dir="ltr"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       autoComplete="email"
-                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
-                      placeholder="Email address"
+                      className="input-premium w-full ps-11 pe-5 py-4 text-base"
+                      placeholder={t("Email address")}
                     />
                   </div>
 
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <Lock className="w-4 h-4 text-thrivv-text-muted absolute start-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
                       id="password"
-                      type="password"
+                      type="password" dir="ltr"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       autoComplete="current-password"
-                      className="input-premium w-full pl-11 pr-5 py-4 text-base"
-                      placeholder="Password"
+                      className="input-premium w-full ps-11 pe-5 py-4 text-base"
+                      placeholder={t("Password")}
                     />
                   </div>
 
-                  <div className="text-right">
-                    <Link href="/member/forgot-password" className="text-sm text-thrivv-gold-500 hover:underline">
-                      Forgot password?
-                    </Link>
+                  <div className="text-end">
+                    <Link href="/member/forgot-password" className="text-sm text-thrivv-gold-500 hover:underline">{t("Forgot password?")}</Link>
                   </div>
 
-                  {accountDeleted && <p role="status" className="mb-4 rounded-xl border border-green-500/30 p-4 text-sm text-green-300">Your account has been deleted. You have been signed out on all devices.</p>}
+                  {accountDeleted && <p role="status" className="mb-4 rounded-xl border border-green-500/30 p-4 text-sm text-green-300">{t("Your account has been deleted. You have been signed out on all devices.")}</p>}
                   {error && (
-                    <div className="error-badge px-4 py-3 text-sm">{error}</div>
+                    <div className="error-badge px-4 py-3 text-sm">{t(error)}</div>
                   )}
 
                   <button
@@ -152,9 +148,7 @@ export default function MemberLoginPage() {
                     {loading ? (
                       'Signing in...'
                     ) : (
-                      <>
-                        Sign In
-                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                      <>{t("Sign In")}<ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5" />
                       </>
                     )}
                   </button>
@@ -162,25 +156,23 @@ export default function MemberLoginPage() {
 
                 <div className="mt-7 text-center text-sm text-thrivv-text-secondary">
                   <p className="app-gym-switch mb-4">
-                    {gymMode ? 'Are you a member? ' : 'Are you a gym owner or manager? '}
+                    {gymMode ? t("Are you a member? ") : t("Are you a gym owner or manager? ")}
                     <a href={switchUrl} className="text-thrivv-gold-500 underline focus-visible:outline">
-                      {gymMode ? 'Member login' : 'Gym login'}
+                      {gymMode ? t("Member login") : t("Gym login")}
                     </a>
                   </p>
-                  {gymMode ? 'Need a Thrivv account? ' : "Don't have an account? "}
+                  {gymMode ? t("Need a Thrivv account? ") : t("Don't have an account? ")}
                   <Link
                     href="/member/signup"
                     className="text-thrivv-gold-500 hover:text-thrivv-gold-400 font-medium transition-colors"
-                  >
-                    Sign up
-                  </Link>
+                  >{t("Sign up")}</Link>
                 </div>
               </div>
             </Reveal>
 
             <Reveal delay={200}>
               <p className="mt-8 text-center text-[10px] uppercase tracking-[0.25em] text-thrivv-text-muted">
-                {gymMode ? 'Authorised gym access · Powered by Thrivv' : 'Built for gyms · Powered by Thrivv'}
+                {gymMode ? t("Authorised gym access · Powered by Thrivv") : t("Built for gyms · Powered by Thrivv")}
               </p>
             </Reveal>
           </div>
