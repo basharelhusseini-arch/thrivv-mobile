@@ -3,6 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Activity, ArrowUpRight, Trophy, Wallet } from 'lucide-react';
 import PageHeader from '@/components/MemberPageHeader';
+import DashboardJourney from '@/components/DashboardJourney';
+import type { JourneyActivity, JourneyRewards } from '@/lib/dashboard-journey';
 import MemberNextAction from '@/components/MemberNextAction';
 import { useClientSession } from '@/lib/client-session';
 import { ensureWhoopAutoSync } from '@/lib/whoop/auto-sync';
@@ -13,7 +15,8 @@ type Snapshot = { score: Score | null; average: number | null; history: Score[];
 type Board = { hasGym: boolean; currentRank: number | null; rankedCount: number; weekStart: string; weekEnd: string; leaderboard: { id: string; name: string; rank: number; score: number; scored_days: number }[] };
 export default function MemberDashboardPage() {
   const { user } = useClientSession();
-  const [activity,setActivity]=useState<{visits:number;weekDays:number;habitDays:number;todayHabits:number;weekStart:string}|null>(null);
+  const [activity,setActivity]=useState<JourneyActivity | null>(null);
+  const [journeyRewards, setJourneyRewards] = useState<JourneyRewards | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [board, setBoard] = useState<Board | null>(null);
   const [daily, setDaily] = useState<VerificationStatus | null>(null);
@@ -30,7 +33,7 @@ export default function MemberDashboardPage() {
     }));
     if (results[0].status === 'fulfilled') setSnapshot(results[0].value); else setSnapshot(null);
     if (results[1].status === 'fulfilled') setBoard(results[1].value); else setBoard(null);
-    if (results[2].status === 'fulfilled') { setDaily(results[2].value.daily); setPoints(Number(results[2].value.points)); } else { setDaily(null); setPoints(null); }
+    if (results[2].status === 'fulfilled') { setJourneyRewards(results[2].value); setDaily(results[2].value.daily); setPoints(Number(results[2].value.points)); } else { setJourneyRewards(null); setDaily(null); setPoints(null); }
     if(results[3].status==='fulfilled')setActivity(results[3].value);else setActivity(null);
     if (results.some(r => r.status === 'rejected')) setError('Some of your activity is unavailable. Your saved progress is unchanged.');
     setLoading(false);
@@ -41,6 +44,7 @@ export default function MemberDashboardPage() {
   const history = (snapshot?.history || []).slice(0, 7).sort((a, b) => a.date.localeCompare(b.date));
   return <div className="member-future space-y-6" data-section="dashboard">
     <PageHeader section="dashboard" title={`Your day, ${name}.`} subtitle="A little consistency. A lot of progress." />
+    <DashboardJourney activity={activity} rewards={journeyRewards} timezone={daily?.timezone} />
     {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-200">{error}<button onClick={() => void refresh()} className="underline underline-offset-4">Retry</button></div>}
     {daily && <MemberNextAction data={daily} />}
     <section aria-label="Your points" className="grid gap-4 sm:grid-cols-2">
