@@ -44,9 +44,9 @@ export default function MemberDashboardPage() {
   const history = (snapshot?.history || []).slice(0, 7).sort((a, b) => a.date.localeCompare(b.date));
   return <div className="member-future space-y-6" data-section="dashboard">
     <PageHeader section="dashboard" title={`Your day, ${name}.`} subtitle="A little consistency. A lot of progress." />
+    <DashboardJourney activity={activity} rewards={journeyRewards} timezone={daily?.timezone} />
     {error && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-200">{error}<button onClick={() => void refresh()} className="underline underline-offset-4">Retry</button></div>}
     {daily && <MemberNextAction data={daily} />}
-    <DashboardJourney activity={activity} rewards={journeyRewards} />
     <section aria-label="Your points" className="grid gap-4 sm:grid-cols-2">
       <Link href="/member/rewards" className="group flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.025] p-6"><div><p className="flex items-center gap-2 text-sm text-thrivv-text-secondary"><Wallet size={16} />Spendable balance</p><p className="mt-3 text-4xl font-semibold tracking-tight text-thrivv-gold-400">{points ?? '—'}<span className="ml-2 text-sm font-normal text-thrivv-text-muted">points</span></p></div><ArrowUpRight size={20} className="text-thrivv-text-muted group-hover:text-thrivv-gold-400" /></Link>
       <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-6"><p className="text-sm text-thrivv-text-secondary">Credited today</p><p className="mt-3 text-4xl font-semibold tracking-tight text-white">{daily?.creditedPoints ?? '—'}<span className="ml-2 text-sm font-normal text-thrivv-text-muted">points</span></p><p className="mt-2 text-xs text-thrivv-text-muted">40 for a verified workout · up to 10 for habits</p></div>

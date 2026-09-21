@@ -1,5 +1,7 @@
 # Thrivv Journey
 
+The Journey card is the first dashboard card, directly below the greeting and above the scan prompt. Its daily boost cycles through 21 original encouragements using the account timezone (device timezone fallback), stays stable during the day, and refreshes on a minute timer or returning to the tab. Violet and cyan accents, individual milestone icons, a tilted level badge and a current-level marker make progress more playful.
+
 The dashboard now makes verified activity tangible through visit levels, weekly missions and progress toward an eligible reward.
 
 - Spark: 0 verified days; Momentum: 5; Stride: 15; Force: 30; Elite: 60; Legend: 100.

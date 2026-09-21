@@ -35,3 +35,14 @@ it('spending affects reward progress, not the visit level; renders completion an
     writeFileSync('/tmp/thrivv-journey-preview.html', `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="file:///tmp/thrivv-journey.css"></head><body style="background:#0c0e0d"><main class="mx-auto max-w-5xl p-5 text-white">${html}</main></body></html>`);
   }
 });
+
+import { dailyEncouragement } from '@/lib/dashboard-journey';
+it('keeps the boost stable within a day and changes at local midnight', () => {
+  const morning = dailyEncouragement(new Date('2026-09-21T01:00:00Z'), 'Asia/Beirut');
+  expect(dailyEncouragement(new Date('2026-09-21T20:59:00Z'), 'Asia/Beirut')).toBe(morning);
+  expect(dailyEncouragement(new Date('2026-09-21T21:01:00Z'), 'Asia/Beirut')).not.toBe(morning);
+});
+it('handles the year boundary and invalid timezones', () => {
+  expect(dailyEncouragement(new Date('2026-12-31T12:00:00Z'), 'UTC')).not.toBe(dailyEncouragement(new Date('2027-01-01T12:00:00Z'), 'UTC'));
+  expect(dailyEncouragement(new Date('2026-09-21T12:00:00Z'), 'invalid/timezone')).toBeTruthy();
+});

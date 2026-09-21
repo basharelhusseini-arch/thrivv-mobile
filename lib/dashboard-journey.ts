@@ -23,3 +23,39 @@ export function journeyReward(data: JourneyRewards, now = Date.now()) {
     && !redeemed.has(o.id) && (!o.expires_at || new Date(o.expires_at).getTime() > now))
     .sort((a, b) => a.points - b.points || a.id.localeCompare(b.id))[0] ?? null;
 }
+
+// Original Thrivv encouragements: stable for the whole local day, no network request.
+export const DAILY_ENCOURAGEMENTS = [
+  'Small wins. Big future. Let’s build yours.',
+  'You don’t need a perfect day. Just a little momentum.',
+  'Every time you show up, you’re voting for future you.',
+  'Your only competition? The version of you that almost skipped.',
+  'Progress looks good on you. Keep going.',
+  'One visit closer. One reason prouder.',
+  'Rest, recharge, return. That’s progress too.',
+  'Make today a tiny win worth celebrating.',
+  'You’re building more than strength. You’re building belief.',
+  'Start where you are. Your next chapter starts there too.',
+  'Some days you push. Some days you recover. Both count.',
+  'A little effort today is a gift to tomorrow’s you.',
+  'Collect moments of “I did that.”',
+  'Your pace. Your path. Your progress.',
+  'The next level starts with one small step.',
+  'You’ve got a whole journey ahead. Enjoy this part.',
+  'Consistency is a collection of fresh starts.',
+  'Show up for yourself. The rewards will follow.',
+  'You don’t have to go all out to move forward.',
+  'Turn “one day” into a small win today.',
+  'Celebrate the effort. That’s where the magic starts.',
+] as const;
+export function dailyEncouragement(now = new Date(), timezone?: string) {
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(now);
+  } catch {
+    parts = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'numeric', day: 'numeric' }).formatToParts(now);
+  }
+  const value = (key: string) => Number(parts.find(p => p.type === key)?.value);
+  const day = Math.floor(Date.UTC(value('year'), value('month') - 1, value('day')) / 86400000);
+  return DAILY_ENCOURAGEMENTS[((day % DAILY_ENCOURAGEMENTS.length) + DAILY_ENCOURAGEMENTS.length) % DAILY_ENCOURAGEMENTS.length];
+}
